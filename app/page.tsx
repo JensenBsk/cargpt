@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { Diagnostic, ChatMessage } from "@/types/diagnostic";
 import DiagnosticReport from "@/components/DiagnosticReport";
 import QuoteChecker from "@/components/QuoteChecker";
@@ -16,16 +16,28 @@ export default function Home() {
   const [hasTune, setHasTune] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showErrors, setShowErrors] = useState(false);
   const [diagnosis, setDiagnosis] = useState<Diagnostic | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+
+  const yearRef = useRef<HTMLDivElement>(null);
+  const makeRef = useRef<HTMLDivElement>(null);
+  const modelRef = useRef<HTMLDivElement>(null);
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 35 }, (_, i) => currentYear - i);
 
   async function handleDiagnose(e: React.FormEvent) {
     e.preventDefault();
-    if (!year || !make || !model || !issue.trim()) return;
 
+    if (!year || !make || !model || !issue.trim()) {
+      setShowErrors(true);
+      const firstEmpty = !year ? yearRef.current : !make ? makeRef.current : !model ? modelRef.current : null;
+      firstEmpty?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    setShowErrors(false);
     setLoading(true);
     setError("");
     setDiagnosis(null);
@@ -108,7 +120,15 @@ export default function Home() {
     marginBottom: "6px",
   };
 
-  const canSubmit = !loading && !!year && !!make && !!model && !!issue.trim();
+  const allFilled = !!year && !!make && !!model && !!issue.trim();
+  const canSubmit = !loading && allFilled;
+
+  const fieldError = (value: string, fieldName: string) =>
+    showErrors && !value ? (
+      <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#ef4444", lineHeight: 1.4 }}>
+        Please enter your car&apos;s {fieldName} so we can give you accurate results.
+      </p>
+    ) : null;
 
   return (
     <main style={{ minHeight: "100dvh", backgroundColor: "var(--background)", display: "flex", flexDirection: "column" }}>
@@ -158,22 +178,41 @@ export default function Home() {
             onSubmit={handleDiagnose}
             style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}
           >
-            <div>
+            <div ref={yearRef}>
               <label style={labelStyle}>Year</label>
-              <select value={year} onChange={(e) => setYear(e.target.value)} required style={{ ...fieldStyle, color: year ? "var(--text-primary)" : "var(--text-muted)" }}>
+              <select
+                value={year}
+                onChange={(e) => { setYear(e.target.value); if (showErrors) setShowErrors(false); }}
+                style={{ ...fieldStyle, color: year ? "var(--text-primary)" : "var(--text-muted)", borderColor: showErrors && !year ? "#ef4444" : "#2a2f38" }}
+              >
                 <option value="">Select year</option>
                 {years.map((y) => <option key={y} value={y}>{y}</option>)}
               </select>
+              {fieldError(year, "year")}
             </div>
 
-            <div>
+            <div ref={makeRef}>
               <label style={labelStyle}>Make</label>
-              <input type="text" value={make} onChange={(e) => setMake(e.target.value)} placeholder="Toyota" required style={fieldStyle} />
+              <input
+                type="text"
+                value={make}
+                onChange={(e) => { setMake(e.target.value); if (showErrors) setShowErrors(false); }}
+                placeholder="Toyota"
+                style={{ ...fieldStyle, borderColor: showErrors && !make ? "#ef4444" : "#2a2f38" }}
+              />
+              {fieldError(make, "make")}
             </div>
 
-            <div>
+            <div ref={modelRef}>
               <label style={labelStyle}>Model</label>
-              <input type="text" value={model} onChange={(e) => setModel(e.target.value)} placeholder="Camry" required style={fieldStyle} />
+              <input
+                type="text"
+                value={model}
+                onChange={(e) => { setModel(e.target.value); if (showErrors) setShowErrors(false); }}
+                placeholder="Camry"
+                style={{ ...fieldStyle, borderColor: showErrors && !model ? "#ef4444" : "#2a2f38" }}
+              />
+              {fieldError(model, "model")}
             </div>
 
             <div>
@@ -248,8 +287,8 @@ export default function Home() {
         <button
           type="submit"
           form="diagnose-form"
-          disabled={!canSubmit}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", height: "56px", backgroundColor: "var(--accent)", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: canSubmit ? "pointer" : "not-allowed", opacity: canSubmit ? 1 : 0.4 }}
+          disabled={loading}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", height: "56px", backgroundColor: "var(--accent)", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: loading ? "not-allowed" : "pointer", opacity: allFilled || loading ? 1 : 0.55 }}
         >
           {loading ? (
             <><span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>⚙</span> Diagnosing...</>
