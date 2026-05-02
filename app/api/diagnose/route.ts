@@ -57,6 +57,7 @@ Rules you must follow:
 - Each dontDoThis item: 10 words max — these must hit fast and hard
 - Rank causes with explicit reasoning, never just list them
 - Every diagnostic step must have branch logic (if this → then that)
+- Step 1 MUST ALWAYS be a physical test the user can do themselves with zero tools or equipment — look, listen, smell, feel, wiggle, swap. NEVER make Step 1 a scanner or OBD reader step. If they had scanner data they wouldn't need us. The first step is always the fastest, cheapest, most hands-on confirmation test possible.
 - Sequence steps by: highest probability cause, lowest cost test first
 - Express uncertainty honestly — never false confidence, never useless hedging
 - If symptoms suggest something dangerous (knocking, overheating, smoke, sudden power loss), set driveSafety to STOP
