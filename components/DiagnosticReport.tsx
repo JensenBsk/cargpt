@@ -20,15 +20,28 @@ const LIKELIHOOD_COLORS: Record<string, { bg: string; text: string }> = {
   "Unlikely but serious": { bg: "rgba(245,158,11,0.14)", text: "#f59e0b" },
 };
 
+const SAFETY_CONFIG = {
+  STOP: { bg: "#1a0a0a", border: "#3a1515", accent: "#ef4444", badgeBg: "#ef4444", label: "⛔ STOP DRIVING", reasonColor: "#fca5a5" },
+  CAUTION: { bg: "#1a1500", border: "#3a2e00", accent: "#f59e0b", badgeBg: "#f59e0b", label: "⚠️ DRIVE WITH CAUTION", reasonColor: "#fcd34d" },
+  OKAY: { bg: "#0a1a0f", border: "#1a3a1f", accent: "#22c55e", badgeBg: "#22c55e", label: "✅ OKAY TO DRIVE", reasonColor: "#86efac" },
+};
+
 export default function DiagnosticReport({
   diagnosis, year, make, model, chatHistory, setChatHistory, onNewDiagnosis,
 }: Props) {
   const [expandedStep, setExpandedStep] = useState<number | null>(0);
+  const [expandedCauses, setExpandedCauses] = useState<Set<number>>(new Set());
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
 
-  const verdict = diagnosis.driveSafety.verdict;
+  function toggleCause(rank: number) {
+    setExpandedCauses(prev => {
+      const next = new Set(prev);
+      if (next.has(rank)) next.delete(rank); else next.add(rank);
+      return next;
+    });
+  }
 
   async function handleChatSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,16 +60,10 @@ export default function DiagnosticReport({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ year, make, model, issue: userText, conversationHistory: chatHistory }),
       });
-
       const data = await res.json();
       const reply = data.reply || "Sorry, I couldn't process that. Try again.";
-
       setChatMessages([...newMessages, { role: "assistant", text: reply }]);
-      setChatHistory([
-        ...chatHistory,
-        { role: "user", content: userText },
-        { role: "assistant", content: reply },
-      ]);
+      setChatHistory([...chatHistory, { role: "user", content: userText }, { role: "assistant", content: reply }]);
     } catch {
       setChatMessages([...newMessages, { role: "assistant", text: "Network error. Please check your connection." }]);
     } finally {
@@ -64,60 +71,94 @@ export default function DiagnosticReport({
     }
   }
 
+  const verdict = diagnosis.driveSafety.verdict;
+  const safetyConfig = SAFETY_CONFIG[verdict];
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
-      {/* Nav */}
+    <div style={{ minHeight: "100dvh", backgroundColor: "var(--background)" }}>
+
+      {/* Header — 48px */}
       <div
-        className="sticky top-0 z-10 border-b px-6 py-4 flex items-center justify-between"
-        style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          height: "48px",
+          padding: "0 16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          backgroundColor: "var(--surface)",
+          borderBottom: "1px solid var(--border)",
+        }}
       >
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <span className="text-base">🔧</span>
-            <div>
-              <div className="font-semibold leading-tight" style={{ color: "var(--text-primary)", fontSize: "14px" }}>
-                AI Mechanic
-              </div>
-              <div className="leading-tight" style={{ color: "var(--text-muted)", fontSize: "11px" }}>
-                Diagnostic Intelligence
-              </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "15px" }}>🔧</span>
+          <div>
+            <div style={{ fontSize: "15px", fontWeight: 600, lineHeight: 1.2, color: "var(--text-primary)" }}>
+              AI Mechanic
             </div>
-          </div>
-          <div
-            className="hidden sm:flex items-center px-3 py-1 rounded-full border"
-            style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)", color: "var(--text-secondary)", fontSize: "12px" }}
-          >
-            {year} {make} {model}
+            <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.2 }}>
+              {year} {make} {model}
+            </div>
           </div>
         </div>
         <button
           onClick={onNewDiagnosis}
-          className="rounded-lg border font-medium transition-opacity hover:opacity-75"
-          style={{ borderColor: "rgba(255,255,255,0.2)", color: "white", backgroundColor: "transparent", fontSize: "13px", padding: "6px 16px" }}
+          style={{
+            fontSize: "12px",
+            fontWeight: 500,
+            padding: "5px 12px",
+            borderRadius: "20px",
+            border: "1px solid rgba(255,255,255,0.2)",
+            color: "white",
+            backgroundColor: "transparent",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
         >
-          ← New Diagnosis
+          ← New
         </button>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-8 space-y-4">
+      {/* Content */}
+      <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+
         {/* Escalation banner */}
         {diagnosis.mechanicEscalation.needed && (
-          <div className="p-4 border flex gap-3" style={{ backgroundColor: "#1a0a0a", borderColor: "#3a1515", borderRadius: "10px" }}>
-            <span className="text-lg flex-shrink-0">🚨</span>
+          <div style={{ backgroundColor: "#1a0a0a", border: "1px solid #3a1515", borderRadius: "10px", padding: "12px 14px", display: "flex", gap: "10px" }}>
+            <span style={{ fontSize: "16px", flexShrink: 0 }}>🚨</span>
             <div>
-              <p className="font-semibold mb-0.5" style={{ color: "#ef4444", fontSize: "14px" }}>Professional Help Required</p>
-              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{diagnosis.mechanicEscalation.reason}</p>
+              <div style={{ fontWeight: 600, fontSize: "13px", color: "#ef4444", marginBottom: "2px" }}>Professional Help Required</div>
+              <div style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.5 }}>{diagnosis.mechanicEscalation.reason}</div>
             </div>
           </div>
         )}
 
-        {/* Drive Safety */}
-        <SafetyCard verdict={verdict} reason={diagnosis.driveSafety.reason} />
+        {/* Drive Safety — most important card */}
+        <div
+          style={{
+            backgroundColor: safetyConfig.bg,
+            border: `1px solid ${safetyConfig.border}`,
+            borderLeft: `3px solid ${safetyConfig.accent}`,
+            borderRadius: "10px",
+            padding: "14px 16px",
+          }}
+        >
+          <div style={{ marginBottom: "8px" }}>
+            <span style={{ backgroundColor: safetyConfig.badgeBg, color: "white", fontWeight: 700, fontSize: "11px", letterSpacing: "0.06em", padding: "3px 10px", borderRadius: "20px", textTransform: "uppercase" as const }}>
+              {safetyConfig.label}
+            </span>
+          </div>
+          <p style={{ margin: 0, fontSize: "13px", color: safetyConfig.reasonColor, lineHeight: 1.5 }}>
+            {diagnosis.driveSafety.reason}
+          </p>
+        </div>
 
         {/* What's Going On */}
         <Card>
           <SectionHeader icon="📋" label="What's Going On" />
-          <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+          <p style={{ margin: 0, fontSize: "14px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
             {diagnosis.whatsWrong}
           </p>
         </Card>
@@ -125,44 +166,57 @@ export default function DiagnosticReport({
         {/* Ranked Causes */}
         <Card>
           <SectionHeader icon="🔍" label="Likely Causes" />
-          <div className="space-y-3">
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {diagnosis.rankedCauses.map((cause) => {
               const colors = LIKELIHOOD_COLORS[cause.likelihood] ?? { bg: "rgba(107,114,128,0.18)", text: "#9ca3af" };
+              const isExpanded = expandedCauses.has(cause.rank);
+              const isLong = cause.reasoning.length > 90;
               return (
                 <div
                   key={cause.rank}
-                  className="p-4 border"
-                  style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)", borderRadius: "8px" }}
+                  style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "8px", padding: "12px" }}
                 >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className="flex items-center justify-center flex-shrink-0 text-white font-bold"
-                        style={{ width: "24px", height: "24px", borderRadius: "50%", backgroundColor: "var(--accent)", fontSize: "11px" }}
-                      >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "6px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                      <span style={{ width: "22px", height: "22px", borderRadius: "50%", backgroundColor: "var(--accent)", color: "white", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         {cause.rank}
                       </span>
-                      <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
+                      <span style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-primary)" }}>
                         {cause.cause}
                       </span>
                     </div>
-                    <span
-                      className="rounded-full font-medium flex-shrink-0 whitespace-nowrap"
-                      style={{ backgroundColor: colors.bg, color: colors.text, fontSize: "11px", padding: "2px 10px" }}
-                    >
+                    <span style={{ backgroundColor: colors.bg, color: colors.text, fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" as const, flexShrink: 0 }}>
                       {cause.likelihood}
                     </span>
                   </div>
-                  <p className="text-xs leading-relaxed" style={{ color: "#9ca3af", paddingLeft: "2.125rem" }}>
+                  <p style={{
+                    margin: 0,
+                    fontSize: "13px",
+                    color: "#8b95a3",
+                    lineHeight: 1.5,
+                    paddingLeft: "30px",
+                    display: "-webkit-box",
+                    WebkitLineClamp: isExpanded ? "unset" : 2,
+                    WebkitBoxOrient: "vertical" as const,
+                    overflow: isExpanded ? "visible" : "hidden",
+                  }}>
                     {cause.reasoning}
                   </p>
+                  {isLong && (
+                    <button
+                      onClick={() => toggleCause(cause.rank)}
+                      style={{ marginLeft: "30px", marginTop: "4px", fontSize: "12px", color: "var(--accent)", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: 0 }}
+                    >
+                      {isExpanded ? "Show less" : "Show more"}
+                    </button>
+                  )}
                 </div>
               );
             })}
           </div>
         </Card>
 
-        {/* Diagnostic Steps */}
+        {/* Diagnostic Steps — timeline */}
         <Card>
           <SectionHeader icon="🔬" label="Check This First" />
           <div>
@@ -170,79 +224,87 @@ export default function DiagnosticReport({
               const isLast = idx === diagnosis.diagnosticSteps.length - 1;
               const isOpen = expandedStep === step.step - 1;
               return (
-                <div key={step.step} className="flex gap-4">
-                  {/* Timeline */}
-                  <div className="flex flex-col items-center flex-shrink-0" style={{ paddingTop: "12px" }}>
-                    <div
-                      className="flex items-center justify-center text-xs font-bold flex-shrink-0"
-                      style={{
-                        width: "28px",
-                        height: "28px",
-                        borderRadius: "50%",
-                        backgroundColor: isOpen ? "var(--accent)" : "var(--surface-2)",
-                        border: `1px solid ${isOpen ? "var(--accent)" : "var(--border-subtle)"}`,
-                        color: isOpen ? "white" : "var(--text-muted)",
-                      }}
-                    >
+                <div key={step.step} style={{ display: "flex", gap: "12px" }}>
+                  {/* Timeline indicator */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: "14px" }}>
+                    <div style={{
+                      width: "26px", height: "26px", borderRadius: "50%",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: "12px", fontWeight: 700, flexShrink: 0,
+                      backgroundColor: isOpen ? "var(--accent)" : "var(--surface-2)",
+                      border: `1px solid ${isOpen ? "var(--accent)" : "var(--border-subtle)"}`,
+                      color: isOpen ? "white" : "var(--text-muted)",
+                    }}>
                       {step.step}
                     </div>
                     {!isLast && (
-                      <div style={{ width: "1px", flex: 1, minHeight: "12px", backgroundColor: "var(--border)", marginTop: "6px" }} />
+                      <div style={{ width: "1px", flex: 1, minHeight: "12px", backgroundColor: "var(--border)", marginTop: "4px" }} />
                     )}
                   </div>
 
-                  {/* Content */}
-                  <div className="flex-1 pb-6">
+                  {/* Step content */}
+                  <div style={{ flex: 1, paddingBottom: isLast ? "0" : "16px" }}>
+                    {/* Collapsed row — tap anywhere, 48px min height */}
                     <button
                       onClick={() => setExpandedStep(isOpen ? null : step.step - 1)}
-                      className="w-full text-left py-3 flex items-center justify-between gap-3"
+                      style={{
+                        width: "100%",
+                        minHeight: "48px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "8px",
+                        backgroundColor: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "0",
+                        textAlign: "left",
+                        transition: "opacity 150ms ease",
+                      }}
                     >
-                      <span className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>
+                      <span style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
                         {step.action}
                       </span>
-                      <span className="flex-shrink-0" style={{ color: "var(--text-muted)", fontSize: "11px" }}>
+                      <span style={{ color: "var(--text-muted)", fontSize: "10px", flexShrink: 0 }}>
                         {isOpen ? "▲" : "▼"}
                       </span>
                     </button>
 
+                    {/* Expanded detail */}
                     {isOpen && (
                       <div
-                        className="p-4 space-y-3 border"
-                        style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", borderRadius: "8px" }}
+                        style={{
+                          backgroundColor: "var(--background)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "8px",
+                          padding: "12px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "10px",
+                          marginTop: "4px",
+                          transition: "all 150ms ease",
+                        }}
                       >
-                        <p className="text-xs italic" style={{ color: "var(--text-secondary)" }}>{step.why}</p>
+                        <p style={{ margin: 0, fontSize: "13px", fontStyle: "italic", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                          {step.why}
+                        </p>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div className="p-3 border" style={{ backgroundColor: "#0a1a0f", borderColor: "#1e3a28", borderRadius: "8px" }}>
-                            <p className="font-semibold mb-1" style={{ color: "#22c55e", fontSize: "11px" }}>
-                              If it passes / looks good
-                            </p>
-                            <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                              {step.ifResultA}
-                            </p>
+                        {/* Branch cards — stacked on mobile */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                          <div style={{ backgroundColor: "#0a1a0f", border: "1px solid #1e3a28", borderRadius: "8px", padding: "10px 12px" }}>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#22c55e", marginBottom: "4px" }}>If it passes / looks good</div>
+                            <div style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.5 }}>{step.ifResultA}</div>
                           </div>
-                          <div className="p-3 border" style={{ backgroundColor: "#1a1200", borderColor: "#3a2a00", borderRadius: "8px" }}>
-                            <p className="font-semibold mb-1" style={{ color: "#f59e0b", fontSize: "11px" }}>
-                              If it fails / looks bad
-                            </p>
-                            <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                              {step.ifResultB}
-                            </p>
+                          <div style={{ backgroundColor: "#1a1200", border: "1px solid #3a2a00", borderRadius: "8px", padding: "10px 12px" }}>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#f59e0b", marginBottom: "4px" }}>If it fails / looks bad</div>
+                            <div style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.5 }}>{step.ifResultB}</div>
                           </div>
                         </div>
 
                         {(step.cost || (step.tools && step.tools !== "None")) && (
-                          <div className="flex gap-4 pt-1" style={{ color: "var(--text-muted)", fontSize: "12px" }}>
-                            {step.cost && (
-                              <span className="flex items-center gap-1.5">
-                                <span>⏱</span>{step.cost}
-                              </span>
-                            )}
-                            {step.tools && step.tools !== "None" && (
-                              <span className="flex items-center gap-1.5">
-                                <span>🔧</span>{step.tools}
-                              </span>
-                            )}
+                          <div style={{ display: "flex", gap: "16px", fontSize: "12px", color: "var(--text-muted)" }}>
+                            {step.cost && <span>⏱ {step.cost}</span>}
+                            {step.tools && step.tools !== "None" && <span>🔧 {step.tools}</span>}
                           </div>
                         )}
                       </div>
@@ -254,19 +316,35 @@ export default function DiagnosticReport({
           </div>
         </Card>
 
-        {/* Cost Estimates */}
+        {/* Cost Estimates — cards on mobile, table on desktop */}
         <Card>
           <SectionHeader icon="💰" label="Cost Estimates" />
-          <div className="overflow-x-auto">
-            <table className="w-full">
+
+          {/* Mobile: stacked cards */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }} className="md:hidden">
+            {diagnosis.costEstimates.map((est, i) => (
+              <div key={i} style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "8px", padding: "12px" }}>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "8px" }}>{est.fix}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+                  {[["Parts", est.parts, false], ["Labor", est.labor, false], ["Total", est.total, true]].map(([label, val, bold]) => (
+                    <div key={label as string}>
+                      <div style={{ fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "2px" }}>{label}</div>
+                      <div style={{ fontSize: "13px", color: bold ? "var(--text-primary)" : "var(--text-secondary)", fontWeight: bold ? 700 : 400 }}>{val}</div>
+                    </div>
+                  ))}
+                </div>
+                {est.note && <div style={{ marginTop: "8px", fontSize: "12px", color: "#6b7280", fontStyle: "italic" }}>{est.note}</div>}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr className="border-b" style={{ borderColor: "var(--border)" }}>
+                <tr style={{ borderBottom: "1px solid var(--border)" }}>
                   {["Repair", "Parts", "Labor", "Total"].map((h, i) => (
-                    <th
-                      key={h}
-                      className={i === 0 ? "text-left pb-3 pr-4" : i === 3 ? "text-right pb-3" : "text-right pb-3 pr-4"}
-                      style={{ color: "var(--text-muted)", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}
-                    >
+                    <th key={h} style={{ textAlign: i === 0 ? "left" : "right", paddingBottom: "10px", paddingRight: i === 3 ? 0 : "16px", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
                       {h}
                     </th>
                   ))}
@@ -275,15 +353,15 @@ export default function DiagnosticReport({
               <tbody>
                 {diagnosis.costEstimates.map((est, i) => (
                   <>
-                    <tr key={i} className="border-b" style={{ borderColor: "var(--border)" }}>
-                      <td className="py-3 pr-4 text-sm font-medium" style={{ color: "var(--text-primary)" }}>{est.fix}</td>
-                      <td className="py-3 pr-4 text-sm text-right" style={{ color: "var(--text-secondary)" }}>{est.parts}</td>
-                      <td className="py-3 pr-4 text-sm text-right" style={{ color: "var(--text-secondary)" }}>{est.labor}</td>
-                      <td className="py-3 text-sm text-right font-bold" style={{ color: "var(--text-primary)" }}>{est.total}</td>
+                    <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                      <td style={{ padding: "10px 16px 10px 0", fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>{est.fix}</td>
+                      <td style={{ padding: "10px 16px 10px 0", fontSize: "14px", color: "var(--text-secondary)", textAlign: "right" }}>{est.parts}</td>
+                      <td style={{ padding: "10px 16px 10px 0", fontSize: "14px", color: "var(--text-secondary)", textAlign: "right" }}>{est.labor}</td>
+                      <td style={{ padding: "10px 0", fontSize: "14px", fontWeight: 700, color: "var(--text-primary)", textAlign: "right" }}>{est.total}</td>
                     </tr>
                     {est.note && (
-                      <tr key={`note-${i}`}>
-                        <td colSpan={4} className="pb-3 italic" style={{ color: "#6b7280", fontSize: "12px" }}>{est.note}</td>
+                      <tr key={`n-${i}`}>
+                        <td colSpan={4} style={{ paddingBottom: "10px", fontSize: "12px", color: "#6b7280", fontStyle: "italic" }}>{est.note}</td>
                       </tr>
                     )}
                   </>
@@ -295,13 +373,13 @@ export default function DiagnosticReport({
 
         {/* Don't Do This */}
         {diagnosis.dontDoThis.length > 0 && (
-          <div className="p-5 border" style={{ backgroundColor: "#150a0a", borderColor: "#2a1515", borderRadius: "10px" }}>
+          <div style={{ backgroundColor: "#150a0a", border: "1px solid #2a1515", borderRadius: "10px", padding: "14px 16px" }}>
             <SectionHeader icon="⚠️" label="Don't Do This" />
-            <ul className="space-y-3">
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "8px" }}>
               {diagnosis.dontDoThis.map((warning, i) => (
-                <li key={i} className="flex gap-2.5" style={{ lineHeight: "1.5" }}>
-                  <span className="flex-shrink-0 font-bold mt-0.5" style={{ color: "#f59e0b", fontSize: "14px" }}>›</span>
-                  <span style={{ color: "var(--text-primary)", fontSize: "14px" }}>{warning}</span>
+                <li key={i} style={{ display: "flex", gap: "8px", lineHeight: 1.4 }}>
+                  <span style={{ color: "#f59e0b", fontWeight: 700, flexShrink: 0, fontSize: "14px" }}>›</span>
+                  <span style={{ fontSize: "13px", color: "var(--text-primary)", lineHeight: 1.4 }}>{warning}</span>
                 </li>
               ))}
             </ul>
@@ -311,56 +389,74 @@ export default function DiagnosticReport({
         {/* Follow-up Chat */}
         <Card>
           <SectionHeader icon="💬" label="Ask a Follow-Up" />
+
           {chatMessages.length > 0 && (
-            <div className="mb-4 space-y-3 max-h-80 overflow-y-auto">
+            <div style={{ marginBottom: "12px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "240px", overflowY: "auto" }}>
               {chatMessages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className="rounded-xl px-4 py-2.5 text-sm max-w-[85%]"
-                    style={{
-                      backgroundColor: msg.role === "user" ? "var(--accent)" : "var(--surface-2)",
-                      color: msg.role === "user" ? "white" : "var(--text-secondary)",
-                    }}
-                  >
+                <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+                  <div style={{
+                    maxWidth: "85%",
+                    padding: "8px 12px",
+                    borderRadius: "12px",
+                    fontSize: "14px",
+                    lineHeight: 1.5,
+                    backgroundColor: msg.role === "user" ? "var(--accent)" : "var(--surface-2)",
+                    color: msg.role === "user" ? "white" : "var(--text-secondary)",
+                  }}>
                     {msg.text}
                   </div>
                 </div>
               ))}
               {chatLoading && (
-                <div className="flex justify-start">
-                  <div className="rounded-xl px-4 py-2.5 text-sm" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-secondary)" }}>
-                    <span className="animate-pulse">Thinking...</span>
+                <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                  <div style={{ padding: "8px 12px", borderRadius: "12px", fontSize: "14px", backgroundColor: "var(--surface-2)", color: "var(--text-secondary)" }}>
+                    <span style={{ opacity: 0.7 }}>Thinking...</span>
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          <form onSubmit={handleChatSubmit} className="flex gap-2">
+          <form onSubmit={handleChatSubmit} style={{ display: "flex", gap: "8px" }}>
             <input
               type="text"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               placeholder="Ask anything about this diagnosis..."
-              className="flex-1 rounded-lg px-3.5 py-2.5 text-sm border"
               style={{
+                flex: 1,
+                height: "44px",
+                padding: "0 12px",
+                fontSize: "16px",
                 backgroundColor: "var(--surface-2)",
-                borderColor: "var(--border)",
+                border: "1px solid var(--border)",
+                borderRadius: "8px",
                 color: "var(--text-primary)",
               }}
             />
             <button
               type="submit"
               disabled={!chatInput.trim() || chatLoading}
-              className="rounded-lg font-semibold text-sm text-white disabled:opacity-40 disabled:cursor-not-allowed transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "var(--accent)", padding: "10px 20px" }}
+              style={{
+                height: "44px",
+                padding: "0 18px",
+                backgroundColor: "var(--accent)",
+                color: "white",
+                fontWeight: 600,
+                fontSize: "14px",
+                border: "none",
+                borderRadius: "8px",
+                cursor: chatInput.trim() && !chatLoading ? "pointer" : "not-allowed",
+                opacity: chatInput.trim() && !chatLoading ? 1 : 0.4,
+                flexShrink: 0,
+              }}
             >
               {chatLoading ? "..." : "Ask"}
             </button>
           </form>
         </Card>
 
-        <p className="text-center pb-8" style={{ fontSize: "12px", color: "var(--text-muted)", opacity: 0.4 }}>
+        <p style={{ textAlign: "center", fontSize: "12px", color: "var(--text-muted)", opacity: 0.4, paddingBottom: "24px", margin: 0 }}>
           AI diagnosis is for guidance only. Always verify with a qualified mechanic for safety-critical repairs.
         </p>
       </div>
@@ -370,75 +466,21 @@ export default function DiagnosticReport({
 
 function SectionHeader({ icon, label }: { icon: string; label: string }) {
   return (
-    <div className="flex items-center gap-2.5 mb-5">
-      <div className="flex-shrink-0 rounded-full" style={{ width: "2px", height: "14px", backgroundColor: "var(--accent)" }} />
-      <span style={{ fontSize: "13px" }}>{icon}</span>
-      <span className="font-semibold uppercase" style={{ color: "var(--text-muted)", fontSize: "11px", letterSpacing: "0.1em" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+      <div style={{ width: "2px", height: "13px", borderRadius: "2px", backgroundColor: "var(--accent)", flexShrink: 0 }} />
+      <span style={{ fontSize: "12px" }}>{icon}</span>
+      <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
         {label}
       </span>
-      <div className="flex-1" style={{ height: "1px", backgroundColor: "var(--border)" }} />
+      <div style={{ flex: 1, height: "1px", backgroundColor: "var(--border)" }} />
     </div>
   );
 }
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className="p-5 border"
-      style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: "10px" }}
-    >
+    <div style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "14px 16px" }}>
       {children}
-    </div>
-  );
-}
-
-function SafetyCard({ verdict, reason }: { verdict: "STOP" | "CAUTION" | "OKAY"; reason: string }) {
-  const config = {
-    STOP: {
-      bg: "#1a0a0a",
-      border: "#3a1515",
-      accentBorder: "#ef4444",
-      badgeBg: "#ef4444",
-      label: "⛔ STOP DRIVING",
-      reasonColor: "#fca5a5",
-    },
-    CAUTION: {
-      bg: "#1a1500",
-      border: "#3a2e00",
-      accentBorder: "#f59e0b",
-      badgeBg: "#f59e0b",
-      label: "⚠️ DRIVE WITH CAUTION",
-      reasonColor: "#fcd34d",
-    },
-    OKAY: {
-      bg: "#0a1a0f",
-      border: "#1a3a1f",
-      accentBorder: "#22c55e",
-      badgeBg: "#22c55e",
-      label: "✅ OKAY TO DRIVE",
-      reasonColor: "#86efac",
-    },
-  }[verdict];
-
-  return (
-    <div
-      className="p-5"
-      style={{
-        backgroundColor: config.bg,
-        border: `1px solid ${config.border}`,
-        borderLeft: `3px solid ${config.accentBorder}`,
-        borderRadius: "10px",
-      }}
-    >
-      <div className="flex items-center gap-3 mb-2.5">
-        <span
-          className="text-white font-bold uppercase rounded-full"
-          style={{ backgroundColor: config.badgeBg, fontSize: "11px", letterSpacing: "0.06em", padding: "3px 12px" }}
-        >
-          {config.label}
-        </span>
-      </div>
-      <p className="text-sm leading-relaxed" style={{ color: config.reasonColor }}>{reason}</p>
     </div>
   );
 }

@@ -58,151 +58,208 @@ export default function Home() {
     setError("");
   }
 
-  const fieldStyle = {
-    height: "44px",
+  if (diagnosis) {
+    return (
+      <DiagnosticReport
+        diagnosis={diagnosis}
+        year={year}
+        make={make}
+        model={model}
+        chatHistory={chatHistory}
+        setChatHistory={setChatHistory}
+        onNewDiagnosis={handleNewDiagnosis}
+      />
+    );
+  }
+
+  const fieldStyle: React.CSSProperties = {
+    display: "block",
+    width: "100%",
+    height: "48px",
+    padding: "0 12px",
+    fontSize: "16px",
     backgroundColor: "var(--surface-2)",
-    borderColor: "#2a2f38",
+    border: "1px solid #2a2f38",
+    borderRadius: "8px",
     color: "var(--text-primary)",
   };
 
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: "11px",
+    fontWeight: 600,
+    color: "var(--text-muted)",
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    marginBottom: "6px",
+  };
+
+  const canSubmit = !loading && !!year && !!make && !!model && !!issue.trim();
+
   return (
-    <main className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
-      {!diagnosis ? (
-        <div className="flex flex-col items-center justify-center min-h-screen px-4 py-16">
-          <div className="w-full" style={{ maxWidth: "560px" }}>
-            <div className="mb-10 text-center">
-              <div className="flex items-center justify-center gap-2.5 mb-3">
-                <span className="text-2xl">🔧</span>
-                <h1 className="text-4xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
-                  AI Mechanic
-                </h1>
-              </div>
-              <p style={{ color: "var(--text-muted)", fontSize: "15px" }}>
-                Tell us what&apos;s wrong. Get a real answer.
-              </p>
+    <main
+      style={{
+        minHeight: "100dvh",
+        backgroundColor: "var(--background)",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* Scrollable content area */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px 16px 0",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: "480px" }}>
+          {/* Title */}
+          <div style={{ textAlign: "center", marginBottom: "24px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "6px" }}>
+              <span style={{ fontSize: "22px" }}>🔧</span>
+              <h1 style={{ fontSize: "28px", fontWeight: 700, color: "var(--text-primary)", margin: 0, lineHeight: 1 }}>
+                AI Mechanic
+              </h1>
             </div>
-
-            <form
-              onSubmit={handleDiagnose}
-              className="p-7 space-y-5 border"
-              style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: "10px" }}
-            >
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block mb-2 font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", fontSize: "11px" }}>
-                    Year
-                  </label>
-                  <select
-                    value={year}
-                    onChange={(e) => setYear(e.target.value)}
-                    required
-                    className="w-full rounded-lg px-3 text-sm border cursor-pointer"
-                    style={{ ...fieldStyle, color: year ? "var(--text-primary)" : "var(--text-muted)" }}
-                  >
-                    <option value="">Year</option>
-                    {years.map((y) => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block mb-2 font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", fontSize: "11px" }}>
-                    Make
-                  </label>
-                  <input
-                    type="text"
-                    value={make}
-                    onChange={(e) => setMake(e.target.value)}
-                    placeholder="Toyota"
-                    required
-                    className="w-full rounded-lg px-3 text-sm border"
-                    style={fieldStyle}
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-2 font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", fontSize: "11px" }}>
-                    Model
-                  </label>
-                  <input
-                    type="text"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    placeholder="Camry"
-                    required
-                    className="w-full rounded-lg px-3 text-sm border"
-                    style={fieldStyle}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block mb-2 font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", fontSize: "11px" }}>
-                  OBD Code or Symptom Description
-                </label>
-                <textarea
-                  value={issue}
-                  onChange={(e) => setIssue(e.target.value)}
-                  placeholder="e.g. P0301 misfire on cylinder 1, rough idle at startup, clears after 10 minutes — or just describe what you're hearing or feeling"
-                  required
-                  rows={4}
-                  className="w-full rounded-lg px-3 py-3 text-sm border resize-none"
-                  style={{
-                    minHeight: "100px",
-                    backgroundColor: "var(--surface-2)",
-                    borderColor: "#2a2f38",
-                    color: "var(--text-primary)",
-                  }}
-                />
-              </div>
-
-              {error && (
-                <p className="text-sm rounded-lg px-3 py-2.5 border" style={{ color: "#ef4444", backgroundColor: "#1a0a0a", borderColor: "#3a1515" }}>
-                  {error}
-                </p>
-              )}
-
-              <div className="space-y-3 pt-1">
-                <button
-                  type="submit"
-                  disabled={loading || !year || !make || !model || !issue.trim()}
-                  className="w-full rounded-lg font-semibold text-white text-sm tracking-wide transition-opacity disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90"
-                  style={{ height: "48px", backgroundColor: "var(--accent)" }}
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="animate-spin inline-block">⚙</span>
-                      Diagnosing...
-                    </span>
-                  ) : (
-                    "Diagnose"
-                  )}
-                </button>
-
-                <p className="flex items-center justify-center gap-1.5" style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                  <span>🔒</span>
-                  Your data is never stored
-                </p>
-              </div>
-            </form>
-
-            <p className="text-center mt-5" style={{ fontSize: "12px", color: "var(--text-muted)", opacity: 0.45 }}>
-              AI diagnosis is for guidance only. Always verify with a qualified mechanic for safety-critical repairs.
+            <p style={{ color: "var(--text-muted)", fontSize: "14px", margin: 0 }}>
+              Tell us what&apos;s wrong. Get a real answer.
             </p>
           </div>
+
+          {/* Form */}
+          <form
+            id="diagnose-form"
+            onSubmit={handleDiagnose}
+            style={{
+              backgroundColor: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "10px",
+              padding: "16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+            }}
+          >
+            <div>
+              <label style={labelStyle}>Year</label>
+              <select
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                required
+                style={{ ...fieldStyle, color: year ? "var(--text-primary)" : "var(--text-muted)" }}
+              >
+                <option value="">Select year</option>
+                {years.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Make</label>
+              <input
+                type="text"
+                value={make}
+                onChange={(e) => setMake(e.target.value)}
+                placeholder="Toyota"
+                required
+                style={fieldStyle}
+              />
+            </div>
+
+            <div>
+              <label style={labelStyle}>Model</label>
+              <input
+                type="text"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder="Camry"
+                required
+                style={fieldStyle}
+              />
+            </div>
+
+            <div>
+              <label style={labelStyle}>OBD Code or Symptom</label>
+              <textarea
+                value={issue}
+                onChange={(e) => setIssue(e.target.value)}
+                placeholder="e.g. P0301 misfire on cylinder 1, rough idle at startup — or describe what you're hearing"
+                required
+                rows={3}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  minHeight: "100px",
+                  padding: "10px 12px",
+                  fontSize: "16px",
+                  backgroundColor: "var(--surface-2)",
+                  border: "1px solid #2a2f38",
+                  borderRadius: "8px",
+                  color: "var(--text-primary)",
+                  resize: "none",
+                  lineHeight: "1.5",
+                }}
+              />
+            </div>
+
+            {error && (
+              <div style={{ padding: "10px 12px", backgroundColor: "#1a0a0a", border: "1px solid #3a1515", borderRadius: "8px", color: "#ef4444", fontSize: "13px" }}>
+                {error}
+              </div>
+            )}
+          </form>
+
+          <p style={{ textAlign: "center", marginTop: "12px", fontSize: "12px", color: "var(--text-muted)", opacity: 0.45 }}>
+            🔒 Your data is never stored
+          </p>
         </div>
-      ) : (
-        <DiagnosticReport
-          diagnosis={diagnosis}
-          year={year}
-          make={make}
-          model={model}
-          chatHistory={chatHistory}
-          setChatHistory={setChatHistory}
-          onNewDiagnosis={handleNewDiagnosis}
-        />
-      )}
+      </div>
+
+      {/* Fixed bottom CTA */}
+      <div
+        style={{
+          padding: "12px 16px",
+          paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
+          backgroundColor: "var(--background)",
+          borderTop: "1px solid var(--border)",
+          flexShrink: 0,
+        }}
+      >
+        <button
+          type="submit"
+          form="diagnose-form"
+          disabled={!canSubmit}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            width: "100%",
+            height: "56px",
+            backgroundColor: "var(--accent)",
+            color: "white",
+            fontWeight: 600,
+            fontSize: "15px",
+            border: "none",
+            borderRadius: "10px",
+            cursor: canSubmit ? "pointer" : "not-allowed",
+            opacity: canSubmit ? 1 : 0.4,
+          }}
+        >
+          {loading ? (
+            <>
+              <span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>⚙</span>
+              Diagnosing...
+            </>
+          ) : (
+            "Diagnose"
+          )}
+        </button>
+      </div>
     </main>
   );
 }
