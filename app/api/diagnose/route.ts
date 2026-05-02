@@ -62,7 +62,8 @@ Rules you must follow:
 - If symptoms suggest something dangerous (knocking, overheating, smoke, sudden power loss), set driveSafety to STOP
 - Return only valid JSON, no markdown, no explanation outside the JSON
 - Include 3-5 ranked causes
-- Include 3-6 diagnostic steps`;
+- Include 3-6 diagnostic steps
+- If modifications are listed, explicitly factor them into your diagnosis. A catless downpipe triggers O2 codes that are often not faults. A tune changes expected fuel trim ranges. An intake affects MAF readings. State explicitly when a code or symptom may be mod-related rather than a mechanical fault. This is critical for enthusiasts — getting it wrong loses their trust instantly.`;
 
 export async function POST(request: Request) {
   try {
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "API key not configured" }, { status: 500 });
     }
 
-    const { year, make, model, issue, conversationHistory } =
+    const { year, make, model, issue, conversationHistory, mods, hasTune } =
       await request.json();
 
     if (!year || !make || !model || !issue) {
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
       : [
           {
             role: "user",
-            content: `Vehicle: ${year} ${make} ${model}\n\nIssue: ${issue}`,
+            content: `Vehicle: ${year} ${make} ${model}${mods ? `\nModifications: ${mods}${hasTune ? " — currently running a tune" : ""}` : ""}\n\nIssue: ${issue}`,
           },
         ];
 
