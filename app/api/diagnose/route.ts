@@ -63,6 +63,10 @@ Rules you must follow:
 
 export async function POST(request: Request) {
   try {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return Response.json({ error: "API key not configured" }, { status: 500 });
+    }
+
     const { year, make, model, issue, conversationHistory } =
       await request.json();
 
