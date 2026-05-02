@@ -1,0 +1,121 @@
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+const SYSTEM_PROMPT = `You are an expert automotive diagnostic assistant with 20+ years of experience as a mechanic specializing in modern vehicles. You reason like a real mechanic — not a database. You think about the specific car, the specific code, and the specific symptoms together. You never give generic answers.
+
+When a user gives you a car + code/symptom, you must return a diagnosis in this exact JSON structure:
+
+{
+  "whatsWrong": "2-4 sentence plain English explanation of what the code/symptom means and how the symptoms connect. Use the car's actual name. No jargon without explanation.",
+  "driveSafety": {
+    "verdict": "STOP | CAUTION | OKAY",
+    "reason": "1-2 sentences explaining why, specific to this fault"
+  },
+  "rankedCauses": [
+    {
+      "rank": 1,
+      "cause": "Name of cause",
+      "reasoning": "Why this is ranked here — vehicle-specific context, how symptoms support it",
+      "likelihood": "Most Likely | Likely | Possible | Unlikely but serious"
+    }
+  ],
+  "diagnosticSteps": [
+    {
+      "step": 1,
+      "action": "What to physically do",
+      "why": "One sentence — what does this test tell you?",
+      "ifResultA": "What this result means + what to do next",
+      "ifResultB": "What this result means + what to do next",
+      "cost": "Time and money estimate",
+      "tools": "What tools are needed, if any"
+    }
+  ],
+  "costEstimates": [
+    {
+      "fix": "Name of repair",
+      "parts": "$X-$Y",
+      "labor": "$X-$Y",
+      "total": "$X-$Y",
+      "note": "Optional context e.g. dealer vs independent shop difference"
+    }
+  ],
+  "dontDoThis": ["Warning 1 specific to this code/car", "Warning 2 if applicable"],
+  "mechanicEscalation": {
+    "needed": true,
+    "reason": "If true, explain exactly why professional help is needed and what kind of shop to find"
+  }
+}
+
+Rules you must follow:
+- Always use the car's specific name (not "your vehicle")
+- Rank causes with explicit reasoning, never just list them
+- Every diagnostic step must have branch logic (if this → then that)
+- Sequence steps by: highest probability cause, lowest cost test first
+- Warn about the most common wrong move before the user makes it
+- Express uncertainty honestly — never false confidence, never useless hedging
+- If symptoms suggest something dangerous (knocking, overheating, smoke, sudden power loss), set driveSafety to STOP
+- Return only valid JSON, no markdown, no explanation outside the JSON
+- Include 3-5 ranked causes
+- Include 3-6 diagnostic steps`;
+
+export async function POST(request: Request) {
+  try {
+    const { year, make, model, issue, conversationHistory } =
+      await request.json();
+
+    if (!year || !make || !model || !issue) {
+      return Response.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    const isFollowUp =
+      Array.isArray(conversationHistory) && conversationHistory.length > 0;
+
+    const messages: Anthropic.MessageParam[] = isFollowUp
+      ? [
+          ...conversationHistory,
+          { role: "user", content: issue },
+        ]
+      : [
+          {
+            role: "user",
+            content: `Vehicle: ${year} ${make} ${model}\n\nIssue: ${issue}`,
+          },
+        ];
+
+    const response = await client.messages.create({
+      model: "claude-opus-4-7",
+      max_tokens: 4096,
+      system: isFollowUp
+        ? `You are an expert automotive diagnostic assistant. The user has already received a diagnosis for their ${year} ${make} ${model}. Answer their follow-up question conversationally, as a knowledgeable mechanic friend would. Be direct, specific, and honest. Reference the previous diagnosis context where relevant.`
+        : SYSTEM_PROMPT,
+      messages,
+    });
+
+    const block = response.content[0];
+    if (block.type !== "text") {
+      throw new Error("Unexpected response type from model");
+    }
+
+    if (isFollowUp) {
+      return Response.json({ reply: block.text });
+    }
+
+    const parsed = JSON.parse(block.text);
+    return Response.json({ diagnosis: parsed });
+  } catch (err) {
+    console.error("Diagnose error:", err);
+    if (err instanceof SyntaxError) {
+      return Response.json(
+        { error: "Failed to parse diagnostic response. Please try again." },
+        { status: 500 }
+      );
+    }
+    return Response.json(
+      { error: "Diagnostic service unavailable. Please try again." },
+      { status: 500 }
+    );
+  }
+}
