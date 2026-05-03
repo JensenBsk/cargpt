@@ -5,13 +5,18 @@ import type { Diagnostic, ChatMessage } from "@/types/diagnostic";
 import DiagnosticReport from "@/components/DiagnosticReport";
 import QuoteChecker from "@/components/QuoteChecker";
 import AuthModal from "@/components/AuthModal";
-import GarageModal from "@/components/GarageModal";
+import GarageView from "@/components/GarageView";
+import BottomNav, { type AppTab } from "@/components/BottomNav";
+import TorqueLogo from "@/components/TorqueLogo";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
+import { MapPin } from "lucide-react";
 
 export default function Home() {
   const { user, available, signOut } = useAuth();
+  const { toast } = useToast();
 
-  const [tab, setTab] = useState<"diagnose" | "quote">("diagnose");
+  const [activeTab, setActiveTab] = useState<AppTab>("diagnose");
   const [year, setYear] = useState("");
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
@@ -27,14 +32,17 @@ export default function Home() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [diagnosisId, setDiagnosisId] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showGarageModal, setShowGarageModal] = useState(false);
+  const [quoteResetKey, setQuoteResetKey] = useState(0);
+  const [quoteHasResult, setQuoteHasResult] = useState(false);
 
   const yearRef = useRef<HTMLDivElement>(null);
   const makeRef = useRef<HTMLDivElement>(null);
   const modelRef = useRef<HTMLDivElement>(null);
 
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 35 }, (_, i) => currentYear - i);
+  const years = Array.from({ length: 36 }, (_, i) => currentYear - i);
+
+  const showDiagnosisResult = activeTab === "diagnose" && diagnosis !== null;
 
   async function handleDiagnose(e: React.FormEvent) {
     e.preventDefault();
@@ -77,20 +85,19 @@ export default function Home() {
         { role: "assistant", content: JSON.stringify(data.diagnosis) },
       ]);
 
-      // Auto-save in background for signed-in users
       if (available) {
         fetch("/api/diagnoses", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            year, make, model, issue,
-            mods: modMode ? mods : "",
-            hasTune: modMode ? hasTune : false,
-            diagnosis: data.diagnosis,
-          }),
+          body: JSON.stringify({ year, make, model, issue, mods: modMode ? mods : "", hasTune: modMode ? hasTune : false, diagnosis: data.diagnosis }),
         })
           .then((r) => r.json())
-          .then((d) => { if (d.saved && d.id) setDiagnosisId(d.id); })
+          .then((d) => {
+            if (d.saved && d.id) {
+              setDiagnosisId(d.id);
+              toast("Diagnosis saved");
+            }
+          })
           .catch(() => {});
       }
     } catch {
@@ -112,19 +119,48 @@ export default function Home() {
     setYear(car.year);
     setMake(car.make);
     setModel(car.model);
-    if (car.mods) {
-      setModMode(true);
-      setMods(car.mods);
-      setHasTune(car.hasTune);
-    }
+    if (car.mods) { setModMode(true); setMods(car.mods); setHasTune(car.hasTune); }
     setShowErrors(false);
+    setActiveTab("diagnose");
+    toast(`${car.year} ${car.make} ${car.model} loaded`);
   }
 
-  if (diagnosis) {
+  function handleBackFromQuote() {
+    setQuoteHasResult(false);
+    setQuoteResetKey((k) => k + 1);
+  }
+
+  // ── Input form field styles ────────────────────────────────
+  const fieldStyle: React.CSSProperties = {
+    display: "block",
+    width: "100%",
+    height: "48px",
+    padding: "0 14px",
+    fontSize: "16px",
+    backgroundColor: "#0d0f12",
+    border: "1px solid #1e2329",
+    borderRadius: "10px",
+    color: "#f1f5f9",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: "10px",
+    fontWeight: 600,
+    color: "#4b5563",
+    textTransform: "uppercase",
+    letterSpacing: "0.1em",
+    marginBottom: "6px",
+  };
+
+  const allFilled = !!year && !!make && !!model && !!issue.trim();
+
+  // ── Render diagnosis result (DiagnosticReport has its own header) ──
+  if (showDiagnosisResult) {
     return (
       <>
         <DiagnosticReport
-          diagnosis={diagnosis}
+          diagnosis={diagnosis!}
           year={year}
           make={make}
           model={model}
@@ -135,139 +171,82 @@ export default function Home() {
           setChatHistory={setChatHistory}
           onNewDiagnosis={handleNewDiagnosis}
           diagnosisId={diagnosisId}
+          onToast={toast}
         />
+        <BottomNav activeTab={activeTab} onChange={(tab) => { handleNewDiagnosis(); setActiveTab(tab); }} />
         {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
       </>
     );
   }
-
-  if (tab === "quote") {
-    return (
-      <>
-        <QuoteChecker onBack={() => setTab("diagnose")} />
-        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
-      </>
-    );
-  }
-
-  const fieldStyle: React.CSSProperties = {
-    display: "block",
-    width: "100%",
-    height: "48px",
-    padding: "0 12px",
-    fontSize: "16px",
-    backgroundColor: "var(--surface-2)",
-    border: "1px solid #2a2f38",
-    borderRadius: "8px",
-    color: "var(--text-primary)",
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: "block",
-    fontSize: "11px",
-    fontWeight: 600,
-    color: "var(--text-muted)",
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    marginBottom: "6px",
-  };
-
-  const allFilled = !!year && !!make && !!model && !!issue.trim();
-
-  const fieldError = (value: string, fieldName: string) =>
-    showErrors && !value ? (
-      <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#ef4444", lineHeight: 1.4 }}>
-        Please enter your car&apos;s {fieldName} so we can give you accurate results.
-      </p>
-    ) : null;
 
   return (
     <>
-      <main style={{ minHeight: "100dvh", backgroundColor: "var(--background)", display: "flex", flexDirection: "column" }}>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px 0" }}>
-          <div style={{ width: "100%", maxWidth: "480px" }}>
+      {/* ── Sticky header ── */}
+      <header style={{ position: "sticky", top: 0, zIndex: 30, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#0d0f12", borderBottom: "1px solid #1e2329" }}>
+        {/* Back button when on quote result, logo otherwise */}
+        {activeTab === "quote" && quoteHasResult ? (
+          <button onClick={handleBackFromQuote} className="tap-target" style={{ fontSize: "14px", fontWeight: 500, color: "#9ca3af", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: "4px" }}>
+            ← Back
+          </button>
+        ) : (
+          <TorqueLogo markSize={28} wordmarkSize={20} glow="soft" />
+        )}
 
-            {/* Title + auth row */}
-            <div style={{ textAlign: "center", marginBottom: "20px" }}>
-              {available && (
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                  <button
-                    onClick={() => setShowGarageModal(true)}
-                    style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid #2a2f38", color: "var(--text-muted)", backgroundColor: "transparent", cursor: "pointer" }}
-                  >
-                    🚗 Garage
-                  </button>
-                  {user ? (
-                    <button
-                      onClick={signOut}
-                      style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid #2a2f38", color: "var(--text-muted)", backgroundColor: "transparent", cursor: "pointer" }}
-                    >
-                      {user.email?.split("@")[0]} · Sign out
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setShowAuthModal(true)}
-                      style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(59,130,246,0.5)", color: "#3b82f6", backgroundColor: "rgba(59,130,246,0.08)", cursor: "pointer" }}
-                    >
-                      Sign In
-                    </button>
-                  )}
-                </div>
-              )}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "6px" }}>
-                <span style={{ fontSize: "22px" }}>🔧</span>
-                <h1 style={{ fontSize: "28px", fontWeight: 700, color: "var(--text-primary)", margin: 0, lineHeight: 1 }}>
-                  Torque
-                </h1>
+        {/* Auth */}
+        {available && (
+          user ? (
+            <button onClick={signOut} className="tap-target" style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid #252b34", color: "#6b7280", backgroundColor: "transparent", cursor: "pointer" }}>
+              {user.email?.split("@")[0]} · out
+            </button>
+          ) : (
+            <button onClick={() => setShowAuthModal(true)} className="tap-target" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(59,130,246,0.5)", color: "#3b82f6", backgroundColor: "rgba(59,130,246,0.08)", cursor: "pointer" }}>
+              Sign In
+            </button>
+          )
+        )}
+      </header>
+
+      {/* ── Main content ── */}
+      <main style={{ flex: 1, paddingBottom: "calc(60px + env(safe-area-inset-bottom, 0px) + 12px)" }}>
+
+        {/* DIAGNOSE TAB */}
+        {activeTab === "diagnose" && (
+          <div className="view-enter" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 16px 16px" }}>
+
+            {/* Hero */}
+            <div style={{ textAlign: "center", padding: "32px 0 28px" }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: "14px" }}>
+                <TorqueLogo markSize={48} showWordmark={false} glow="strong" />
               </div>
-              <p style={{ color: "var(--text-muted)", fontSize: "14px", margin: 0 }}>
+              <div style={{ fontFamily: "var(--font-barlow), sans-serif", fontSize: "28px", fontWeight: 700, letterSpacing: "0.15em", color: "white", lineHeight: 1 }}>
+                TORQUE
+              </div>
+              <div style={{ fontSize: "13px", letterSpacing: "0.05em", color: "#6b7280", marginTop: "6px" }}>
                 Your car. Decoded.
-              </p>
+              </div>
             </div>
 
-            {/* Tab bar */}
-            <div style={{ display: "flex", backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "4px", marginBottom: "12px", gap: "4px" }}>
-              {(["diagnose", "quote"] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  style={{
-                    flex: 1,
-                    height: "36px",
-                    borderRadius: "7px",
-                    border: "none",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    backgroundColor: tab === t ? "var(--accent)" : "transparent",
-                    color: tab === t ? "white" : "var(--text-muted)",
-                    transition: "all 150ms ease",
-                  }}
-                >
-                  {t === "diagnose" ? "🔧 Diagnose" : "💰 Check Quote"}
-                </button>
-              ))}
-            </div>
-
-            {/* Diagnose form */}
+            {/* Form card */}
             <form
               id="diagnose-form"
               onSubmit={handleDiagnose}
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}
+              style={{ width: "100%", maxWidth: "480px", backgroundColor: "#13161b", border: "1px solid #1e2329", borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}
             >
+              {/* Year */}
               <div ref={yearRef}>
                 <label style={labelStyle}>Year</label>
                 <select
                   value={year}
                   onChange={(e) => { setYear(e.target.value); if (showErrors) setShowErrors(false); }}
-                  style={{ ...fieldStyle, color: year ? "var(--text-primary)" : "var(--text-muted)", borderColor: showErrors && !year ? "#ef4444" : "#2a2f38" }}
+                  style={{ ...fieldStyle, color: year ? "#f1f5f9" : "#374151", borderColor: showErrors && !year ? "#ef4444" : "#1e2329" }}
                 >
                   <option value="">Select year</option>
                   {years.map((y) => <option key={y} value={y}>{y}</option>)}
                 </select>
-                {fieldError(year, "year")}
+                {showErrors && !year && <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#ef4444" }}>Please enter your car&apos;s year.</p>}
               </div>
 
+              {/* Make */}
               <div ref={makeRef}>
                 <label style={labelStyle}>Make</label>
                 <input
@@ -275,11 +254,13 @@ export default function Home() {
                   value={make}
                   onChange={(e) => { setMake(e.target.value); if (showErrors) setShowErrors(false); }}
                   placeholder="Toyota"
-                  style={{ ...fieldStyle, borderColor: showErrors && !make ? "#ef4444" : "#2a2f38" }}
+                  autoComplete="off"
+                  style={{ ...fieldStyle, borderColor: showErrors && !make ? "#ef4444" : "#1e2329" }}
                 />
-                {fieldError(make, "make")}
+                {showErrors && !make && <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#ef4444" }}>Please enter your car&apos;s make.</p>}
               </div>
 
+              {/* Model */}
               <div ref={modelRef}>
                 <label style={labelStyle}>Model</label>
                 <input
@@ -287,59 +268,75 @@ export default function Home() {
                   value={model}
                   onChange={(e) => { setModel(e.target.value); if (showErrors) setShowErrors(false); }}
                   placeholder="Camry"
-                  style={{ ...fieldStyle, borderColor: showErrors && !model ? "#ef4444" : "#2a2f38" }}
+                  autoComplete="off"
+                  style={{ ...fieldStyle, borderColor: showErrors && !model ? "#ef4444" : "#1e2329" }}
                 />
-                {fieldError(model, "model")}
+                {showErrors && !model && <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#ef4444" }}>Please enter your car&apos;s model.</p>}
               </div>
 
+              {/* Section break */}
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "2px 0" }}>
+                <div style={{ flex: 1, height: "1px", backgroundColor: "#1e2329" }} />
+                <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", color: "#374151" }}>WHAT&apos;S WRONG</span>
+                <div style={{ flex: 1, height: "1px", backgroundColor: "#1e2329" }} />
+              </div>
+
+              {/* Issue */}
               <div>
                 <label style={labelStyle}>OBD Code or Symptom</label>
                 <textarea
                   value={issue}
                   onChange={(e) => setIssue(e.target.value)}
                   placeholder="e.g. P0301 misfire on cylinder 1, rough idle at startup — or describe what you're hearing"
-                  required
                   rows={3}
-                  style={{ display: "block", width: "100%", minHeight: "100px", padding: "10px 12px", fontSize: "16px", backgroundColor: "var(--surface-2)", border: "1px solid #2a2f38", borderRadius: "8px", color: "var(--text-primary)", resize: "none", lineHeight: 1.5 }}
+                  style={{ display: "block", width: "100%", minHeight: "100px", padding: "12px 14px", fontSize: "16px", backgroundColor: "#0d0f12", border: "1px solid #1e2329", borderRadius: "10px", color: "#f1f5f9", resize: "none", lineHeight: 1.5 }}
                 />
               </div>
 
-              {/* Mod-aware mode toggle */}
-              <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: modMode ? "12px" : "0" }}>
-                  <div>
-                    <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>Modified Car</div>
-                    <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>Factor in mods and tune</div>
+              {/* Modified Car toggle */}
+              <div style={{ borderTop: "1px solid #1e2329", paddingTop: "14px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: modMode ? "12px" : 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{ width: "32px", height: "32px", borderRadius: "8px", backgroundColor: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <span style={{ fontSize: "14px" }}>🔧</span>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9", lineHeight: 1.2 }}>Modified / Tuned</div>
+                      <div style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.2 }}>Factor in mods and tune</div>
+                    </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setModMode(!modMode)}
-                    style={{ width: "44px", height: "24px", borderRadius: "12px", backgroundColor: modMode ? "var(--accent)" : "var(--surface-2)", border: `1px solid ${modMode ? "var(--accent)" : "var(--border)"}`, position: "relative", cursor: "pointer", transition: "background-color 200ms", flexShrink: 0 }}
+                    className="tap-target"
+                    style={{ width: "44px", height: "26px", borderRadius: "13px", backgroundColor: modMode ? "#3b82f6" : "#252b34", border: "none", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background-color 200ms" }}
+                    aria-label="Toggle modified car mode"
                   >
-                    <div style={{ position: "absolute", top: "3px", left: modMode ? "21px" : "3px", width: "16px", height: "16px", borderRadius: "50%", backgroundColor: "white", transition: "left 200ms ease" }} />
+                    <div style={{ position: "absolute", top: "3px", left: modMode ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "white", transition: "left 200ms ease", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
                   </button>
                 </div>
 
                 {modMode && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <div>
-                      <label style={labelStyle}>Mods affecting engine / tune</label>
+                      <label style={labelStyle}>List your mods</label>
                       <textarea
                         value={mods}
                         onChange={(e) => setMods(e.target.value)}
                         placeholder="e.g. catless downpipe, Cobb Accessport tune, cold air intake"
                         rows={2}
-                        style={{ display: "block", width: "100%", padding: "10px 12px", fontSize: "16px", backgroundColor: "var(--surface-2)", border: "1px solid #2a2f38", borderRadius: "8px", color: "var(--text-primary)", resize: "none", lineHeight: 1.5 }}
+                        style={{ display: "block", width: "100%", padding: "10px 14px", fontSize: "16px", backgroundColor: "#0d0f12", border: "1px solid #1e2329", borderRadius: "10px", color: "#f1f5f9", resize: "none", lineHeight: 1.5 }}
                       />
                     </div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <div style={{ fontSize: "13px", color: "var(--text-primary)" }}>Currently running a tune?</div>
+                      <span style={{ fontSize: "14px", color: "#f1f5f9" }}>Running a tune?</span>
                       <button
                         type="button"
                         onClick={() => setHasTune(!hasTune)}
-                        style={{ width: "44px", height: "24px", borderRadius: "12px", backgroundColor: hasTune ? "var(--accent)" : "var(--surface-2)", border: `1px solid ${hasTune ? "var(--accent)" : "var(--border)"}`, position: "relative", cursor: "pointer", transition: "background-color 200ms", flexShrink: 0 }}
+                        className="tap-target"
+                        style={{ width: "44px", height: "26px", borderRadius: "13px", backgroundColor: hasTune ? "#3b82f6" : "#252b34", border: "none", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background-color 200ms" }}
                       >
-                        <div style={{ position: "absolute", top: "3px", left: hasTune ? "21px" : "3px", width: "16px", height: "16px", borderRadius: "50%", backgroundColor: "white", transition: "left 200ms ease" }} />
+                        <div style={{ position: "absolute", top: "3px", left: hasTune ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "white", transition: "left 200ms ease", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
                       </button>
                     </div>
                   </div>
@@ -347,54 +344,71 @@ export default function Home() {
               </div>
 
               {/* ZIP code */}
-              <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
-                <label style={labelStyle}>ZIP Code <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#4b5563" }}>— for local pricing</span></label>
+              <div style={{ borderTop: "1px solid #1e2329", paddingTop: "14px" }}>
+                <label style={labelStyle}>
+                  <MapPin size={10} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} />
+                  Your Area <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#374151" }}>— for local pricing</span>
+                </label>
                 <input
                   type="text"
                   inputMode="numeric"
                   value={zip}
                   onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
-                  placeholder="Optional"
-                  style={{ ...fieldStyle, width: "120px" }}
+                  placeholder="ZIP code (optional)"
+                  style={{ ...fieldStyle, width: "160px" }}
                 />
               </div>
 
               {error && (
-                <div style={{ padding: "10px 12px", backgroundColor: "#1a0a0a", border: "1px solid #3a1515", borderRadius: "8px", color: "#ef4444", fontSize: "13px" }}>
+                <div style={{ padding: "10px 14px", backgroundColor: "#1a0a0a", border: "1px solid #3a1515", borderRadius: "8px", color: "#ef4444", fontSize: "13px" }}>
                   {error}
                 </div>
               )}
             </form>
 
-            <p style={{ textAlign: "center", marginTop: "12px", fontSize: "12px", color: "var(--text-muted)", opacity: 0.45 }}>
+            <p style={{ marginTop: "14px", fontSize: "12px", color: "#374151", letterSpacing: "0.02em" }}>
               🔒 Your data is never stored
             </p>
           </div>
-        </div>
+        )}
 
-        {/* Fixed bottom button */}
-        <div style={{ padding: "12px 16px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))", backgroundColor: "var(--background)", borderTop: "1px solid var(--border)", flexShrink: 0 }}>
+        {/* QUOTE TAB */}
+        {activeTab === "quote" && (
+          <div className="view-enter">
+            <QuoteChecker
+              key={quoteResetKey}
+              onResultChange={setQuoteHasResult}
+              onToast={toast}
+            />
+          </div>
+        )}
+
+        {/* GARAGE TAB */}
+        {activeTab === "garage" && (
+          <GarageView
+            onSelectCar={handleSelectCar}
+            onRequestSignIn={() => setShowAuthModal(true)}
+          />
+        )}
+      </main>
+
+      {/* Fixed bottom diagnose button — only on diagnose tab */}
+      {activeTab === "diagnose" && (
+        <div style={{ position: "fixed", bottom: "calc(60px + env(safe-area-inset-bottom, 0px))", left: 0, right: 0, padding: "10px 16px", backgroundColor: "rgba(13,15,18,0.95)", backdropFilter: "blur(8px)", borderTop: "1px solid #1e2329", zIndex: 35 }}>
           <button
             type="submit"
             form="diagnose-form"
             disabled={loading}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", height: "56px", backgroundColor: "var(--accent)", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: loading ? "not-allowed" : "pointer", opacity: allFilled || loading ? 1 : 0.55 }}
+            className={loading ? "btn-shimmer" : "tap-target"}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "54px", backgroundColor: loading ? undefined : "#3b82f6", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "12px", cursor: loading ? "default" : "pointer", opacity: allFilled || loading ? 1 : 0.45, letterSpacing: "0.02em" }}
           >
-            {loading ? (
-              <><span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>⚙</span> Diagnosing...</>
-            ) : "Diagnose"}
+            {loading ? "Diagnosing…" : "Diagnose"}
           </button>
         </div>
-      </main>
-
-      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
-      {showGarageModal && (
-        <GarageModal
-          onClose={() => setShowGarageModal(false)}
-          onSelectCar={handleSelectCar}
-          onRequestSignIn={() => setShowAuthModal(true)}
-        />
       )}
+
+      <BottomNav activeTab={activeTab} onChange={setActiveTab} />
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
     </>
   );
 }

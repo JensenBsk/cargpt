@@ -16,8 +16,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--text-primary);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-brand: var(--font-barlow);
 }
 
 * {
@@ -29,7 +29,7 @@ body {
   color: var(--text-primary);
   font-size: 14px;
   line-height: 1.6;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -42,6 +42,7 @@ body {
 input, textarea, select {
   outline: none;
   -webkit-appearance: none;
+  transition: border-color 150ms ease;
 }
 
 input:focus, textarea:focus, select:focus {
@@ -54,7 +55,69 @@ select option {
   color: var(--text-primary);
 }
 
+/* Tap targets — press feedback on mobile */
+.tap-target {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+.tap-target:active {
+  transform: scale(0.97);
+}
+
+/* Spin */
 @keyframes spin {
   from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Loading button shimmer */
+@keyframes shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+.btn-shimmer {
+  background: linear-gradient(
+    90deg,
+    #1d4ed8 0%,
+    #3b82f6 25%,
+    #818cf8 50%,
+    #3b82f6 75%,
+    #1d4ed8 100%
+  ) !important;
+  background-size: 200% auto !important;
+  animation: shimmer 1.6s linear infinite !important;
+}
+
+/* Safety badge pulses */
+@keyframes pulse-stop {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
+  50%       { opacity: 0.8; box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+}
+@keyframes pulse-caution {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(245,158,11,0.5); }
+  50%       { opacity: 0.8; box-shadow: 0 0 0 6px rgba(245,158,11,0); }
+}
+.badge-pulse-stop {
+  animation: pulse-stop 2s ease-in-out infinite;
+}
+.badge-pulse-caution {
+  animation: pulse-caution 2.4s ease-in-out infinite;
+}
+
+/* View fade-in on tab switch */
+@keyframes view-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.view-enter {
+  animation: view-fade-in 150ms ease forwards;
+}
+
+/* Toast */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.toast-enter {
+  animation: toast-in 200ms ease forwards;
 }

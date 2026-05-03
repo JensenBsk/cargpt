@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { FileText, Search, Wrench, DollarSign, AlertTriangle, Send, MessageCircle } from "lucide-react";
 import type { Diagnostic, ChatMessage } from "@/types/diagnostic";
 import FeedbackCard from "@/components/FeedbackCard";
+import TorqueLogo from "@/components/TorqueLogo";
 
 interface Props {
   diagnosis: Diagnostic;
@@ -16,6 +18,7 @@ interface Props {
   setChatHistory: (h: ChatMessage[]) => void;
   onNewDiagnosis: () => void;
   diagnosisId: string | null;
+  onToast: (msg: string) => void;
 }
 
 const LIKELIHOOD_COLORS: Record<string, { bg: string; text: string }> = {
@@ -23,6 +26,13 @@ const LIKELIHOOD_COLORS: Record<string, { bg: string; text: string }> = {
   "Likely": { bg: "rgba(99,102,241,0.14)", text: "#818cf8" },
   "Possible": { bg: "rgba(107,114,128,0.18)", text: "#9ca3af" },
   "Unlikely but serious": { bg: "rgba(245,158,11,0.14)", text: "#f59e0b" },
+};
+
+const ACCENT_BORDERS: Record<string, string> = {
+  "Most Likely": "#3b82f6",
+  "Likely": "#6366f1",
+  "Possible": "#374151",
+  "Unlikely but serious": "#f59e0b",
 };
 
 const SAFETY_CONFIG = {
@@ -47,7 +57,7 @@ Thanks`;
 }
 
 export default function DiagnosticReport({
-  diagnosis, year, make, model, issue, mods, chatHistory, setChatHistory, onNewDiagnosis, diagnosisId,
+  diagnosis, year, make, model, issue, mods, chatHistory, setChatHistory, onNewDiagnosis, diagnosisId, onToast,
 }: Props) {
   const [expandedStep, setExpandedStep] = useState<number | null>(0);
   const [expandedCauses, setExpandedCauses] = useState<Set<number>>(new Set());
@@ -105,6 +115,7 @@ export default function DiagnosticReport({
   async function copyMechanicMessage() {
     await navigator.clipboard.writeText(getMechanicMessage(diagnosis, year, make, model, issue, mods));
     setMechanicCopied(true);
+    onToast("Copied to clipboard");
     setTimeout(() => setMechanicCopied(false), 2000);
   }
 
@@ -144,15 +155,10 @@ export default function DiagnosticReport({
     <div style={{ minHeight: "100dvh", backgroundColor: "#0d0f12" }}>
 
       {/* Header */}
-      <div style={{ position: "sticky", top: 0, zIndex: 10, height: "48px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#13161b", borderBottom: "1px solid #1e2329" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "15px" }}>🔧</span>
-          <div>
-            <div style={{ fontSize: "15px", fontWeight: 600, lineHeight: 1.2, color: "#f1f5f9" }}>Torque</div>
-            <div style={{ fontSize: "11px", color: "#6b7280", lineHeight: 1.2 }}>{year} {make} {model}</div>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: "8px" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 10, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#13161b", borderBottom: "1px solid #1e2329" }}>
+        <TorqueLogo markSize={28} showWordmark wordmarkSize={14} glow="soft" />
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <span style={{ fontSize: "11px", color: "#6b7280" }}>{year} {make} {model}</span>
           <button
             onClick={() => setShowShareModal(true)}
             style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid rgba(59,130,246,0.4)", color: "#3b82f6", backgroundColor: "rgba(59,130,246,0.1)", cursor: "pointer" }}
@@ -161,9 +167,10 @@ export default function DiagnosticReport({
           </button>
           <button
             onClick={onNewDiagnosis}
+            className="tap-target"
             style={{ fontSize: "12px", fontWeight: 500, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.2)", color: "white", backgroundColor: "transparent", cursor: "pointer" }}
           >
-            ← New
+            ← Back
           </button>
         </div>
       </div>
@@ -184,14 +191,17 @@ export default function DiagnosticReport({
         {/* Safety */}
         <div style={{ backgroundColor: safetyConfig.bg, border: `1px solid ${safetyConfig.border}`, borderLeft: `3px solid ${safetyConfig.accent}`, borderRadius: "10px", padding: "14px 16px" }}>
           <div style={{ marginBottom: "8px" }}>
-            <span style={{ backgroundColor: safetyConfig.badgeBg, color: "white", fontWeight: 700, fontSize: "11px", letterSpacing: "0.06em", padding: "3px 10px", borderRadius: "20px", textTransform: "uppercase" as const }}>
+            <span
+              className={verdict === "STOP" ? "badge-pulse-stop" : verdict === "CAUTION" ? "badge-pulse-caution" : ""}
+              style={{ display: "inline-block", backgroundColor: safetyConfig.badgeBg, color: "white", fontWeight: 700, fontSize: "11px", letterSpacing: "0.06em", padding: "3px 10px", borderRadius: "20px", textTransform: "uppercase" as const }}
+            >
               {safetyConfig.label}
             </span>
           </div>
           <p style={{ margin: 0, fontSize: "13px", color: safetyConfig.reasonColor, lineHeight: 1.5 }}>{diagnosis.driveSafety.reason}</p>
         </div>
 
-        {/* Mod note — shown when mods meaningfully affect diagnosis */}
+        {/* Mod note */}
         {diagnosis.modNote && (
           <div style={{ backgroundColor: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", borderLeft: "3px solid #fbbf24", borderRadius: "10px", padding: "12px 14px", display: "flex", gap: "10px" }}>
             <span style={{ fontSize: "15px", flexShrink: 0 }}>⚡</span>
@@ -204,20 +214,21 @@ export default function DiagnosticReport({
 
         {/* What's Going On */}
         <Card>
-          <SectionHeader icon="📋" label="What's Going On" />
+          <SectionHeader Icon={FileText} label="What's Going On" />
           <p style={{ margin: 0, fontSize: "14px", color: "#9ca3af", lineHeight: 1.6 }}>{diagnosis.whatsWrong}</p>
         </Card>
 
         {/* Causes */}
         <Card>
-          <SectionHeader icon="🔍" label="Likely Causes" />
+          <SectionHeader Icon={Search} label="Likely Causes" />
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {diagnosis.rankedCauses.map((cause) => {
               const colors = LIKELIHOOD_COLORS[cause.likelihood] ?? { bg: "rgba(107,114,128,0.18)", text: "#9ca3af" };
+              const accentColor = ACCENT_BORDERS[cause.likelihood] ?? "#374151";
               const isExpanded = expandedCauses.has(cause.rank);
               const isLong = cause.reasoning.length > 90;
               return (
-                <div key={cause.rank} style={{ backgroundColor: "#1a1e25", border: "1px solid #1e2329", borderRadius: "8px", padding: "12px" }}>
+                <div key={cause.rank} style={{ backgroundColor: "#1a1e25", border: "1px solid #1e2329", borderLeft: `3px solid ${accentColor}`, borderRadius: "8px", padding: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "6px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
                       <span style={{ width: "22px", height: "22px", borderRadius: "50%", backgroundColor: "#3b82f6", color: "white", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{cause.rank}</span>
@@ -248,7 +259,7 @@ export default function DiagnosticReport({
 
         {/* Diagnostic Steps */}
         <Card>
-          <SectionHeader icon="🔬" label="Check This First" />
+          <SectionHeader Icon={Wrench} label="Check This First" />
           <div>
             {diagnosis.diagnosticSteps.map((step, idx) => {
               const isLast = idx === diagnosis.diagnosticSteps.length - 1;
@@ -297,9 +308,9 @@ export default function DiagnosticReport({
           </div>
         </Card>
 
-        {/* Cost — mobile cards / desktop table */}
+        {/* Cost */}
         <Card>
-          <SectionHeader icon="💰" label="Cost Estimates" />
+          <SectionHeader Icon={DollarSign} label="Cost Estimates" />
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }} className="md:hidden">
             {diagnosis.costEstimates.map((est, i) => (
               <div key={i} style={{ backgroundColor: "#1a1e25", border: "1px solid #1e2329", borderRadius: "8px", padding: "12px" }}>
@@ -310,7 +321,7 @@ export default function DiagnosticReport({
                     return (
                       <div key={label}>
                         <div style={{ fontSize: "10px", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "2px" }}>{label}</div>
-                        <div style={{ fontSize: "13px", color: li === 2 ? "#f1f5f9" : "#9ca3af", fontWeight: li === 2 ? 700 : 400 }}>{val}</div>
+                        <div style={{ fontSize: li === 2 ? "16px" : "13px", color: li === 2 ? "#f1f5f9" : "#9ca3af", fontWeight: li === 2 ? 700 : 400 }}>{val}</div>
                       </div>
                     );
                   })}
@@ -348,7 +359,7 @@ export default function DiagnosticReport({
         {/* Don't Do This */}
         {diagnosis.dontDoThis.length > 0 && (
           <div style={{ backgroundColor: "#150a0a", border: "1px solid #2a1515", borderRadius: "10px", padding: "14px 16px" }}>
-            <SectionHeader icon="⚠️" label="Don't Do This" />
+            <SectionHeader Icon={AlertTriangle} label="Don't Do This" />
             <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "8px" }}>
               {diagnosis.dontDoThis.map((warning, i) => (
                 <li key={i} style={{ display: "flex", gap: "8px", lineHeight: 1.4 }}>
@@ -365,12 +376,13 @@ export default function DiagnosticReport({
 
         {/* Send to My Mechanic */}
         <Card>
-          <SectionHeader icon="📱" label="Send to My Mechanic" />
+          <SectionHeader Icon={Send} label="Send to My Mechanic" />
           <p style={{ margin: "0 0 12px", fontSize: "13px", color: "#9ca3af", lineHeight: 1.5 }}>
             Walk into the shop prepared. Send this before your appointment so they know you&apos;ve done your homework.
           </p>
           <button
             onClick={() => setShowMechanicModal(true)}
+            className="tap-target"
             style={{ width: "100%", height: "44px", backgroundColor: "#1a1e25", border: "1px solid #252b34", borderRadius: "8px", color: "#f1f5f9", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}
           >
             Generate Message
@@ -379,7 +391,7 @@ export default function DiagnosticReport({
 
         {/* Chat */}
         <Card>
-          <SectionHeader icon="💬" label="Ask a Follow-Up" />
+          <SectionHeader Icon={MessageCircle} label="Ask a Follow-Up" />
           {chatMessages.length > 0 && (
             <div style={{ marginBottom: "12px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "240px", overflowY: "auto" }}>
               {chatMessages.map((msg, i) => (
@@ -416,7 +428,7 @@ export default function DiagnosticReport({
           </form>
         </Card>
 
-        <p style={{ textAlign: "center", fontSize: "12px", color: "#6b7280", opacity: 0.4, paddingBottom: "24px", margin: 0 }}>
+        <p style={{ textAlign: "center", fontSize: "12px", color: "#6b7280", opacity: 0.4, paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))", margin: 0 }}>
           AI diagnosis is for guidance only. Always verify with a qualified mechanic for safety-critical repairs.
         </p>
       </div>
@@ -441,6 +453,7 @@ export default function DiagnosticReport({
             </div>
             <button
               onClick={copyMechanicMessage}
+              className="tap-target"
               style={{ width: "100%", height: "48px", backgroundColor: mechanicCopied ? "#22c55e" : "#3b82f6", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer", transition: "background-color 200ms", marginBottom: "8px" }}
             >
               {mechanicCopied ? "✓ Copied!" : "Copy Message"}
@@ -470,31 +483,26 @@ export default function DiagnosticReport({
           style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.85)", zIndex: 50, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 16px" }}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "390px" }}>
-            {/* Share card — captured by html-to-image */}
             <div
               ref={shareCardRef}
               style={{ backgroundColor: "#0d0f12", borderRadius: "20px", padding: "28px 24px", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", overflow: "hidden" }}
             >
-              {/* Brand */}
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "20px" }}>
                 <span style={{ fontSize: "16px" }}>🔧</span>
                 <span style={{ fontSize: "14px", fontWeight: 700, color: "#3b82f6", letterSpacing: "0.02em" }}>Torque</span>
               </div>
 
-              {/* Car + issue */}
               <div style={{ fontSize: "24px", fontWeight: 800, color: "#f1f5f9", marginBottom: "4px", lineHeight: 1.1 }}>{year} {make} {model}</div>
               <div style={{ fontSize: "13px", color: "#6b7280", marginBottom: "20px", lineHeight: 1.4 }}>
                 {issue.length > 72 ? issue.slice(0, 69) + "…" : issue}
               </div>
 
-              {/* Safety verdict */}
               <div style={{ padding: "12px 16px", borderRadius: "10px", marginBottom: "18px", backgroundColor: safetyConfig.bg, borderLeft: `4px solid ${safetyConfig.accent}` }}>
                 <span style={{ fontSize: "13px", fontWeight: 700, color: safetyConfig.accent, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   {safetyConfig.label}
                 </span>
               </div>
 
-              {/* Top cause */}
               {topCause && (
                 <div style={{ marginBottom: "18px" }}>
                   <div style={{ fontSize: "10px", color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 600 }}>Most Likely Cause</div>
@@ -505,7 +513,6 @@ export default function DiagnosticReport({
                 </div>
               )}
 
-              {/* Cost */}
               {topEst && (
                 <div style={{ marginBottom: "22px" }}>
                   <div style={{ fontSize: "10px", color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 600 }}>Estimated Repair</div>
@@ -514,7 +521,6 @@ export default function DiagnosticReport({
                 </div>
               )}
 
-              {/* Footer */}
               <div style={{ borderTop: "1px solid #1e2329", paddingTop: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: "11px", color: "#4b5563" }}>AI diagnosis · verify with a mechanic</span>
                 <span style={{ fontSize: "12px", color: "#3b82f6", fontWeight: 700 }}>torque.app</span>
@@ -525,12 +531,14 @@ export default function DiagnosticReport({
               <button
                 onClick={captureAndShare}
                 disabled={isSharing}
+                className="tap-target"
                 style={{ flex: 1, height: "52px", backgroundColor: "#3b82f6", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: "pointer", opacity: isSharing ? 0.6 : 1 }}
               >
                 {isSharing ? "Preparing…" : "↑ Share Image"}
               </button>
               <button
                 onClick={() => setShowShareModal(false)}
+                className="tap-target"
                 style={{ height: "52px", padding: "0 20px", backgroundColor: "#1a1e25", border: "1px solid #252b34", borderRadius: "10px", color: "#9ca3af", fontSize: "14px", cursor: "pointer" }}
               >
                 Cancel
@@ -543,11 +551,11 @@ export default function DiagnosticReport({
   );
 }
 
-function SectionHeader({ icon, label }: { icon: string; label: string }) {
+function SectionHeader({ Icon, label }: { Icon: React.ElementType; label: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
       <div style={{ width: "2px", height: "13px", borderRadius: "2px", backgroundColor: "#3b82f6", flexShrink: 0 }} />
-      <span style={{ fontSize: "12px" }}>{icon}</span>
+      <Icon size={12} color="#6b7280" />
       <span style={{ fontSize: "11px", fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</span>
       <div style={{ flex: 1, height: "1px", backgroundColor: "#1e2329" }} />
     </div>
