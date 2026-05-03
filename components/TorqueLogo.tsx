@@ -24,9 +24,9 @@ export default function TorqueLogo({
 
   const glowFilter =
     glow === "strong"
-      ? "drop-shadow(0 0 14px rgba(59,130,246,0.55)) drop-shadow(0 0 6px rgba(99,102,241,0.4))"
+      ? "drop-shadow(0 0 16px rgba(74,158,255,0.65)) drop-shadow(0 0 7px rgba(74,158,255,0.35))"
       : glow === "soft"
-      ? "drop-shadow(0 0 7px rgba(59,130,246,0.35))"
+      ? "drop-shadow(0 0 8px rgba(74,158,255,0.4))"
       : "none";
 
   return (
@@ -42,8 +42,8 @@ export default function TorqueLogo({
       >
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#3b82f6" />
-            <stop offset="100%" stopColor="#6366f1" />
+            <stop offset="0%" stopColor="#4a9eff" />
+            <stop offset="100%" stopColor="#2d6fd6" />
           </linearGradient>
         </defs>
         {/* Top horizontal bar */}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Barlow_Condensed } from "next/font/google";
+import { Inter, Barlow_Condensed, IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import Providers from "@/components/Providers";
 import "./globals.css";
 
@@ -12,6 +12,20 @@ const inter = Inter({
 const barlow = Barlow_Condensed({
   variable: "--font-barlow",
   weight: "700",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const ibm = IBM_Plex_Sans({
+  variable: "--font-ibm",
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
   display: "swap",
 });
@@ -30,7 +44,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${barlow.variable} h-full antialiased`}
+      className={`${inter.variable} ${barlow.variable} ${ibm.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <body
         className="min-h-full flex flex-col"

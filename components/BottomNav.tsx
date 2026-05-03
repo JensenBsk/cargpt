@@ -28,8 +28,10 @@ export default function BottomNav({ activeTab, onChange }: Props) {
         right: 0,
         height: "calc(60px + env(safe-area-inset-bottom, 0px))",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        backgroundColor: "#0d0f12",
-        borderTop: "1px solid #1e2329",
+        backgroundColor: "rgba(6,8,16,0.96)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderTop: "1px solid #172134",
         display: "flex",
         zIndex: 40,
       }}
@@ -50,20 +52,51 @@ export default function BottomNav({ activeTab, onChange }: Props) {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              gap: "3px",
+              gap: "4px",
               backgroundColor: "transparent",
               border: "none",
-              borderTop: `2px solid ${isActive ? "#3b82f6" : "transparent"}`,
               cursor: "pointer",
-              color: isActive ? "#3b82f6" : "#4b5563",
-              paddingTop: "6px",
+              color: isActive ? "#4a9eff" : "#4a5c72",
+              paddingTop: "8px",
+              position: "relative",
             }}
             aria-label={label}
           >
+            {/* Active glow background */}
+            {isActive && (
+              <div style={{
+                position: "absolute",
+                top: "6px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "44px",
+                height: "36px",
+                borderRadius: "10px",
+                backgroundColor: "rgba(74,158,255,0.08)",
+                pointerEvents: "none",
+              }} />
+            )}
             {locked ? <Lock size={18} /> : <Icon size={18} />}
-            <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.03em" }}>
+            <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.04em", position: "relative", zIndex: 1 }}>
               {label}
             </span>
+            {/* Active pill indicator */}
+            {isActive && (
+              <div
+                className="nav-pill"
+                style={{
+                  position: "absolute",
+                  bottom: "6px",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "20px",
+                  height: "3px",
+                  borderRadius: "2px",
+                  backgroundColor: "#4a9eff",
+                  boxShadow: "0 0 8px rgba(74,158,255,0.6)",
+                }}
+              />
+            )}
           </button>
         );
       })}
