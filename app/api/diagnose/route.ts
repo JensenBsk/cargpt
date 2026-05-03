@@ -10,6 +10,7 @@ When a user gives you a car + code/symptom, you must return a diagnosis in this 
 
 {
   "whatsWrong": "EXACTLY 2 sentences. Plain English, car's actual name, no jargon without explanation.",
+  "modNote": "1 sentence summary of how the listed mods affect this diagnosis — ONLY include if mods are listed AND they meaningfully change the interpretation. Omit this field entirely if no mods or mods are irrelevant.",
   "driveSafety": {
     "verdict": "STOP | CAUTION | OKAY",
     "reason": "1-2 sentences explaining why, specific to this fault"
@@ -19,7 +20,8 @@ When a user gives you a car + code/symptom, you must return a diagnosis in this 
       "rank": 1,
       "cause": "Name of cause",
       "reasoning": "EXACTLY 2 sentences. Vehicle-specific context, why this is ranked here.",
-      "likelihood": "Most Likely | Likely | Possible | Unlikely but serious"
+      "likelihood": "Most Likely | Likely | Possible | Unlikely but serious",
+      "modRelated": false
     }
   ],
   "diagnosticSteps": [
@@ -64,7 +66,18 @@ Rules you must follow:
 - Return only valid JSON, no markdown, no explanation outside the JSON
 - Include 3-5 ranked causes
 - Include 3-6 diagnostic steps
-- If modifications are listed, explicitly factor them into your diagnosis. A catless downpipe triggers O2 codes that are often not faults. A tune changes expected fuel trim ranges. An intake affects MAF readings. State explicitly when a code or symptom may be mod-related rather than a mechanical fault. This is critical for enthusiasts — getting it wrong loses their trust instantly.`;
+- For modRelated: set to true on any cause that is likely triggered by a modification rather than a mechanical fault — e.g. a catless downpipe causing O2 codes, a tune pushing fuel trims, an intake affecting MAF. Set to false otherwise.
+- If modifications are listed, explicitly factor them into your diagnosis. A catless downpipe triggers O2 codes that are often not faults. A tune changes expected fuel trim ranges. An intake affects MAF readings. State explicitly when a code or symptom may be mod-related rather than a mechanical fault. This is critical for enthusiasts — getting it wrong loses their trust instantly.
+- If ZIP code is provided, factor local labor rates into your cost estimates (e.g. NYC and LA rates are 40-60% higher than national average; rural midwest is 20-30% lower).`;
+
+function selectModel(issue: string, isFollowUp: boolean): string {
+  if (isFollowUp) return "claude-haiku-4-5-20251001";
+  const hasOBDCode = /\bP[0-9]{4}\b/i.test(issue);
+  const hasMultipleSymptoms = issue.split(/[,;.]/).filter((s) => s.trim().length > 3).length >= 3;
+  const isLong = issue.length > 150;
+  const isComplex = (hasOBDCode && hasMultipleSymptoms) || isLong;
+  return isComplex ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001";
+}
 
 export async function POST(request: Request) {
   try {
@@ -72,7 +85,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "API key not configured" }, { status: 500 });
     }
 
-    const { year, make, model, issue, conversationHistory, mods, hasTune } =
+    const { year, make, model, issue, conversationHistory, mods, hasTune, zip } =
       await request.json();
 
     if (!year || !make || !model || !issue) {
@@ -82,24 +95,31 @@ export async function POST(request: Request) {
     const isFollowUp =
       Array.isArray(conversationHistory) && conversationHistory.length > 0;
 
-    const messages: Anthropic.MessageParam[] = isFollowUp
-      ? [
-          ...conversationHistory,
-          { role: "user", content: issue },
-        ]
+    const model_id = selectModel(issue, isFollowUp);
+
+    const userContent = isFollowUp
+      ? issue
       : [
-          {
-            role: "user",
-            content: `Vehicle: ${year} ${make} ${model}${mods ? `\nModifications: ${mods}${hasTune ? " — currently running a tune" : ""}` : ""}\n\nIssue: ${issue}`,
-          },
-        ];
+          `Vehicle: ${year} ${make} ${model}`,
+          mods ? `Modifications: ${mods}${hasTune ? " — currently running a tune" : ""}` : null,
+          zip ? `Location: ZIP ${zip} (factor local labor rates into cost estimates)` : null,
+          `Issue: ${issue}`,
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+    const messages: Anthropic.MessageParam[] = isFollowUp
+      ? [...conversationHistory, { role: "user", content: issue }]
+      : [{ role: "user", content: userContent }];
+
+    const systemContent = isFollowUp
+      ? `You are an expert automotive diagnostic assistant. The user has already received a diagnosis for their ${year} ${make} ${model}. Answer their follow-up question conversationally, as a knowledgeable mechanic friend would. Be direct, specific, and honest. Reference the previous diagnosis context where relevant.`
+      : SYSTEM_PROMPT;
 
     const response = await client.messages.create({
-      model: "claude-opus-4-7",
+      model: model_id,
       max_tokens: 4096,
-      system: isFollowUp
-        ? `You are an expert automotive diagnostic assistant. The user has already received a diagnosis for their ${year} ${make} ${model}. Answer their follow-up question conversationally, as a knowledgeable mechanic friend would. Be direct, specific, and honest. Reference the previous diagnosis context where relevant.`
-        : SYSTEM_PROMPT,
+      system: [{ type: "text", text: systemContent, cache_control: { type: "ephemeral" } }],
       messages,
     });
 

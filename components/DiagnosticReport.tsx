@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { Diagnostic, ChatMessage } from "@/types/diagnostic";
+import FeedbackCard from "@/components/FeedbackCard";
 
 interface Props {
   diagnosis: Diagnostic;
@@ -9,9 +10,12 @@ interface Props {
   make: string;
   model: string;
   issue: string;
+  mods?: string;
+  hasTune?: boolean;
   chatHistory: ChatMessage[];
   setChatHistory: (h: ChatMessage[]) => void;
   onNewDiagnosis: () => void;
+  diagnosisId: string | null;
 }
 
 const LIKELIHOOD_COLORS: Record<string, { bg: string; text: string }> = {
@@ -27,13 +31,13 @@ const SAFETY_CONFIG = {
   OKAY: { bg: "#0a1a0f", border: "#1a3a1f", accent: "#22c55e", badgeBg: "#22c55e", label: "✅ OKAY TO DRIVE", reasonColor: "#86efac" },
 };
 
-function getMechanicMessage(diagnosis: Diagnostic, year: string, make: string, model: string, issue: string): string {
+function getMechanicMessage(diagnosis: Diagnostic, year: string, make: string, model: string, issue: string, mods?: string): string {
   const top = diagnosis.rankedCauses[0];
   const step = diagnosis.diagnosticSteps[0];
   const est = diagnosis.costEstimates[0];
   return `Hi — before I bring my ${year} ${make} ${model} in, I did some research on this issue.
 
-Problem: ${issue}
+Problem: ${issue}${mods ? `\nMods: ${mods}` : ""}
 
 Based on my research, the most likely cause is ${top?.cause ?? "a known fault"}. Before replacing anything, can you start with ${step?.action ?? "a diagnostic check"}?
 
@@ -43,7 +47,7 @@ Thanks`;
 }
 
 export default function DiagnosticReport({
-  diagnosis, year, make, model, issue, chatHistory, setChatHistory, onNewDiagnosis,
+  diagnosis, year, make, model, issue, mods, chatHistory, setChatHistory, onNewDiagnosis, diagnosisId,
 }: Props) {
   const [expandedStep, setExpandedStep] = useState<number | null>(0);
   const [expandedCauses, setExpandedCauses] = useState<Set<number>>(new Set());
@@ -64,22 +68,18 @@ export default function DiagnosticReport({
     });
   }
 
-  async function handleShare() {
-    setShowShareModal(true);
-  }
-
   async function captureAndShare() {
     if (!shareCardRef.current || isSharing) return;
     setIsSharing(true);
     try {
       const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(shareCardRef.current, { pixelRatio: 2 });
+      const dataUrl = await toPng(shareCardRef.current, { pixelRatio: 3 });
 
       if (navigator.share) {
         try {
           const res = await fetch(dataUrl);
           const blob = await res.blob();
-          const file = new File([blob], "ai-mechanic-diagnosis.png", { type: "image/png" });
+          const file = new File([blob], "torque-diagnosis.png", { type: "image/png" });
           if ("canShare" in navigator && navigator.canShare({ files: [file] })) {
             await navigator.share({ files: [file] });
             setShowShareModal(false);
@@ -91,7 +91,7 @@ export default function DiagnosticReport({
       }
 
       const link = document.createElement("a");
-      link.download = "ai-mechanic-diagnosis.png";
+      link.download = "torque-diagnosis.png";
       link.href = dataUrl;
       link.click();
       setShowShareModal(false);
@@ -103,7 +103,7 @@ export default function DiagnosticReport({
   }
 
   async function copyMechanicMessage() {
-    await navigator.clipboard.writeText(getMechanicMessage(diagnosis, year, make, model, issue));
+    await navigator.clipboard.writeText(getMechanicMessage(diagnosis, year, make, model, issue, mods));
     setMechanicCopied(true);
     setTimeout(() => setMechanicCopied(false), 2000);
   }
@@ -137,6 +137,8 @@ export default function DiagnosticReport({
   const safetyConfig = SAFETY_CONFIG[verdict];
   const topCause = diagnosis.rankedCauses[0];
   const topEst = diagnosis.costEstimates[0];
+  const mechanicMsg = getMechanicMessage(diagnosis, year, make, model, issue, mods);
+  const emailUri = `mailto:?subject=${encodeURIComponent(`My ${year} ${make} ${model} — notes before appointment`)}&body=${encodeURIComponent(mechanicMsg)}`;
 
   return (
     <div style={{ minHeight: "100dvh", backgroundColor: "#0d0f12" }}>
@@ -146,13 +148,13 @@ export default function DiagnosticReport({
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ fontSize: "15px" }}>🔧</span>
           <div>
-            <div style={{ fontSize: "15px", fontWeight: 600, lineHeight: 1.2, color: "#f1f5f9" }}>AI Mechanic</div>
+            <div style={{ fontSize: "15px", fontWeight: 600, lineHeight: 1.2, color: "#f1f5f9" }}>Torque</div>
             <div style={{ fontSize: "11px", color: "#6b7280", lineHeight: 1.2 }}>{year} {make} {model}</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
           <button
-            onClick={handleShare}
+            onClick={() => setShowShareModal(true)}
             style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid rgba(59,130,246,0.4)", color: "#3b82f6", backgroundColor: "rgba(59,130,246,0.1)", cursor: "pointer" }}
           >
             ↑ Share
@@ -189,6 +191,17 @@ export default function DiagnosticReport({
           <p style={{ margin: 0, fontSize: "13px", color: safetyConfig.reasonColor, lineHeight: 1.5 }}>{diagnosis.driveSafety.reason}</p>
         </div>
 
+        {/* Mod note — shown when mods meaningfully affect diagnosis */}
+        {diagnosis.modNote && (
+          <div style={{ backgroundColor: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", borderLeft: "3px solid #fbbf24", borderRadius: "10px", padding: "12px 14px", display: "flex", gap: "10px" }}>
+            <span style={{ fontSize: "15px", flexShrink: 0 }}>⚡</span>
+            <div>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "#fbbf24", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "3px" }}>Mod Note</div>
+              <div style={{ fontSize: "13px", color: "#fde68a", lineHeight: 1.5 }}>{diagnosis.modNote}</div>
+            </div>
+          </div>
+        )}
+
         {/* What's Going On */}
         <Card>
           <SectionHeader icon="📋" label="What's Going On" />
@@ -210,7 +223,14 @@ export default function DiagnosticReport({
                       <span style={{ width: "22px", height: "22px", borderRadius: "50%", backgroundColor: "#3b82f6", color: "white", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{cause.rank}</span>
                       <span style={{ fontSize: "15px", fontWeight: 600, color: "#f1f5f9" }}>{cause.cause}</span>
                     </div>
-                    <span style={{ backgroundColor: colors.bg, color: colors.text, fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" as const, flexShrink: 0 }}>{cause.likelihood}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
+                      {cause.modRelated && (
+                        <span style={{ backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "4px", letterSpacing: "0.04em" }}>
+                          MOD
+                        </span>
+                      )}
+                      <span style={{ backgroundColor: colors.bg, color: colors.text, fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" as const }}>{cause.likelihood}</span>
+                    </div>
                   </div>
                   <p style={{ margin: 0, fontSize: "13px", color: "#8b95a3", lineHeight: 1.5, paddingLeft: "30px", display: "-webkit-box", WebkitLineClamp: isExpanded ? "unset" : 2, WebkitBoxOrient: "vertical" as const, overflow: isExpanded ? "visible" : "hidden" }}>
                     {cause.reasoning}
@@ -340,11 +360,14 @@ export default function DiagnosticReport({
           </div>
         )}
 
+        {/* Feedback */}
+        <FeedbackCard diagnosisId={diagnosisId} />
+
         {/* Send to My Mechanic */}
         <Card>
           <SectionHeader icon="📱" label="Send to My Mechanic" />
           <p style={{ margin: "0 0 12px", fontSize: "13px", color: "#9ca3af", lineHeight: 1.5 }}>
-            Walk into the shop prepared. Send this before your appointment so they know you've done your homework.
+            Walk into the shop prepared. Send this before your appointment so they know you&apos;ve done your homework.
           </p>
           <button
             onClick={() => setShowMechanicModal(true)}
@@ -413,21 +436,27 @@ export default function DiagnosticReport({
             <div style={{ fontSize: "13px", color: "#6b7280", marginBottom: "16px" }}>Copy this and send before your appointment.</div>
             <div style={{ backgroundColor: "#1a1e25", border: "1px solid #252b34", borderRadius: "10px", padding: "14px", marginBottom: "14px", maxHeight: "260px", overflowY: "auto" }}>
               <p style={{ margin: 0, fontSize: "14px", color: "#f1f5f9", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-                {getMechanicMessage(diagnosis, year, make, model, issue)}
+                {mechanicMsg}
               </p>
             </div>
+            <button
+              onClick={copyMechanicMessage}
+              style={{ width: "100%", height: "48px", backgroundColor: mechanicCopied ? "#22c55e" : "#3b82f6", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer", transition: "background-color 200ms", marginBottom: "8px" }}
+            >
+              {mechanicCopied ? "✓ Copied!" : "Copy Message"}
+            </button>
             <div style={{ display: "flex", gap: "8px" }}>
-              <button
-                onClick={copyMechanicMessage}
-                style={{ flex: 1, height: "48px", backgroundColor: mechanicCopied ? "#22c55e" : "#3b82f6", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer", transition: "background-color 200ms" }}
-              >
-                {mechanicCopied ? "✓ Copied!" : "Copy Message"}
-              </button>
               <a
-                href={`sms:?body=${encodeURIComponent(getMechanicMessage(diagnosis, year, make, model, issue))}`}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 16px", backgroundColor: "#1a1e25", border: "1px solid #252b34", borderRadius: "8px", color: "#f1f5f9", fontWeight: 500, fontSize: "14px", textDecoration: "none" }}
+                href={`sms:?body=${encodeURIComponent(mechanicMsg)}`}
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", height: "44px", backgroundColor: "#1a1e25", border: "1px solid #252b34", borderRadius: "8px", color: "#f1f5f9", fontWeight: 500, fontSize: "14px", textDecoration: "none" }}
               >
-                Open in Messages
+                💬 Text
+              </a>
+              <a
+                href={emailUri}
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", height: "44px", backgroundColor: "#1a1e25", border: "1px solid #252b34", borderRadius: "8px", color: "#f1f5f9", fontWeight: 500, fontSize: "14px", textDecoration: "none" }}
+              >
+                ✉️ Email
               </a>
             </div>
           </div>
@@ -441,50 +470,54 @@ export default function DiagnosticReport({
           style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.85)", zIndex: 50, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 16px" }}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "390px" }}>
-            {/* The share card — captured by html-to-image */}
+            {/* Share card — captured by html-to-image */}
             <div
               ref={shareCardRef}
-              style={{ backgroundColor: "#0d0f12", borderRadius: "16px", padding: "24px", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", overflow: "hidden" }}
+              style={{ backgroundColor: "#0d0f12", borderRadius: "20px", padding: "28px 24px", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", overflow: "hidden" }}
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ fontSize: "14px" }}>🔧</span>
-                  <span style={{ fontSize: "13px", fontWeight: 600, color: "#f1f5f9" }}>AI Mechanic</span>
-                </div>
+              {/* Brand */}
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "20px" }}>
+                <span style={{ fontSize: "16px" }}>🔧</span>
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#3b82f6", letterSpacing: "0.02em" }}>Torque</span>
               </div>
 
-              <div style={{ fontSize: "22px", fontWeight: 700, color: "#f1f5f9", marginBottom: "4px", lineHeight: 1.2 }}>{year} {make} {model}</div>
-              <div style={{ fontSize: "13px", color: "#9ca3af", marginBottom: "18px", lineHeight: 1.4 }}>
+              {/* Car + issue */}
+              <div style={{ fontSize: "24px", fontWeight: 800, color: "#f1f5f9", marginBottom: "4px", lineHeight: 1.1 }}>{year} {make} {model}</div>
+              <div style={{ fontSize: "13px", color: "#6b7280", marginBottom: "20px", lineHeight: 1.4 }}>
                 {issue.length > 72 ? issue.slice(0, 69) + "…" : issue}
               </div>
 
-              <div style={{ padding: "10px 14px", borderRadius: "8px", marginBottom: "16px", backgroundColor: safetyConfig.bg, borderLeft: `3px solid ${safetyConfig.accent}` }}>
-                <span style={{ fontSize: "12px", fontWeight: 700, color: safetyConfig.accent, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              {/* Safety verdict */}
+              <div style={{ padding: "12px 16px", borderRadius: "10px", marginBottom: "18px", backgroundColor: safetyConfig.bg, borderLeft: `4px solid ${safetyConfig.accent}` }}>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: safetyConfig.accent, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   {safetyConfig.label}
                 </span>
               </div>
 
+              {/* Top cause */}
               {topCause && (
-                <div style={{ marginBottom: "16px" }}>
-                  <div style={{ fontSize: "10px", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Most Likely Cause</div>
-                  <div style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9" }}>{topCause.cause}</div>
+                <div style={{ marginBottom: "18px" }}>
+                  <div style={{ fontSize: "10px", color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 600 }}>Most Likely Cause</div>
+                  <div style={{ fontSize: "18px", fontWeight: 700, color: "#f1f5f9" }}>{topCause.cause}</div>
                   {diagnosis.diagnosticSteps[0] && (
-                    <div style={{ fontSize: "12px", color: "#9ca3af", marginTop: "2px" }}>→ {diagnosis.diagnosticSteps[0].action}</div>
+                    <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "3px" }}>→ {diagnosis.diagnosticSteps[0].action}</div>
                   )}
                 </div>
               )}
 
+              {/* Cost */}
               {topEst && (
-                <div style={{ marginBottom: "20px" }}>
-                  <div style={{ fontSize: "10px", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Estimated Repair</div>
-                  <div style={{ fontSize: "22px", fontWeight: 700, color: "#3b82f6" }}>{topEst.total}</div>
+                <div style={{ marginBottom: "22px" }}>
+                  <div style={{ fontSize: "10px", color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 600 }}>Estimated Repair</div>
+                  <div style={{ fontSize: "26px", fontWeight: 800, color: "#3b82f6" }}>{topEst.total}</div>
                   <div style={{ fontSize: "12px", color: "#6b7280" }}>{topEst.fix}</div>
                 </div>
               )}
 
-              <div style={{ borderTop: "1px solid #1e2329", paddingTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "11px", color: "#6b7280" }}>AI diagnosis · verify with a mechanic</span>
-                <span style={{ fontSize: "11px", color: "#3b82f6", fontWeight: 600 }}>AI Mechanic</span>
+              {/* Footer */}
+              <div style={{ borderTop: "1px solid #1e2329", paddingTop: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "11px", color: "#4b5563" }}>AI diagnosis · verify with a mechanic</span>
+                <span style={{ fontSize: "12px", color: "#3b82f6", fontWeight: 700 }}>torque.app</span>
               </div>
             </div>
 
@@ -506,8 +539,6 @@ export default function DiagnosticReport({
           </div>
         </div>
       )}
-
-      {/* Hidden share card is inside the modal above — no need for a separate off-screen element */}
     </div>
   );
 }

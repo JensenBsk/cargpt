@@ -3,6 +3,7 @@ export interface RankedCause {
   cause: string;
   reasoning: string;
   likelihood: "Most Likely" | "Likely" | "Possible" | "Unlikely but serious";
+  modRelated?: boolean;
 }
 
 export interface DiagnosticStep {
@@ -25,6 +26,7 @@ export interface CostEstimate {
 
 export interface Diagnostic {
   whatsWrong: string;
+  modNote?: string;
   driveSafety: {
     verdict: "STOP" | "CAUTION" | "OKAY";
     reason: string;
