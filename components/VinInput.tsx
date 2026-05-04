@@ -27,10 +27,11 @@ const fieldStyle: React.CSSProperties = {
   fontFamily: "monospace",
   letterSpacing: "0.12em",
   textTransform: "uppercase",
-  backgroundColor: "#0d0f12",
-  border: "1px solid #1e2329",
+  backgroundColor: "#101822",
+  border: "1px solid #172134",
   borderRadius: "10px",
-  color: "#f1f5f9",
+  color: "#dce8f5",
+  boxSizing: "border-box",
 };
 
 export default function VinInput({ onDecode }: Props) {
@@ -140,7 +141,7 @@ export default function VinInput({ onDecode }: Props) {
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        style={{ fontSize: "12px", color: "#3b82f6", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "0", textDecoration: "underline", textDecorationStyle: "dotted" }}
+        style={{ fontSize: "12px", color: "#4a9eff", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "0", textDecoration: "underline", textDecorationStyle: "dotted" }}
       >
         Or enter your VIN for exact specs →
       </button>
@@ -196,7 +197,7 @@ export default function VinInput({ onDecode }: Props) {
           <button
             type="button"
             onClick={() => { stopCamera(); setScanOpen(false); }}
-            style={{ marginTop: "20px", padding: "10px 28px", backgroundColor: "#1a1e25", border: "1px solid #252b34", borderRadius: "8px", color: "#f1f5f9", fontSize: "14px", cursor: "pointer" }}
+            style={{ marginTop: "20px", padding: "10px 28px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", color: "#dce8f5", fontSize: "14px", cursor: "pointer" }}
           >
             Cancel
           </button>

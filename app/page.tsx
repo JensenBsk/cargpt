@@ -9,10 +9,11 @@ import GarageView from "@/components/GarageView";
 import BottomNav, { type AppTab } from "@/components/BottomNav";
 import TorqueLogo from "@/components/TorqueLogo";
 import VinInput from "@/components/VinInput";
+import ErrorCard, { type ErrorType } from "@/components/ErrorCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { resizeImage } from "@/utils/resizeImage";
-import { MapPin, Camera, Wrench, Lock } from "lucide-react";
+import { MapPin, Camera, Wrench, Lock, WifiOff } from "lucide-react";
 
 const LS_KEY = "torque_diagnosis_history";
 
@@ -52,7 +53,7 @@ export default function Home() {
   const [hasTune, setHasTune] = useState(false);
   const [zip, setZip] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errorType, setErrorType] = useState<ErrorType | null>(null);
   const [showErrors, setShowErrors] = useState(false);
   const [diagnosis, setDiagnosis] = useState<Diagnostic | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -62,6 +63,7 @@ export default function Home() {
   const [quoteHasResult, setQuoteHasResult] = useState(false);
   const [dashboardImage, setDashboardImage] = useState<string | null>(null);
   const [vinData, setVinData] = useState<{ year: string; make: string; model: string; engine?: string; fuelType?: string; drivetrain?: string } | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
 
   const yearRef = useRef<HTMLDivElement>(null);
   const makeRef = useRef<HTMLDivElement>(null);
@@ -72,7 +74,18 @@ export default function Home() {
   const showDiagnosis = diagnosis !== null;
   const onDiagnoseWithResult = activeTab === "diagnose" && showDiagnosis;
 
-  // When user signs in, migrate any locally-saved diagnoses to Supabase
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    setIsOnline(navigator.onLine);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
   useEffect(() => {
     if (!user || !available) return;
     try {
@@ -102,7 +115,7 @@ export default function Home() {
 
     setShowErrors(false);
     setLoading(true);
-    setError("");
+    setErrorType(null);
     setDiagnosis(null);
     setDiagnosisId(null);
     setChatHistory([]);
@@ -121,9 +134,16 @@ export default function Home() {
         }),
       });
 
+      if (!res.ok) {
+        if (res.status === 429) { setErrorType("rate_limit"); return; }
+        if (res.status === 402) { setErrorType("free_limit"); return; }
+        setErrorType("diagnosis");
+        return;
+      }
+
       const data = await res.json();
-      if (!res.ok || data.error) {
-        setError(data.error || "Something went wrong. Please try again.");
+      if (data.error) {
+        setErrorType("diagnosis");
         return;
       }
 
@@ -134,7 +154,6 @@ export default function Home() {
         { role: "assistant", content: JSON.stringify(diag) },
       ]);
 
-      // Always save to localStorage so history works on all tabs
       saveToLS({ year, make, model, issue, diagnosis: diag, verdict: diag.driveSafety.verdict });
 
       if (available) {
@@ -151,7 +170,7 @@ export default function Home() {
         toast("Saved locally ✓");
       }
     } catch {
-      setError("Network error. Please check your connection and try again.");
+      setErrorType(!navigator.onLine ? "network" : "diagnosis");
     } finally {
       setLoading(false);
     }
@@ -162,7 +181,7 @@ export default function Home() {
     setDiagnosisId(null);
     setChatHistory([]);
     setIssue("");
-    setError("");
+    setErrorType(null);
     setDashboardImage(null);
   }
 
@@ -214,6 +233,7 @@ export default function Home() {
     display: "block",
     width: "100%",
     boxSizing: "border-box",
+    maxWidth: "100%",
     height: "48px",
     padding: "0 14px",
     fontSize: "16px",
@@ -235,13 +255,30 @@ export default function Home() {
   };
 
   const allFilled = !!year && !!make && !!model && !!issue.trim();
+  const buttonBg = errorType ? "#f59e0b" : "linear-gradient(135deg, #4a9eff 0%, #2d6fd6 100%)";
+  const buttonText = loading ? `Analyzing your ${make || "car"}…` : errorType ? "Try Again" : "Diagnose";
 
   return (
     <>
-      {/* Header — hidden when DiagnosticReport is active (it has its own sticky header) */}
+      {/* Offline banner */}
+      {!isOnline && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+          backgroundColor: "#1a0505", borderBottom: "1px solid #3a1515",
+          padding: "8px 16px",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+        }}>
+          <WifiOff size={13} color="#ef4444" />
+          <span style={{ fontSize: "13px", color: "#fca5a5", fontWeight: 500 }}>
+            No internet connection — reconnect to use Torque
+          </span>
+        </div>
+      )}
+
+      {/* Header */}
       <header style={{
         display: onDiagnoseWithResult ? "none" : "flex",
-        position: "sticky", top: 0, zIndex: 30,
+        position: "sticky", top: !isOnline ? "33px" : 0, zIndex: 30,
         height: "52px", padding: "0 16px",
         alignItems: "center", justifyContent: "space-between",
         backgroundColor: "rgba(6,8,16,0.96)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid #172134",
@@ -271,11 +308,12 @@ export default function Home() {
         flex: 1,
         overflowX: "hidden",
         width: "100%",
+        maxWidth: "100%",
         boxSizing: "border-box",
         paddingBottom: onDiagnoseWithResult ? 0 : "calc(60px + env(safe-area-inset-bottom, 0px) + 12px)",
       }}>
 
-        {/* ── DIAGNOSE TAB ── always mounted, hidden via display:none when inactive */}
+        {/* ── DIAGNOSE TAB ── */}
         <div style={{ display: activeTab === "diagnose" ? "block" : "none" }}>
           {showDiagnosis ? (
             <DiagnosticReport
@@ -294,7 +332,7 @@ export default function Home() {
               onToast={toast}
             />
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 20px 20px", width: "100%", boxSizing: "border-box", overflowX: "hidden" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 20px 20px", width: "100%", maxWidth: "100%", boxSizing: "border-box", overflowX: "hidden" }}>
 
               {/* Hero */}
               <div style={{ textAlign: "center", padding: "36px 0 28px" }}>
@@ -306,17 +344,16 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Form — no card chrome, inputs are the visual layer */}
               <form
                 id="diagnose-form"
                 onSubmit={handleDiagnose}
                 style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: "20px" }}
               >
-                {/* Vehicle row — Year / Make / Model in one line */}
+                {/* Vehicle row */}
                 <div>
                   <label style={labelStyle}>Your Vehicle</label>
                   <div style={{ display: "flex", gap: "8px" }}>
-                    <div ref={yearRef} style={{ flex: "0 0 88px" }}>
+                    <div ref={yearRef} style={{ flex: "0 0 88px", minWidth: 0 }}>
                       <select
                         value={year}
                         onChange={(e) => { setYear(e.target.value); if (showErrors) setShowErrors(false); }}
@@ -326,7 +363,7 @@ export default function Home() {
                         {years.map((y) => <option key={y} value={y}>{y}</option>)}
                       </select>
                     </div>
-                    <div ref={makeRef} style={{ flex: 1 }}>
+                    <div ref={makeRef} style={{ flex: 1, minWidth: 0 }}>
                       <input
                         type="text"
                         value={make}
@@ -336,7 +373,7 @@ export default function Home() {
                         style={{ ...fieldStyle, borderColor: showErrors && !make ? "#ef4444" : "#172134" }}
                       />
                     </div>
-                    <div ref={modelRef} style={{ flex: 1 }}>
+                    <div ref={modelRef} style={{ flex: 1, minWidth: 0 }}>
                       <input
                         type="text"
                         value={model}
@@ -354,10 +391,9 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* VIN lookup */}
                 <VinInput onDecode={handleVinDecode} />
 
-                {/* Issue — the star of the form */}
+                {/* Issue */}
                 <div>
                   <label style={labelStyle}>What&apos;s the issue?</label>
                   <textarea
@@ -365,19 +401,20 @@ export default function Home() {
                     onChange={(e) => setIssue(e.target.value)}
                     placeholder="P0301 misfire on cyl 1, rough idle at startup, knocking under load — describe what you see or hear"
                     rows={4}
-                    style={{ display: "block", width: "100%", boxSizing: "border-box", minHeight: "130px", padding: "14px 16px", fontSize: "16px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "12px", color: "#dce8f5", resize: "none", lineHeight: 1.6, fontFamily: "var(--font-ibm), sans-serif" }}
+                    style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", minHeight: "130px", padding: "14px 16px", fontSize: "16px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "12px", color: "#dce8f5", resize: "none", lineHeight: 1.6, fontFamily: "var(--font-ibm), sans-serif" }}
                   />
                 </div>
 
-                {/* Secondary details — grouped in a subtle card */}
-                <div style={{ backgroundColor: "#0b1019", border: "1px solid #1c2a3e", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                {/* Secondary details card */}
+                <div style={{ backgroundColor: "#0b1019", border: "1px solid #1c2a3e", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "16px", width: "100%", boxSizing: "border-box" }}>
 
                   {/* Dashboard photo */}
                   <div>
                     <label style={labelStyle}>Warning Lights Photo <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#2d3f55" }}>optional</span></label>
                     {dashboardImage ? (
-                      <div style={{ position: "relative", display: "inline-block" }}>
-                        <img src={dashboardImage} alt="Dashboard" style={{ height: "80px", borderRadius: "8px", border: "1px solid #172134", objectFit: "cover" }} />
+                      <div style={{ position: "relative", display: "inline-block", maxWidth: "100%" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={dashboardImage} alt="Dashboard" style={{ height: "80px", borderRadius: "8px", border: "1px solid #172134", objectFit: "cover", display: "block" }} />
                         <button
                           type="button"
                           onClick={() => setDashboardImage(null)}
@@ -387,7 +424,7 @@ export default function Home() {
                         </button>
                       </div>
                     ) : (
-                      <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 14px", boxSizing: "border-box", backgroundColor: "#101822", border: "1px dashed #172134", borderRadius: "10px", cursor: "pointer", fontSize: "13px", color: "#4a5c72" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 14px", boxSizing: "border-box", backgroundColor: "#101822", border: "1px dashed #172134", borderRadius: "10px", cursor: "pointer", fontSize: "13px", color: "#4a5c72", width: "100%" }}>
                         <Camera size={14} color="#4a5c72" />
                         <span>Add photo</span>
                         <input type="file" accept="image/*" capture="environment" onChange={handleDashboardPhoto} style={{ display: "none" }} />
@@ -426,7 +463,7 @@ export default function Home() {
                             onChange={(e) => setMods(e.target.value)}
                             placeholder="catless downpipe, Cobb Accessport tune, cold air intake"
                             rows={2}
-                            style={{ display: "block", width: "100%", boxSizing: "border-box", padding: "10px 14px", fontSize: "15px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "10px", color: "#dce8f5", resize: "none", lineHeight: 1.5 }}
+                            style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", padding: "10px 14px", fontSize: "15px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "10px", color: "#dce8f5", resize: "none", lineHeight: 1.5 }}
                           />
                         </div>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -456,15 +493,17 @@ export default function Home() {
                       value={zip}
                       onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
                       placeholder="ZIP code"
-                      style={{ ...fieldStyle, width: "140px" }}
+                      style={{ ...fieldStyle, width: "140px", maxWidth: "140px" }}
                     />
                   </div>
                 </div>
 
-                {error && (
-                  <div style={{ padding: "12px 14px", backgroundColor: "#130406", border: "1px solid #2d0c10", borderRadius: "10px", color: "#f87171", fontSize: "13px", fontFamily: "var(--font-ibm), sans-serif" }}>
-                    {error}
-                  </div>
+                {errorType && (
+                  <ErrorCard
+                    type={errorType}
+                    onRetry={() => { setErrorType(null); }}
+                    onSecondary={() => setErrorType(null)}
+                  />
                 )}
               </form>
 
@@ -478,7 +517,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* ── QUOTE TAB ── always mounted */}
+        {/* ── QUOTE TAB ── */}
         <div style={{ display: activeTab === "quote" ? "block" : "none" }}>
           <QuoteChecker
             key={quoteResetKey}
@@ -487,7 +526,7 @@ export default function Home() {
           />
         </div>
 
-        {/* ── GARAGE TAB ── always mounted */}
+        {/* ── GARAGE TAB ── */}
         <div style={{ display: activeTab === "garage" ? "block" : "none" }}>
           <GarageView
             onSelectCar={handleSelectCar}
@@ -498,7 +537,7 @@ export default function Home() {
 
       </main>
 
-      {/* Fixed diagnose button — only on diagnose tab without a result */}
+      {/* Fixed diagnose button */}
       {activeTab === "diagnose" && !showDiagnosis && (
         <div style={{ position: "fixed", bottom: "calc(60px + env(safe-area-inset-bottom, 0px))", left: 0, right: 0, padding: "10px 16px", boxSizing: "border-box", backgroundColor: "rgba(6,8,16,0.96)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderTop: "1px solid #172134", zIndex: 35 }}>
           <button
@@ -506,9 +545,19 @@ export default function Home() {
             form="diagnose-form"
             disabled={loading}
             className={loading ? "btn-shimmer" : "tap-target"}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "54px", background: loading ? undefined : "linear-gradient(135deg, #4a9eff 0%, #2d6fd6 100%)", color: "white", fontWeight: 600, fontSize: "15px", letterSpacing: "0.04em", border: "none", borderRadius: "12px", cursor: loading ? "default" : "pointer", opacity: allFilled || loading ? 1 : 0.4, boxShadow: allFilled && !loading ? "0 4px 20px rgba(74,158,255,0.3)" : "none", transition: "box-shadow 200ms ease, opacity 200ms ease" }}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: "100%", height: "54px",
+              background: loading ? undefined : buttonBg,
+              color: "white", fontWeight: 600, fontSize: "15px", letterSpacing: "0.04em",
+              border: "none", borderRadius: "12px",
+              cursor: loading ? "default" : "pointer",
+              opacity: allFilled || loading || errorType ? 1 : 0.4,
+              boxShadow: allFilled && !loading && !errorType ? "0 4px 20px rgba(74,158,255,0.3)" : "none",
+              transition: "box-shadow 200ms ease, opacity 200ms ease, background 200ms ease",
+            }}
           >
-            {loading ? "Diagnosing…" : "Diagnose"}
+            {buttonText}
           </button>
         </div>
       )}

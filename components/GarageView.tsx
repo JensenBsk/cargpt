@@ -52,10 +52,10 @@ const inputStyle: React.CSSProperties = {
   height: "44px",
   padding: "0 12px",
   fontSize: "16px",
-  backgroundColor: "#0d0f12",
-  border: "1px solid #1e2329",
+  backgroundColor: "#101822",
+  border: "1px solid #172134",
   borderRadius: "10px",
-  color: "#f1f5f9",
+  color: "#dce8f5",
 };
 
 const STATUS_COLORS = {
@@ -168,36 +168,36 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
     return (
       <div className="view-enter" style={{ padding: "60px 24px", textAlign: "center" }}>
         <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔒</div>
-        <div style={{ fontSize: "18px", fontWeight: 700, color: "#f1f5f9", marginBottom: "8px" }}>Sign in to use My Garage</div>
-        <div style={{ fontSize: "14px", color: "#6b7280", marginBottom: "28px", lineHeight: 1.6 }}>
+        <div style={{ fontSize: "18px", fontWeight: 700, color: "#dce8f5", marginBottom: "8px" }}>Sign in to use My Garage</div>
+        <div style={{ fontSize: "14px", color: "#7d8fa8", marginBottom: "28px", lineHeight: 1.6 }}>
           Save your cars and see your diagnosis history in one place.
         </div>
-        <button onClick={onRequestSignIn} className="tap-target" style={{ height: "48px", padding: "0 28px", backgroundColor: "#3b82f6", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: "pointer" }}>
+        <button onClick={onRequestSignIn} className="tap-target" style={{ height: "48px", padding: "0 28px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: "pointer" }}>
           Sign In
         </button>
 
         {/* Show local history even when not signed in */}
         {visibleHistory.length > 0 && (
           <div style={{ marginTop: "40px", textAlign: "left" }}>
-            <div style={{ fontSize: "13px", fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>Recent Diagnoses</div>
+            <div style={{ fontSize: "13px", fontWeight: 700, color: "#7d8fa8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>Recent Diagnoses</div>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {visibleHistory.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => onOpenDiagnosis(item)}
-                  style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "#13161b", border: "1px solid #1e2329", borderRadius: "10px", padding: "12px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
+                  style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "10px", padding: "12px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
                 >
-                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: VERDICT_DOT[item.verdict] ?? "#6b7280", flexShrink: 0 }} />
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: VERDICT_DOT[item.verdict] ?? "#7d8fa8", flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9" }}>{item.year} {item.make} {item.model}</div>
-                    <div style={{ fontSize: "12px", color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.issue}</div>
+                    <div style={{ fontSize: "14px", fontWeight: 600, color: "#dce8f5" }}>{item.year} {item.make} {item.model}</div>
+                    <div style={{ fontSize: "12px", color: "#7d8fa8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.issue}</div>
                   </div>
-                  <div style={{ fontSize: "11px", color: "#4b5563", flexShrink: 0 }}>{formatDate(item.date)}</div>
+                  <div style={{ fontSize: "11px", color: "#4a5c72", flexShrink: 0 }}>{formatDate(item.date)}</div>
                 </button>
               ))}
             </div>
-            <p style={{ textAlign: "center", fontSize: "12px", color: "#4b5563", marginTop: "12px" }}>
-              <button onClick={onRequestSignIn} style={{ color: "#3b82f6", backgroundColor: "transparent", border: "none", cursor: "pointer", fontSize: "12px", padding: 0 }}>Sign in</button>
+            <p style={{ textAlign: "center", fontSize: "12px", color: "#4a5c72", marginTop: "12px" }}>
+              <button onClick={onRequestSignIn} style={{ color: "#4a9eff", backgroundColor: "transparent", border: "none", cursor: "pointer", fontSize: "12px", padding: 0 }}>Sign in</button>
               {" to sync across devices"}
             </p>
           </div>
@@ -209,11 +209,11 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
   return (
     <div className="view-enter" style={{ padding: "16px 16px 0", overflowX: "hidden", boxSizing: "border-box" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-        <span style={{ fontSize: "16px", fontWeight: 700, color: "#f1f5f9" }}>My Cars</span>
+        <span style={{ fontSize: "16px", fontWeight: 700, color: "#dce8f5" }}>My Cars</span>
         <button
           onClick={() => setShowAddForm((v) => !v)}
           className="tap-target"
-          style={{ fontSize: "13px", fontWeight: 600, padding: "6px 14px", borderRadius: "8px", border: "1px solid #3b82f6", color: "#3b82f6", backgroundColor: "transparent", cursor: "pointer" }}
+          style={{ fontSize: "13px", fontWeight: 600, padding: "6px 14px", borderRadius: "8px", border: "1px solid #3b82f6", color: "#4a9eff", backgroundColor: "transparent", cursor: "pointer" }}
         >
           {showAddForm ? "Cancel" : "+ Add Car"}
         </button>
@@ -222,9 +222,9 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
       {showAddForm && (
         <form
           onSubmit={addCar}
-          style={{ backgroundColor: "#13161b", border: "1px solid #1e2329", borderRadius: "12px", padding: "16px", marginBottom: "16px", display: "flex", flexDirection: "column", gap: "10px", boxSizing: "border-box" }}
+          style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "12px", padding: "16px", marginBottom: "16px", display: "flex", flexDirection: "column", gap: "10px", boxSizing: "border-box" }}
         >
-          <select value={form.year} onChange={(e) => setForm((f) => ({ ...f, year: e.target.value }))} required style={{ ...inputStyle, color: form.year ? "#f1f5f9" : "#6b7280" }}>
+          <select value={form.year} onChange={(e) => setForm((f) => ({ ...f, year: e.target.value }))} required style={{ ...inputStyle, color: form.year ? "#dce8f5" : "#7d8fa8" }}>
             <option value="">Year</option>
             {years.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
@@ -244,24 +244,24 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
           <input type="text" value={form.nickname} onChange={(e) => setForm((f) => ({ ...f, nickname: e.target.value }))} placeholder="Nickname (optional)" style={inputStyle} />
           <input type="text" value={form.mods} onChange={(e) => setForm((f) => ({ ...f, mods: e.target.value }))} placeholder="Mods (optional)" style={inputStyle} />
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: "13px", color: "#9ca3af" }}>Running a tune?</span>
-            <button type="button" onClick={() => setForm((f) => ({ ...f, has_tune: !f.has_tune }))} style={{ width: "40px", height: "22px", borderRadius: "11px", backgroundColor: form.has_tune ? "#3b82f6" : "#252b34", border: "none", position: "relative", cursor: "pointer" }}>
+            <span style={{ fontSize: "13px", color: "#7d8fa8" }}>Running a tune?</span>
+            <button type="button" onClick={() => setForm((f) => ({ ...f, has_tune: !f.has_tune }))} style={{ width: "40px", height: "22px", borderRadius: "11px", backgroundColor: form.has_tune ? "#4a9eff" : "#172134", border: "none", position: "relative", cursor: "pointer" }}>
               <div style={{ position: "absolute", top: "3px", left: form.has_tune ? "19px" : "3px", width: "16px", height: "16px", borderRadius: "50%", backgroundColor: "white", transition: "left 150ms ease" }} />
             </button>
           </div>
-          <button type="submit" disabled={saving || !form.year || !form.make || !form.model} className="tap-target" style={{ height: "44px", backgroundColor: "#3b82f6", color: "white", fontWeight: 600, fontSize: "14px", border: "none", borderRadius: "10px", cursor: "pointer", opacity: saving || !form.year || !form.make || !form.model ? 0.5 : 1 }}>
+          <button type="submit" disabled={saving || !form.year || !form.make || !form.model} className="tap-target" style={{ height: "44px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "14px", border: "none", borderRadius: "10px", cursor: "pointer", opacity: saving || !form.year || !form.make || !form.model ? 0.5 : 1 }}>
             {saving ? "Saving…" : "Save Car"}
           </button>
         </form>
       )}
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "40px", color: "#6b7280" }}>Loading…</div>
+        <div style={{ textAlign: "center", padding: "40px", color: "#7d8fa8" }}>Loading…</div>
       ) : cars.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 0" }}>
           <div style={{ fontSize: "36px", marginBottom: "12px" }}>🚗</div>
-          <div style={{ fontSize: "15px", color: "#6b7280" }}>No cars saved yet.</div>
-          <div style={{ fontSize: "13px", color: "#4b5563", marginTop: "4px" }}>Add one above to get started.</div>
+          <div style={{ fontSize: "15px", color: "#7d8fa8" }}>No cars saved yet.</div>
+          <div style={{ fontSize: "13px", color: "#4a5c72", marginTop: "4px" }}>Add one above to get started.</div>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -272,11 +272,11 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
             const isLoadingMaint = maintLoading[car.id];
 
             return (
-              <div key={car.id} style={{ backgroundColor: "#13161b", border: "1px solid #1e2329", borderRadius: "12px", overflow: "hidden" }}>
+              <div key={car.id} style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "12px", overflow: "hidden" }}>
                 <div style={{ padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                      <span style={{ fontSize: "15px", fontWeight: 600, color: "#f1f5f9" }}>
+                      <span style={{ fontSize: "15px", fontWeight: 600, color: "#dce8f5" }}>
                         {car.nickname || `${car.year} ${car.make} ${car.model}`}
                       </span>
                       {recallCount > 0 && (
@@ -286,18 +286,18 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                         </span>
                       )}
                     </div>
-                    {car.nickname && <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "1px" }}>{car.year} {car.make} {car.model}</div>}
+                    {car.nickname && <div style={{ fontSize: "12px", color: "#7d8fa8", marginTop: "1px" }}>{car.year} {car.make} {car.model}</div>}
                     {car.mods && (
-                      <div style={{ fontSize: "12px", color: "#4b5563", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={{ fontSize: "12px", color: "#4a5c72", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {car.has_tune && "⚡ "}{car.mods}
                       </div>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-                    <button onClick={() => onSelectCar({ year: String(car.year), make: car.make, model: car.model, mods: car.mods || "", hasTune: car.has_tune })} className="tap-target" style={{ fontSize: "13px", fontWeight: 600, padding: "7px 14px", borderRadius: "8px", border: "none", backgroundColor: "#3b82f6", color: "white", cursor: "pointer" }}>
+                    <button onClick={() => onSelectCar({ year: String(car.year), make: car.make, model: car.model, mods: car.mods || "", hasTune: car.has_tune })} className="tap-target" style={{ fontSize: "13px", fontWeight: 600, padding: "7px 14px", borderRadius: "8px", border: "none", backgroundColor: "#4a9eff", color: "white", cursor: "pointer" }}>
                       Use
                     </button>
-                    <button onClick={() => deleteCar(car.id)} disabled={deletingId === car.id} className="tap-target" style={{ fontSize: "13px", padding: "7px 10px", borderRadius: "8px", border: "1px solid #252b34", backgroundColor: "transparent", color: "#6b7280", cursor: "pointer", opacity: deletingId === car.id ? 0.4 : 1 }}>
+                    <button onClick={() => deleteCar(car.id)} disabled={deletingId === car.id} className="tap-target" style={{ fontSize: "13px", padding: "7px 10px", borderRadius: "8px", border: "1px solid #252b34", backgroundColor: "transparent", color: "#7d8fa8", cursor: "pointer", opacity: deletingId === car.id ? 0.4 : 1 }}>
                       ✕
                     </button>
                   </div>
@@ -306,14 +306,14 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                 {/* Maintenance section */}
                 <div style={{ borderTop: "1px solid #1e2329" }}>
                   {!isMaintExpanded ? (
-                    <button onClick={() => setExpandedMaint(car.id)} style={{ width: "100%", padding: "10px 16px", fontSize: "12px", color: "#6b7280", backgroundColor: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+                    <button onClick={() => setExpandedMaint(car.id)} style={{ width: "100%", padding: "10px 16px", fontSize: "12px", color: "#7d8fa8", backgroundColor: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
                       Maintenance schedule →
                     </button>
                   ) : (
                     <div style={{ padding: "12px 16px" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-                        <span style={{ fontSize: "11px", fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.08em" }}>Maintenance Schedule</span>
-                        <button onClick={() => setExpandedMaint(null)} style={{ fontSize: "11px", color: "#4b5563", backgroundColor: "transparent", border: "none", cursor: "pointer" }}>↑ Close</button>
+                        <span style={{ fontSize: "11px", fontWeight: 600, color: "#7d8fa8", textTransform: "uppercase", letterSpacing: "0.08em" }}>Maintenance Schedule</span>
+                        <button onClick={() => setExpandedMaint(null)} style={{ fontSize: "11px", color: "#4a5c72", backgroundColor: "transparent", border: "none", cursor: "pointer" }}>↑ Close</button>
                       </div>
                       {!services ? (
                         <div style={{ display: "flex", gap: "8px" }}>
@@ -323,12 +323,12 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                             value={mileageInputs[car.id] || ""}
                             onChange={(e) => setMileageInputs((prev) => ({ ...prev, [car.id]: e.target.value.replace(/\D/g, "") }))}
                             placeholder="Current mileage"
-                            style={{ flex: 1, height: "38px", padding: "0 10px", boxSizing: "border-box", fontSize: "15px", backgroundColor: "#0d0f12", border: "1px solid #1e2329", borderRadius: "8px", color: "#f1f5f9" }}
+                            style={{ flex: 1, height: "38px", padding: "0 10px", boxSizing: "border-box", fontSize: "15px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", color: "#dce8f5" }}
                           />
                           <button
                             onClick={() => generateMaintenance(car)}
                             disabled={!mileageInputs[car.id] || isLoadingMaint}
-                            style={{ height: "38px", padding: "0 14px", fontSize: "13px", fontWeight: 600, backgroundColor: "#3b82f6", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", opacity: !mileageInputs[car.id] || isLoadingMaint ? 0.5 : 1, whiteSpace: "nowrap" }}
+                            style={{ height: "38px", padding: "0 14px", fontSize: "13px", fontWeight: 600, backgroundColor: "#4a9eff", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", opacity: !mileageInputs[car.id] || isLoadingMaint ? 0.5 : 1, whiteSpace: "nowrap" }}
                           >
                             {isLoadingMaint ? "…" : "Generate"}
                           </button>
@@ -338,10 +338,10 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                           {services.map((svc) => {
                             const colors = STATUS_COLORS[svc.status];
                             return (
-                              <div key={svc.service} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", backgroundColor: "#0d0f12", borderRadius: "8px", border: "1px solid #1e2329" }}>
+                              <div key={svc.service} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", backgroundColor: "#101822", borderRadius: "8px", border: "1px solid #172134" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                   <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: colors.dot, flexShrink: 0 }} />
-                                  <span style={{ fontSize: "13px", color: "#f1f5f9" }}>{svc.service}</span>
+                                  <span style={{ fontSize: "13px", color: "#dce8f5" }}>{svc.service}</span>
                                 </div>
                                 <span style={{ fontSize: "11px", fontWeight: 600, backgroundColor: colors.bg, color: colors.text, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" }}>
                                   {svc.deltaLabel}
@@ -349,7 +349,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                               </div>
                             );
                           })}
-                          <button onClick={() => setMaintResults((prev) => { const n = { ...prev }; delete n[car.id]; return n; })} style={{ marginTop: "2px", fontSize: "11px", color: "#4b5563", backgroundColor: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+                          <button onClick={() => setMaintResults((prev) => { const n = { ...prev }; delete n[car.id]; return n; })} style={{ marginTop: "2px", fontSize: "11px", color: "#4a5c72", backgroundColor: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
                             Update mileage →
                           </button>
                         </div>
@@ -366,20 +366,20 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
       {/* ── Recent Diagnoses ── */}
       {visibleHistory.length > 0 && (
         <div style={{ marginTop: "28px", paddingBottom: "24px" }}>
-          <div style={{ fontSize: "16px", fontWeight: 700, color: "#f1f5f9", marginBottom: "12px" }}>Recent Diagnoses</div>
+          <div style={{ fontSize: "16px", fontWeight: 700, color: "#dce8f5", marginBottom: "12px" }}>Recent Diagnoses</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {visibleHistory.map((item) => (
               <button
                 key={item.id}
                 onClick={() => onOpenDiagnosis(item)}
-                style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "#13161b", border: "1px solid #1e2329", borderRadius: "10px", padding: "12px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
+                style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "10px", padding: "12px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
               >
-                <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: VERDICT_DOT[item.verdict] ?? "#6b7280", flexShrink: 0 }} />
+                <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: VERDICT_DOT[item.verdict] ?? "#7d8fa8", flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9" }}>{item.year} {item.make} {item.model}</div>
-                  <div style={{ fontSize: "12px", color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.issue}</div>
+                  <div style={{ fontSize: "14px", fontWeight: 600, color: "#dce8f5" }}>{item.year} {item.make} {item.model}</div>
+                  <div style={{ fontSize: "12px", color: "#7d8fa8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.issue}</div>
                 </div>
-                <div style={{ fontSize: "11px", color: "#4b5563", flexShrink: 0 }}>{formatDate(item.date)}</div>
+                <div style={{ fontSize: "11px", color: "#4a5c72", flexShrink: 0 }}>{formatDate(item.date)}</div>
               </button>
             ))}
           </div>
