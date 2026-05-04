@@ -4,7 +4,7 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const SYSTEM_PROMPT = `You are an automotive service pricing expert who helps car owners understand if they're being charged fairly. You know exact parts costs (OEM and aftermarket) and standard labor rates for every common repair at independent shops across the US.
 
-The user gives you a mechanic's quote as a list of services and prices. Analyze each item and return this exact JSON:
+The user gives you a mechanic's quote as a list of services and prices (either as text OR as a photo of the written estimate). Analyze each item and return this exact JSON:
 
 {
   "lineItems": [
@@ -32,6 +32,8 @@ Verdict rules (US independent shop rates):
 
 Common RED_FLAG services: cabin air filter replacement >$40, engine air filter >$35, wiper blades >$30, fuel system cleaner additives, transmission fluid flush on <60k mile cars unless manufacturer specifies, "throttle body cleaning" without symptoms.
 
+If given a photo: extract ALL line items visible, including handwritten ones. If the photo is unreadable, return {"error": "Couldn't read this photo clearly. Try better lighting or type the quote instead."}
+
 Always cite real parts cost ranges and labor hours. The negotiationScript must sound human and be ready to copy-paste. Return only valid JSON.`;
 
 export async function POST(request: Request) {
@@ -40,29 +42,48 @@ export async function POST(request: Request) {
       return Response.json({ error: "API key not configured" }, { status: 500 });
     }
 
-    const { year, make, model, quote } = await request.json();
+    const { year, make, model, quote, imageBase64, zip } = await request.json();
 
-    if (!year || !make || !model || !quote) {
+    if (!year || !make || !model) {
       return Response.json({ error: "Missing required fields" }, { status: 400 });
+    }
+    if (!quote?.trim() && !imageBase64) {
+      return Response.json({ error: "Provide a quote (text or photo)" }, { status: 400 });
+    }
+
+    const hasImage = !!imageBase64;
+    const modelId = hasImage ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001";
+
+    let content: Anthropic.MessageParam["content"];
+    if (hasImage) {
+      const base64Data = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64;
+      content = [
+        {
+          type: "image",
+          source: { type: "base64", media_type: "image/jpeg", data: base64Data },
+        },
+        {
+          type: "text",
+          text: `This is a mechanic repair quote for a ${year} ${make} ${model}${zip ? ` in ZIP ${zip}` : ""}. Extract every line item, labor charge, and price visible in the image. Then analyze each for fair market pricing.${quote?.trim() ? `\n\nUser also provided: ${quote.trim()}` : ""} Return the standard quote JSON format.`,
+        },
+      ];
+    } else {
+      content = `Vehicle: ${year} ${make} ${model}${zip ? ` in ZIP ${zip}` : ""}\n\nMechanic's quote:\n${quote}`;
     }
 
     const response = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
+      model: modelId,
       max_tokens: 2048,
       system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
-      messages: [
-        {
-          role: "user",
-          content: `Vehicle: ${year} ${make} ${model}\n\nMechanic's quote:\n${quote}`,
-        },
-      ],
+      messages: [{ role: "user", content }],
     });
 
     const block = response.content[0];
     if (block.type !== "text") throw new Error("Unexpected response type");
 
-    const analysis = JSON.parse(block.text);
-    return Response.json({ analysis });
+    const parsed = JSON.parse(block.text);
+    if (parsed.error) return Response.json({ error: parsed.error }, { status: 422 });
+    return Response.json({ analysis: parsed });
   } catch (err) {
     console.error("Check-quote error:", err);
     if (err instanceof SyntaxError) {

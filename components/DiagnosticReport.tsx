@@ -34,7 +34,7 @@ const LIKELIHOOD_COLORS: Record<string, { bg: string; text: string }> = {
 const ACCENT_BORDERS: Record<string, string> = {
   "Most Likely": "#4a9eff",
   "Likely": "#6366f1",
-  "Possible": "#374151",
+  "Possible": "#1c2a3e",
   "Unlikely but serious": "#f59e0b",
 };
 
@@ -282,14 +282,14 @@ export default function DiagnosticReport({
           <span style={{ fontSize: "11px", color: "#4a5c72" }}>{year} {make} {model}</span>
           <button
             onClick={handleShareSheet}
-            style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.4)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}
+            style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.35)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}
           >
             ↑ Share
           </button>
           <button
             onClick={onNewDiagnosis}
             className="tap-target"
-            style={{ fontSize: "12px", fontWeight: 500, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.2)", color: "white", backgroundColor: "transparent", cursor: "pointer" }}
+            style={{ fontSize: "12px", fontWeight: 500, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.15)", color: "#dce8f5", backgroundColor: "transparent", cursor: "pointer" }}
           >
             ← Back
           </button>
@@ -347,11 +347,11 @@ export default function DiagnosticReport({
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {diagnosis.rankedCauses.map((cause) => {
               const colors = LIKELIHOOD_COLORS[cause.likelihood] ?? { bg: "rgba(107,114,128,0.18)", text: "#7d8fa8" };
-              const accentColor = ACCENT_BORDERS[cause.likelihood] ?? "#374151";
+              const accentColor = ACCENT_BORDERS[cause.likelihood] ?? "#1c2a3e";
               const isExpanded = expandedCauses.has(cause.rank);
               const isLong = cause.reasoning.length > 90;
               return (
-                <div key={cause.rank} style={{ backgroundColor: "#101822", border: "1px solid #1e2329", borderLeft: `3px solid ${accentColor}`, borderRadius: "8px", padding: "12px" }}>
+                <div key={cause.rank} style={{ backgroundColor: "#101822", border: "1px solid #172134", borderLeft: `3px solid ${accentColor}`, borderRadius: "8px", padding: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "6px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
                       <span style={{ width: "22px", height: "22px", borderRadius: "6px", backgroundColor: "rgba(74,158,255,0.15)", border: "1px solid rgba(74,158,255,0.3)", color: "#4a9eff", fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{cause.rank}</span>
@@ -364,7 +364,7 @@ export default function DiagnosticReport({
                       <span style={{ backgroundColor: colors.bg, color: colors.text, fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" as const }}>{cause.likelihood}</span>
                     </div>
                   </div>
-                  <p style={{ margin: 0, fontSize: "13px", color: "#8b95a3", lineHeight: 1.5, paddingLeft: "30px", display: "-webkit-box", WebkitLineClamp: isExpanded ? "unset" : 2, WebkitBoxOrient: "vertical" as const, overflow: isExpanded ? "visible" : "hidden" }}>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#6a7e96", lineHeight: 1.5, paddingLeft: "30px", display: "-webkit-box", WebkitLineClamp: isExpanded ? "unset" : 2, WebkitBoxOrient: "vertical" as const, overflow: isExpanded ? "visible" : "hidden" }}>
                     {cause.reasoning}
                   </p>
                   {isLong && (
@@ -388,7 +388,7 @@ export default function DiagnosticReport({
               return (
                 <div key={step.step} style={{ display: "flex", gap: "12px" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: "14px" }}>
-                    <div style={{ width: "26px", height: "26px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, flexShrink: 0, backgroundColor: isOpen ? "#4a9eff" : "#101822", border: `1px solid ${isOpen ? "#4a9eff" : "#1c2a3e"}`, color: isOpen ? "white" : "#4a5c72" }}>{step.step}</div>
+                    <div style={{ width: "26px", height: "26px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, flexShrink: 0, backgroundColor: isOpen ? "#4a9eff" : "#101822", border: `1px solid ${isOpen ? "#4a9eff" : "#172134"}`, color: isOpen ? "white" : "#4a5c72" }}>{step.step}</div>
                     {!isLast && <div style={{ width: "1px", flex: 1, minHeight: "12px", backgroundColor: "#172134", marginTop: "4px" }} />}
                   </div>
                   <div style={{ flex: 1, paddingBottom: isLast ? "0" : "16px" }}>
@@ -397,7 +397,7 @@ export default function DiagnosticReport({
                       <span style={{ color: "#4a5c72", fontSize: "10px", flexShrink: 0 }}>{isOpen ? "▲" : "▼"}</span>
                     </button>
                     {isOpen && (
-                      <div style={{ backgroundColor: "#060810", border: "1px solid #1e2329", borderRadius: "8px", padding: "12px", display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
+                      <div style={{ backgroundColor: "#060810", border: "1px solid #172134", borderRadius: "8px", padding: "12px", display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
                         <p style={{ margin: 0, fontSize: "13px", fontStyle: "italic", color: "#7d8fa8", lineHeight: 1.5 }}>{step.why}</p>
                         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                           <div style={{ backgroundColor: "#0a1a0f", border: "1px solid #1e3a28", borderRadius: "8px", padding: "10px 12px" }}>
@@ -429,14 +429,14 @@ export default function DiagnosticReport({
           <SectionHeader Icon={DollarSign} label="Cost Estimates" />
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {diagnosis.costEstimates.map((est, i) => (
-              <div key={i} style={{ backgroundColor: "#101822", border: "1px solid #1e2329", borderRadius: "8px", padding: "12px" }}>
+              <div key={i} style={{ backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", padding: "12px" }}>
                 <div style={{ fontSize: "14px", fontWeight: 600, color: "#dce8f5", marginBottom: "8px" }}>{est.fix}</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
                   {(["Parts", "Labor", "Total"] as const).map((label, li) => {
                     const val = li === 0 ? est.parts : li === 1 ? est.labor : est.total;
                     return (
                       <div key={label}>
-                        <div style={{ fontSize: "9px", color: "#3a4d63", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px", fontWeight: 600 }}>{label}</div>
+                        <div style={{ fontSize: "9px", color: "#2d3f55", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px", fontWeight: 600 }}>{label}</div>
                         <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: li === 2 ? "16px" : "13px", color: li === 2 ? "#4a9eff" : "#7d8fa8", fontWeight: li === 2 ? 700 : 400 }}>{val}</div>
                       </div>
                     );
@@ -465,17 +465,17 @@ export default function DiagnosticReport({
 
         {/* Mechanic Finder */}
         {shops.length > 0 && (
-          <div style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "10px", padding: "14px 16px" }}>
+          <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "14px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
               <MapPin size={12} color="#4a5c72" />
               <span style={{ fontSize: "11px", fontWeight: 600, color: "#4a5c72", textTransform: "uppercase", letterSpacing: "0.08em" }}>Shops Near You</span>
             </div>
-            <p style={{ margin: "0 0 12px", fontSize: "12px", color: "#3a4d63", fontStyle: "italic" }}>
+            <p style={{ margin: "0 0 12px", fontSize: "12px", color: "#2d3f55", fontStyle: "italic" }}>
               Independent shops typically charge 30–40% less than dealers for this repair.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {shops.map((shop, i) => (
-                <a key={i} href={shop.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", backgroundColor: "#101822", border: "1px solid #1e2329", borderRadius: "8px", padding: "12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <a key={i} href={shop.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", padding: "12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: "14px", fontWeight: 600, color: "#dce8f5", marginBottom: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shop.name}</div>
                     {shop.address && <div style={{ fontSize: "11px", color: "#4a5c72", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shop.address}</div>}
@@ -505,7 +505,7 @@ export default function DiagnosticReport({
           <button
             onClick={() => setShowMechanicModal(true)}
             className="tap-target"
-            style={{ width: "100%", height: "44px", backgroundColor: "#101822", border: "1px solid #252b34", borderRadius: "8px", color: "#dce8f5", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}
+            style={{ width: "100%", height: "44px", backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "8px", color: "#dce8f5", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}
           >
             Generate Message
           </button>
@@ -544,7 +544,7 @@ export default function DiagnosticReport({
                   key={reply}
                   onClick={() => handleChatSubmit(reply)}
                   className="tap-target"
-                  style={{ fontSize: "12px", padding: "6px 12px", borderRadius: "20px", border: "1px solid #252b34", backgroundColor: "#101822", color: "#7d8fa8", cursor: "pointer", whiteSpace: "nowrap" }}
+                  style={{ fontSize: "12px", padding: "6px 12px", borderRadius: "20px", border: "1px solid #1c2a3e", backgroundColor: "#101822", color: "#7d8fa8", cursor: "pointer", whiteSpace: "nowrap" }}
                 >
                   {reply}
                 </button>
@@ -558,7 +558,7 @@ export default function DiagnosticReport({
               value={chatInput}
               onChange={(e) => { setChatInput(e.target.value); if (e.target.value) setShowQuickReplies(false); else if (chatMessages.length === 0) setShowQuickReplies(true); }}
               placeholder="Ask anything about this diagnosis..."
-              style={{ flex: 1, height: "44px", padding: "0 12px", fontSize: "16px", backgroundColor: "#101822", border: "1px solid #1e2329", borderRadius: "8px", color: "#dce8f5" }}
+              style={{ flex: 1, height: "44px", padding: "0 12px", fontSize: "16px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", color: "#dce8f5" }}
             />
             <button
               type="submit"
@@ -578,13 +578,13 @@ export default function DiagnosticReport({
       {/* Share Sheet */}
       {showShareSheet && (
         <div onClick={() => setShowShareSheet(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "560px", backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "20px 20px 0 0", padding: "20px 16px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", animation: "view-fade-in 200ms ease" }}>
-            <div style={{ width: "32px", height: "4px", backgroundColor: "#1c2a3e", borderRadius: "2px", margin: "0 auto 20px" }} />
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "560px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "20px 20px 0 0", padding: "20px 16px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", animation: "view-fade-in 200ms ease" }}>
+            <div style={{ width: "32px", height: "4px", backgroundColor: "#162232", borderRadius: "2px", margin: "0 auto 20px" }} />
             <div style={{ fontSize: "16px", fontWeight: 700, color: "#dce8f5", marginBottom: "16px" }}>
               Share Diagnosis
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <button onClick={copyShareLink} disabled={shareLoading} className="tap-target" style={{ height: "52px", display: "flex", alignItems: "center", gap: "14px", backgroundColor: "#101822", border: "1px solid #252b34", borderRadius: "12px", padding: "0 16px", cursor: "pointer", color: "#dce8f5", width: "100%", opacity: shareLoading ? 0.5 : 1 }}>
+              <button onClick={copyShareLink} disabled={shareLoading} className="tap-target" style={{ height: "52px", display: "flex", alignItems: "center", gap: "14px", backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "12px", padding: "0 16px", cursor: "pointer", color: "#dce8f5", width: "100%", opacity: shareLoading ? 0.5 : 1 }}>
                 <Link size={18} color="#4a9eff" />
                 <div style={{ textAlign: "left" }}>
                   <div style={{ fontSize: "14px", fontWeight: 600 }}>Copy link</div>
@@ -592,7 +592,7 @@ export default function DiagnosticReport({
                 </div>
               </button>
               {"share" in navigator && (
-                <button onClick={shareViaSystem} disabled={shareLoading} className="tap-target" style={{ height: "52px", display: "flex", alignItems: "center", gap: "14px", backgroundColor: "#101822", border: "1px solid #252b34", borderRadius: "12px", padding: "0 16px", cursor: "pointer", color: "#dce8f5", width: "100%", opacity: shareLoading ? 0.5 : 1 }}>
+                <button onClick={shareViaSystem} disabled={shareLoading} className="tap-target" style={{ height: "52px", display: "flex", alignItems: "center", gap: "14px", backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "12px", padding: "0 16px", cursor: "pointer", color: "#dce8f5", width: "100%", opacity: shareLoading ? 0.5 : 1 }}>
                   <Share2 size={18} color="#4a9eff" />
                   <div style={{ textAlign: "left" }}>
                     <div style={{ fontSize: "14px", fontWeight: 600 }}>Share via…</div>
@@ -600,7 +600,7 @@ export default function DiagnosticReport({
                   </div>
                 </button>
               )}
-              <button onClick={() => { setShowShareSheet(false); setShowImageModal(true); }} className="tap-target" style={{ height: "52px", display: "flex", alignItems: "center", gap: "14px", backgroundColor: "#101822", border: "1px solid #252b34", borderRadius: "12px", padding: "0 16px", cursor: "pointer", color: "#dce8f5", width: "100%" }}>
+              <button onClick={() => { setShowShareSheet(false); setShowImageModal(true); }} className="tap-target" style={{ height: "52px", display: "flex", alignItems: "center", gap: "14px", backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "12px", padding: "0 16px", cursor: "pointer", color: "#dce8f5", width: "100%" }}>
                 <ImageIcon size={18} color="#4a9eff" />
                 <div style={{ textAlign: "left" }}>
                   <div style={{ fontSize: "14px", fontWeight: 600 }}>Download image</div>
@@ -615,8 +615,8 @@ export default function DiagnosticReport({
       {/* Send to Mechanic Modal */}
       {showMechanicModal && (
         <div onClick={() => setShowMechanicModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "560px", backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "16px 16px 0 0", padding: "20px 16px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", boxSizing: "border-box" }}>
-            <div style={{ width: "32px", height: "4px", backgroundColor: "#1c2a3e", borderRadius: "2px", margin: "0 auto 16px" }} />
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "560px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "16px 16px 0 0", padding: "20px 16px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", boxSizing: "border-box" }}>
+            <div style={{ width: "32px", height: "4px", backgroundColor: "#162232", borderRadius: "2px", margin: "0 auto 16px" }} />
             <div style={{ fontSize: "16px", fontWeight: 700, color: "#dce8f5", marginBottom: "14px" }}>Send to Your Mechanic</div>
 
             {/* Format tabs */}
@@ -634,14 +634,14 @@ export default function DiagnosticReport({
 
             {/* Email subject line */}
             {mechanicFormat === "email" && (
-              <div style={{ backgroundColor: "#060810", border: "1px solid #1e2329", borderRadius: "8px", padding: "8px 12px", marginBottom: "8px" }}>
-                <span style={{ fontSize: "10px", fontWeight: 600, color: "#3a4d63", textTransform: "uppercase", letterSpacing: "0.08em" }}>Subject: </span>
+              <div style={{ backgroundColor: "#060810", border: "1px solid #172134", borderRadius: "8px", padding: "8px 12px", marginBottom: "8px" }}>
+                <span style={{ fontSize: "10px", fontWeight: 600, color: "#2d3f55", textTransform: "uppercase", letterSpacing: "0.08em" }}>Subject: </span>
                 <span style={{ fontSize: "13px", color: "#7d8fa8" }}>Question about my {year} {make} {model}</span>
               </div>
             )}
 
             {/* Message body */}
-            <div style={{ backgroundColor: "#101822", border: "1px solid #252b34", borderRadius: "10px", padding: "14px", marginBottom: "14px", maxHeight: "220px", overflowY: "auto" }}>
+            <div style={{ backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "10px", padding: "14px", marginBottom: "14px", maxHeight: "220px", overflowY: "auto" }}>
               <p style={{ margin: 0, fontSize: "14px", color: "#dce8f5", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{currentMechanicMessage()}</p>
             </div>
 
@@ -652,7 +652,7 @@ export default function DiagnosticReport({
             {mechanicFormat === "email" && (
               <a
                 href={`mailto:?subject=${encodeURIComponent(`Question about my ${year} ${make} ${model}`)}&body=${encodeURIComponent(currentMechanicMessage())}`}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "44px", backgroundColor: "#101822", border: "1px solid #252b34", borderRadius: "8px", color: "#7d8fa8", fontWeight: 500, fontSize: "14px", textDecoration: "none" }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "44px", backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "8px", color: "#7d8fa8", fontWeight: 500, fontSize: "14px", textDecoration: "none" }}
               >
                 Open in Mail ↗
               </a>
@@ -660,7 +660,7 @@ export default function DiagnosticReport({
             {mechanicFormat === "text" && (
               <a
                 href={`sms:?body=${encodeURIComponent(currentMechanicMessage())}`}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "44px", backgroundColor: "#101822", border: "1px solid #252b34", borderRadius: "8px", color: "#7d8fa8", fontWeight: 500, fontSize: "14px", textDecoration: "none" }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "44px", backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "8px", color: "#7d8fa8", fontWeight: 500, fontSize: "14px", textDecoration: "none" }}
               >
                 Open in Messages ↗
               </a>
@@ -685,20 +685,20 @@ export default function DiagnosticReport({
               </div>
               {topCause && (
                 <div style={{ marginBottom: "18px" }}>
-                  <div style={{ fontSize: "10px", color: "#3a4d63", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 600 }}>Most Likely Cause</div>
+                  <div style={{ fontSize: "10px", color: "#2d3f55", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 600 }}>Most Likely Cause</div>
                   <div style={{ fontSize: "18px", fontWeight: 700, color: "#dce8f5" }}>{topCause.cause}</div>
                   {diagnosis.diagnosticSteps[0] && <div style={{ fontSize: "12px", color: "#4a5c72", marginTop: "3px" }}>→ {diagnosis.diagnosticSteps[0].action}</div>}
                 </div>
               )}
               {topEst && (
                 <div style={{ marginBottom: "22px" }}>
-                  <div style={{ fontSize: "10px", color: "#3a4d63", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 600 }}>Estimated Repair</div>
+                  <div style={{ fontSize: "10px", color: "#2d3f55", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 600 }}>Estimated Repair</div>
                   <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "26px", fontWeight: 700, color: "#4a9eff" }}>{topEst.total}</div>
                   <div style={{ fontSize: "12px", color: "#4a5c72" }}>{topEst.fix}</div>
                 </div>
               )}
               <div style={{ borderTop: "1px solid #172134", paddingTop: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "11px", color: "#3a4d63" }}>AI diagnosis · verify with a mechanic</span>
+                <span style={{ fontSize: "11px", color: "#2d3f55" }}>AI diagnosis · verify with a mechanic</span>
                 <span style={{ fontSize: "12px", color: "#4a9eff", fontWeight: 700 }}>torqueapp.co</span>
               </div>
             </div>
@@ -706,7 +706,7 @@ export default function DiagnosticReport({
               <button onClick={captureAndShare} disabled={isSharing} className="tap-target" style={{ flex: 1, height: "52px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: "pointer", opacity: isSharing ? 0.6 : 1 }}>
                 {isSharing ? "Preparing…" : "↑ Share Image"}
               </button>
-              <button onClick={() => setShowImageModal(false)} className="tap-target" style={{ height: "52px", padding: "0 20px", backgroundColor: "#101822", border: "1px solid #252b34", borderRadius: "10px", color: "#7d8fa8", fontSize: "14px", cursor: "pointer" }}>
+              <button onClick={() => setShowImageModal(false)} className="tap-target" style={{ height: "52px", padding: "0 20px", backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "10px", color: "#7d8fa8", fontSize: "14px", cursor: "pointer" }}>
                 Cancel
               </button>
             </div>
@@ -730,7 +730,7 @@ function SectionHeader({ Icon, label }: { Icon: React.ElementType; label: string
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "10px", padding: "14px 16px" }}>
+    <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "14px 16px" }}>
       {children}
     </div>
   );

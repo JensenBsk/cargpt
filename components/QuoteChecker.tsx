@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { Camera, X } from "lucide-react";
 import type { QuoteAnalysis } from "@/types/quote";
+import { resizeImage } from "@/utils/resizeImage";
 
 interface Props {
   onBack?: () => void;
@@ -42,17 +44,37 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [quoteText, setQuoteText] = useState("");
+  const [quoteImage, setQuoteImage] = useState<string | null>(null);
+  const [resizing, setResizing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<QuoteAnalysis | null>(null);
   const [copied, setCopied] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 35 }, (_, i) => currentYear - i);
 
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setResizing(true);
+    setError("");
+    try {
+      const base64 = await resizeImage(file);
+      setQuoteImage(base64);
+    } catch {
+      setError("Couldn't read that image. Try another photo.");
+    } finally {
+      setResizing(false);
+      if (e.target) e.target.value = "";
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!year || !make || !model || !quoteText.trim()) return;
+    if (!year || !make || !model) return;
+    if (!quoteText.trim() && !quoteImage) return;
 
     setLoading(true);
     setError("");
@@ -61,7 +83,13 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
       const res = await fetch("/api/check-quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ year, make, model, quote: quoteText }),
+        body: JSON.stringify({
+          year,
+          make,
+          model,
+          quote: quoteText,
+          imageBase64: quoteImage || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {
@@ -90,31 +118,23 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const canSubmit = !loading && !!year && !!make && !!model && !!quoteText.trim();
+  const canSubmit = !loading && !!year && !!make && !!model && (!!quoteText.trim() || !!quoteImage);
 
   if (result) {
     const overall = VERDICT_CONFIG[result.overallVerdict];
     return (
       <div style={{ minHeight: "100dvh", backgroundColor: "#0d0f12", display: "flex", flexDirection: "column" }}>
-        {/* Header */}
         <div style={{ position: "sticky", top: 0, zIndex: 10, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#13161b", borderBottom: "1px solid #1e2329" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div>
-              <div style={{ fontSize: "15px", fontWeight: 600, lineHeight: 1.2, color: "#f1f5f9" }}>Quote Analysis</div>
-              <div style={{ fontSize: "11px", color: "#6b7280", lineHeight: 1.2 }}>{year} {make} {model}</div>
-            </div>
+          <div>
+            <div style={{ fontSize: "15px", fontWeight: 600, lineHeight: 1.2, color: "#f1f5f9" }}>Quote Analysis</div>
+            <div style={{ fontSize: "11px", color: "#6b7280", lineHeight: 1.2 }}>{year} {make} {model}</div>
           </div>
-          <button
-            onClick={clearResult}
-            className="tap-target"
-            style={{ fontSize: "12px", fontWeight: 500, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.2)", color: "white", backgroundColor: "transparent", cursor: "pointer" }}
-          >
+          <button onClick={clearResult} className="tap-target" style={{ fontSize: "12px", fontWeight: 500, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.2)", color: "white", backgroundColor: "transparent", cursor: "pointer" }}>
             ← New
           </button>
         </div>
 
         <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "12px" }}>
-
           {/* Total comparison */}
           <div style={{ backgroundColor: "#13161b", border: "1px solid #1e2329", borderRadius: "10px", padding: "16px" }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "10px" }}>
@@ -157,7 +177,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
               {result.lineItems.map((item, i) => {
                 const vc = VERDICT_CONFIG[item.verdict];
                 return (
-                  <div key={i} style={{ backgroundColor: "#1a1e25", border: `1px solid #1e2329`, borderRadius: "8px", padding: "12px", borderLeft: `3px solid ${vc.text}` }}>
+                  <div key={i} style={{ backgroundColor: "#1a1e25", border: "1px solid #1e2329", borderRadius: "8px", padding: "12px", borderLeft: `3px solid ${vc.text}` }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "6px" }}>
                       <span style={{ fontSize: "15px", fontWeight: 600, color: "#f1f5f9" }}>{item.service}</span>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
@@ -193,18 +213,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
             <button
               onClick={copyScript}
               className="tap-target"
-              style={{
-                width: "100%",
-                height: "48px",
-                backgroundColor: copied ? "#22c55e" : "#3b82f6",
-                color: "white",
-                fontWeight: 600,
-                fontSize: "15px",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                transition: "background-color 200ms",
-              }}
+              style={{ width: "100%", height: "48px", backgroundColor: copied ? "#22c55e" : "#3b82f6", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer", transition: "background-color 200ms" }}
             >
               {copied ? "✓ Copied!" : "Copy Script"}
             </button>
@@ -218,7 +227,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
 
   return (
     <div style={{ minHeight: "100dvh", backgroundColor: "#0d0f12", display: "flex", flexDirection: "column" }}>
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px 0" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px 0" }}>
         <div style={{ width: "100%", maxWidth: "480px" }}>
           <div style={{ textAlign: "center", marginBottom: "24px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "6px" }}>
@@ -245,14 +254,15 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
               </select>
             </div>
 
-            <div>
-              <label style={labelStyle}>Make</label>
-              <input type="text" value={make} onChange={(e) => setMake(e.target.value)} placeholder="Toyota" required style={fieldStyle} />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Model</label>
-              <input type="text" value={model} onChange={(e) => setModel(e.target.value)} placeholder="Camry" required style={fieldStyle} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              <div>
+                <label style={labelStyle}>Make</label>
+                <input type="text" value={make} onChange={(e) => setMake(e.target.value)} placeholder="Toyota" required style={fieldStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Model</label>
+                <input type="text" value={model} onChange={(e) => setModel(e.target.value)} placeholder="Camry" required style={fieldStyle} />
+              </div>
             </div>
 
             <div>
@@ -261,10 +271,59 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
                 value={quoteText}
                 onChange={(e) => setQuoteText(e.target.value)}
                 placeholder={"Oil change $89, Brake pads front $320, Brake fluid flush $180\n\nor paste line items from a written estimate"}
-                required
-                rows={5}
-                style={{ display: "block", width: "100%", minHeight: "120px", padding: "10px 12px", fontSize: "16px", backgroundColor: "#0d0f12", border: "1px solid #1e2329", borderRadius: "8px", color: "#f1f5f9", resize: "none", lineHeight: 1.5 }}
+                rows={4}
+                style={{ display: "block", width: "100%", minHeight: "100px", padding: "10px 12px", fontSize: "16px", backgroundColor: "#0d0f12", border: "1px solid #1e2329", borderRadius: "8px", color: "#f1f5f9", resize: "none", lineHeight: 1.5 }}
               />
+            </div>
+
+            {/* OR divider */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div style={{ flex: 1, height: "1px", backgroundColor: "#1e2329" }} />
+              <span style={{ fontSize: "11px", fontWeight: 600, color: "#374151", letterSpacing: "0.08em" }}>OR</span>
+              <div style={{ flex: 1, height: "1px", backgroundColor: "#1e2329" }} />
+            </div>
+
+            {/* Photo upload */}
+            <div>
+              <label style={labelStyle}>
+                <Camera size={10} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} />
+                Photograph your quote
+              </label>
+              {quoteImage ? (
+                <div style={{ position: "relative" }}>
+                  <div className={loading ? "photo-scanning" : ""} style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #252b34" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={quoteImage} alt="Quote" style={{ width: "100%", maxHeight: "200px", objectFit: "cover", display: "block" }} />
+                  </div>
+                  {!loading && (
+                    <button
+                      type="button"
+                      onClick={() => setQuoteImage(null)}
+                      style={{ position: "absolute", top: "8px", right: "8px", width: "28px", height: "28px", borderRadius: "50%", backgroundColor: "rgba(0,0,0,0.7)", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <label htmlFor="quote-photo-input" style={{ display: "block", cursor: resizing ? "wait" : "pointer" }}>
+                  <div style={{ border: "2px dashed #252b34", borderRadius: "10px", padding: "20px", textAlign: "center", color: "#4b5563", fontSize: "13px", backgroundColor: "#0d0f12" }}>
+                    <Camera size={22} color="#374151" style={{ margin: "0 auto 6px", display: "block" }} />
+                    <div style={{ fontWeight: 600, marginBottom: "2px", color: "#9ca3af" }}>{resizing ? "Resizing…" : "Tap to photograph"}</div>
+                    <div style={{ fontSize: "12px" }}>Opens camera on mobile</div>
+                  </div>
+                  <input
+                    id="quote-photo-input"
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: "none" }}
+                    onChange={handlePhotoSelect}
+                    disabled={resizing}
+                  />
+                </label>
+              )}
             </div>
 
             {error && (
@@ -288,7 +347,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
           className={loading ? "btn-shimmer" : "tap-target"}
           style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", height: "56px", backgroundColor: "#3b82f6", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: canSubmit ? "pointer" : "not-allowed", opacity: canSubmit ? 1 : 0.4 }}
         >
-          {loading ? "Analyzing..." : "Check Quote"}
+          {loading ? (quoteImage ? "Analyzing photo…" : "Analyzing…") : "Check Quote"}
         </button>
       </div>
     </div>

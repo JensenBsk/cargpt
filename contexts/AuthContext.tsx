@@ -15,7 +15,7 @@ interface AuthContextType {
   loading: boolean;
   available: boolean;
   signOut: () => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (returnTo?: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
   signUpWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
 }
@@ -26,7 +26,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: false,
   available: false,
   signOut: async () => {},
-  signInWithGoogle: async () => {},
+  signInWithGoogle: async () => { void 0; },
   signInWithEmail: async () => ({ error: null }),
   signUpWithEmail: async () => ({ error: null }),
 });
@@ -62,11 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await createClient().auth.signOut();
   }
 
-  async function signInWithGoogle() {
+  async function signInWithGoogle(returnTo?: string) {
     if (!SUPABASE_AVAILABLE) return;
+    const next = returnTo ? `?next=${encodeURIComponent(returnTo)}` : "";
     await createClient().auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback${next}` },
     });
   }
 

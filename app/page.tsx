@@ -12,7 +12,7 @@ import VinInput from "@/components/VinInput";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { resizeImage } from "@/utils/resizeImage";
-import { MapPin, Camera, Wrench } from "lucide-react";
+import { MapPin, Camera, Wrench, Lock } from "lucide-react";
 
 const LS_KEY = "torque_diagnosis_history";
 
@@ -217,20 +217,21 @@ export default function Home() {
     height: "48px",
     padding: "0 14px",
     fontSize: "16px",
-    backgroundColor: "#060810",
-    border: "1px solid #1e2329",
+    backgroundColor: "#101822",
+    border: "1px solid #172134",
     borderRadius: "10px",
     color: "#dce8f5",
   };
 
   const labelStyle: React.CSSProperties = {
     display: "block",
+    fontFamily: "var(--font-jetbrains), monospace",
     fontSize: "10px",
     fontWeight: 600,
-    color: "#3a4d63",
+    color: "#2d3f55",
     textTransform: "uppercase",
-    letterSpacing: "0.1em",
-    marginBottom: "6px",
+    letterSpacing: "0.15em",
+    marginBottom: "8px",
   };
 
   const allFilled = !!year && !!make && !!model && !!issue.trim();
@@ -255,11 +256,11 @@ export default function Home() {
         )}
         {available && (
           user ? (
-            <button onClick={signOut} className="tap-target" style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid #252b34", color: "#4a5c72", backgroundColor: "transparent", cursor: "pointer" }}>
+            <button onClick={signOut} className="tap-target" style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid #1c2a3e", color: "#4a5c72", backgroundColor: "transparent", cursor: "pointer" }}>
               {user.email?.split("@")[0]} · out
             </button>
           ) : (
-            <button onClick={() => setShowAuthModal(true)} className="tap-target" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.4)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}>
+            <button onClick={() => setShowAuthModal(true)} className="tap-target" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.35)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}>
               Sign In
             </button>
           )
@@ -293,191 +294,186 @@ export default function Home() {
               onToast={toast}
             />
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 16px 16px", width: "100%", boxSizing: "border-box", overflowX: "hidden" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 20px 20px", width: "100%", boxSizing: "border-box", overflowX: "hidden" }}>
 
               {/* Hero */}
-              <div style={{ textAlign: "center", padding: "36px 0 24px", position: "relative" }}>
-                {/* Subtle radial glow behind logo */}
-                <div style={{ position: "absolute", top: "30px", left: "50%", transform: "translateX(-50%)", width: "160px", height: "80px", borderRadius: "50%", background: "radial-gradient(ellipse, rgba(74,158,255,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px", position: "relative" }}>
-                  <TorqueLogo markSize={52} showWordmark={false} glow="strong" />
-                </div>
-                <div style={{ fontFamily: "var(--font-barlow), sans-serif", fontSize: "30px", fontWeight: 700, letterSpacing: "0.18em", color: "#dce8f5", lineHeight: 1 }}>
-                  TORQUE
-                </div>
-                <div style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.12em", color: "#4a5c72", marginTop: "8px", textTransform: "uppercase" }}>
-                  Your car. Decoded.
-                </div>
+              <div style={{ textAlign: "center", padding: "36px 0 28px" }}>
+                <h1 style={{ fontFamily: "var(--font-ibm), sans-serif", fontSize: "26px", fontWeight: 700, color: "#dce8f5", margin: "0 0 8px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+                  What&apos;s wrong<br />with your car?
+                </h1>
+                <p style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", letterSpacing: "0.15em", color: "#2d3f55", margin: 0, textTransform: "uppercase" }}>
+                  AI Mechanic · Instant Answers
+                </p>
               </div>
 
-              {/* Form card */}
+              {/* Form — no card chrome, inputs are the visual layer */}
               <form
                 id="diagnose-form"
                 onSubmit={handleDiagnose}
-                style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}
+                style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: "20px" }}
               >
-                {/* Year */}
-                <div ref={yearRef}>
-                  <label style={labelStyle}>Year</label>
-                  <select
-                    value={year}
-                    onChange={(e) => { setYear(e.target.value); if (showErrors) setShowErrors(false); }}
-                    style={{ ...fieldStyle, color: year ? "#dce8f5" : "#2a3a52", borderColor: showErrors && !year ? "#ef4444" : "#172134" }}
-                  >
-                    <option value="">Select year</option>
-                    {years.map((y) => <option key={y} value={y}>{y}</option>)}
-                  </select>
-                  {showErrors && !year && <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#ef4444" }}>Please enter your car&apos;s year.</p>}
-                </div>
-
-                {/* Make */}
-                <div ref={makeRef}>
-                  <label style={labelStyle}>Make</label>
-                  <input
-                    type="text"
-                    value={make}
-                    onChange={(e) => { setMake(e.target.value); if (showErrors) setShowErrors(false); }}
-                    placeholder="Toyota"
-                    autoComplete="off"
-                    style={{ ...fieldStyle, borderColor: showErrors && !make ? "#ef4444" : "#172134" }}
-                  />
-                  {showErrors && !make && <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#ef4444" }}>Please enter your car&apos;s make.</p>}
-                </div>
-
-                {/* Model */}
-                <div ref={modelRef}>
-                  <label style={labelStyle}>Model</label>
-                  <input
-                    type="text"
-                    value={model}
-                    onChange={(e) => { setModel(e.target.value); if (showErrors) setShowErrors(false); }}
-                    placeholder="Camry"
-                    autoComplete="off"
-                    style={{ ...fieldStyle, borderColor: showErrors && !model ? "#ef4444" : "#172134" }}
-                  />
-                  {showErrors && !model && <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#ef4444" }}>Please enter your car&apos;s model.</p>}
+                {/* Vehicle row — Year / Make / Model in one line */}
+                <div>
+                  <label style={labelStyle}>Your Vehicle</label>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <div ref={yearRef} style={{ flex: "0 0 88px" }}>
+                      <select
+                        value={year}
+                        onChange={(e) => { setYear(e.target.value); if (showErrors) setShowErrors(false); }}
+                        style={{ ...fieldStyle, padding: "0 8px", color: year ? "#dce8f5" : "#2d3f55", borderColor: showErrors && !year ? "#ef4444" : "#172134" }}
+                      >
+                        <option value="">Year</option>
+                        {years.map((y) => <option key={y} value={y}>{y}</option>)}
+                      </select>
+                    </div>
+                    <div ref={makeRef} style={{ flex: 1 }}>
+                      <input
+                        type="text"
+                        value={make}
+                        onChange={(e) => { setMake(e.target.value); if (showErrors) setShowErrors(false); }}
+                        placeholder="Make"
+                        autoComplete="off"
+                        style={{ ...fieldStyle, borderColor: showErrors && !make ? "#ef4444" : "#172134" }}
+                      />
+                    </div>
+                    <div ref={modelRef} style={{ flex: 1 }}>
+                      <input
+                        type="text"
+                        value={model}
+                        onChange={(e) => { setModel(e.target.value); if (showErrors) setShowErrors(false); }}
+                        placeholder="Model"
+                        autoComplete="off"
+                        style={{ ...fieldStyle, borderColor: showErrors && !model ? "#ef4444" : "#172134" }}
+                      />
+                    </div>
+                  </div>
+                  {showErrors && (!year || !make || !model) && (
+                    <p style={{ margin: "6px 0 0", fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", color: "#ef4444", letterSpacing: "0.02em" }}>
+                      Enter your vehicle year, make, and model
+                    </p>
+                  )}
                 </div>
 
                 {/* VIN lookup */}
                 <VinInput onDecode={handleVinDecode} />
 
-                {/* Section break */}
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "2px 0" }}>
-                  <div style={{ flex: 1, height: "1px", backgroundColor: "#172134" }} />
-                  <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", color: "#2a3a52" }}>WHAT&apos;S WRONG</span>
-                  <div style={{ flex: 1, height: "1px", backgroundColor: "#172134" }} />
-                </div>
-
-                {/* Issue */}
+                {/* Issue — the star of the form */}
                 <div>
-                  <label style={labelStyle}>OBD Code or Symptom</label>
+                  <label style={labelStyle}>What&apos;s the issue?</label>
                   <textarea
                     value={issue}
                     onChange={(e) => setIssue(e.target.value)}
-                    placeholder="e.g. P0301 misfire on cylinder 1, rough idle at startup — or describe what you're hearing"
-                    rows={3}
-                    style={{ display: "block", width: "100%", boxSizing: "border-box", minHeight: "100px", padding: "12px 14px", fontSize: "16px", backgroundColor: "#060810", border: "1px solid #1e2329", borderRadius: "10px", color: "#dce8f5", resize: "none", lineHeight: 1.5 }}
+                    placeholder="P0301 misfire on cyl 1, rough idle at startup, knocking under load — describe what you see or hear"
+                    rows={4}
+                    style={{ display: "block", width: "100%", boxSizing: "border-box", minHeight: "130px", padding: "14px 16px", fontSize: "16px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "12px", color: "#dce8f5", resize: "none", lineHeight: 1.6, fontFamily: "var(--font-ibm), sans-serif" }}
                   />
                 </div>
 
-                {/* Dashboard warning lights photo */}
-                <div>
-                  <label style={labelStyle}>Dashboard Warning Lights <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#2a3a52" }}>— photo (optional)</span></label>
-                  {dashboardImage ? (
-                    <div style={{ position: "relative", display: "inline-block" }}>
-                      <img src={dashboardImage} alt="Dashboard" style={{ height: "80px", borderRadius: "8px", border: "1px solid #1e2329", objectFit: "cover" }} />
-                      <button
-                        type="button"
-                        onClick={() => setDashboardImage(null)}
-                        style={{ position: "absolute", top: "-6px", right: "-6px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "#1c2a3e", border: "1px solid #1e2329", color: "#7d8fa8", fontSize: "11px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 14px", boxSizing: "border-box", backgroundColor: "#060810", border: "1px dashed #1c2a3e", borderRadius: "10px", cursor: "pointer", fontSize: "13px", color: "#4a5c72" }}>
-                      <Camera size={15} color="#4a5c72" />
-                      <span>Add photo</span>
-                      <input type="file" accept="image/*" capture="environment" onChange={handleDashboardPhoto} style={{ display: "none" }} />
-                    </label>
-                  )}
-                </div>
+                {/* Secondary details — grouped in a subtle card */}
+                <div style={{ backgroundColor: "#0b1019", border: "1px solid #1c2a3e", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
-                {/* Modified / Tuned toggle */}
-                <div style={{ borderTop: "1px solid #1e2329", paddingTop: "14px" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: modMode ? "12px" : 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ width: "32px", height: "32px", borderRadius: "8px", backgroundColor: "rgba(74,158,255,0.1)", border: "1px solid rgba(74,158,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <Wrench size={15} color="#4a9eff" />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: "14px", fontWeight: 600, color: "#dce8f5", lineHeight: 1.2 }}>Modified / Tuned</div>
-                        <div style={{ fontSize: "12px", color: "#4a5c72", lineHeight: 1.2 }}>Factor in mods and tune</div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setModMode(!modMode)}
-                      className="tap-target"
-                      style={{ width: "44px", height: "26px", borderRadius: "13px", backgroundColor: modMode ? "#4a9eff" : "#1c2a3e", border: "none", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background-color 200ms" }}
-                      aria-label="Toggle modified car mode"
-                    >
-                      <div style={{ position: "absolute", top: "3px", left: modMode ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "white", transition: "left 200ms ease", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
-                    </button>
-                  </div>
-                  {modMode && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                      <div>
-                        <label style={labelStyle}>List your mods</label>
-                        <textarea
-                          value={mods}
-                          onChange={(e) => setMods(e.target.value)}
-                          placeholder="e.g. catless downpipe, Cobb Accessport tune, cold air intake"
-                          rows={2}
-                          style={{ display: "block", width: "100%", boxSizing: "border-box", padding: "10px 14px", fontSize: "16px", backgroundColor: "#060810", border: "1px solid #1e2329", borderRadius: "10px", color: "#dce8f5", resize: "none", lineHeight: 1.5 }}
-                        />
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span style={{ fontSize: "14px", color: "#dce8f5" }}>Running a tune?</span>
+                  {/* Dashboard photo */}
+                  <div>
+                    <label style={labelStyle}>Warning Lights Photo <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#2d3f55" }}>optional</span></label>
+                    {dashboardImage ? (
+                      <div style={{ position: "relative", display: "inline-block" }}>
+                        <img src={dashboardImage} alt="Dashboard" style={{ height: "80px", borderRadius: "8px", border: "1px solid #172134", objectFit: "cover" }} />
                         <button
                           type="button"
-                          onClick={() => setHasTune(!hasTune)}
-                          className="tap-target"
-                          style={{ width: "44px", height: "26px", borderRadius: "13px", backgroundColor: hasTune ? "#4a9eff" : "#1c2a3e", border: "none", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background-color 200ms" }}
+                          onClick={() => setDashboardImage(null)}
+                          style={{ position: "absolute", top: "-6px", right: "-6px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "#162232", border: "1px solid #172134", color: "#7d8fa8", fontSize: "11px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
                         >
-                          <div style={{ position: "absolute", top: "3px", left: hasTune ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "white", transition: "left 200ms ease", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
+                          ✕
                         </button>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    ) : (
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 14px", boxSizing: "border-box", backgroundColor: "#101822", border: "1px dashed #172134", borderRadius: "10px", cursor: "pointer", fontSize: "13px", color: "#4a5c72" }}>
+                        <Camera size={14} color="#4a5c72" />
+                        <span>Add photo</span>
+                        <input type="file" accept="image/*" capture="environment" onChange={handleDashboardPhoto} style={{ display: "none" }} />
+                      </label>
+                    )}
+                  </div>
 
-                {/* ZIP code */}
-                <div style={{ borderTop: "1px solid #1e2329", paddingTop: "14px" }}>
-                  <label style={labelStyle}>
-                    <MapPin size={10} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} />
-                    Your Area <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#2a3a52" }}>— for local pricing</span>
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={zip}
-                    onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
-                    placeholder="ZIP code (optional)"
-                    style={{ ...fieldStyle, width: "160px" }}
-                  />
+                  {/* Mods toggle */}
+                  <div style={{ borderTop: "1px solid #1c2a3e", paddingTop: "14px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: modMode ? "14px" : 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div style={{ width: "30px", height: "30px", borderRadius: "8px", backgroundColor: "rgba(74,158,255,0.08)", border: "1px solid rgba(74,158,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Wrench size={13} color="#4a9eff" />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: "13px", fontWeight: 600, color: "#dce8f5", lineHeight: 1.3 }}>Modified / Tuned</div>
+                          <div style={{ fontSize: "11px", color: "#4a5c72", lineHeight: 1.3 }}>Factor in mods and tune</div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setModMode(!modMode)}
+                        className="tap-target"
+                        style={{ width: "42px", height: "24px", borderRadius: "12px", backgroundColor: modMode ? "#4a9eff" : "#162232", border: "none", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background-color 200ms" }}
+                        aria-label="Toggle modified car mode"
+                      >
+                        <div style={{ position: "absolute", top: "2px", left: modMode ? "20px" : "2px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "white", transition: "left 200ms ease", boxShadow: "0 1px 3px rgba(0,0,0,0.4)" }} />
+                      </button>
+                    </div>
+                    {modMode && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                        <div>
+                          <label style={labelStyle}>List your mods</label>
+                          <textarea
+                            value={mods}
+                            onChange={(e) => setMods(e.target.value)}
+                            placeholder="catless downpipe, Cobb Accessport tune, cold air intake"
+                            rows={2}
+                            style={{ display: "block", width: "100%", boxSizing: "border-box", padding: "10px 14px", fontSize: "15px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "10px", color: "#dce8f5", resize: "none", lineHeight: 1.5 }}
+                          />
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <span style={{ fontSize: "13px", color: "#7d8fa8" }}>Running a tune?</span>
+                          <button
+                            type="button"
+                            onClick={() => setHasTune(!hasTune)}
+                            className="tap-target"
+                            style={{ width: "42px", height: "24px", borderRadius: "12px", backgroundColor: hasTune ? "#4a9eff" : "#162232", border: "none", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background-color 200ms" }}
+                          >
+                            <div style={{ position: "absolute", top: "2px", left: hasTune ? "20px" : "2px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "white", transition: "left 200ms ease", boxShadow: "0 1px 3px rgba(0,0,0,0.4)" }} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ZIP */}
+                  <div style={{ borderTop: "1px solid #1c2a3e", paddingTop: "14px" }}>
+                    <label style={labelStyle}>
+                      <MapPin size={9} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} />
+                      Area ZIP <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#2d3f55" }}>— for local pricing</span>
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={zip}
+                      onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                      placeholder="ZIP code"
+                      style={{ ...fieldStyle, width: "140px" }}
+                    />
+                  </div>
                 </div>
 
                 {error && (
-                  <div style={{ padding: "10px 14px", backgroundColor: "#1a0a0a", border: "1px solid #3a1515", borderRadius: "8px", color: "#ef4444", fontSize: "13px" }}>
+                  <div style={{ padding: "12px 14px", backgroundColor: "#130406", border: "1px solid #2d0c10", borderRadius: "10px", color: "#f87171", fontSize: "13px", fontFamily: "var(--font-ibm), sans-serif" }}>
                     {error}
                   </div>
                 )}
               </form>
 
-              <p style={{ marginTop: "14px", fontSize: "12px", color: "#2a3a52", letterSpacing: "0.02em" }}>
-                🔒 Your data is never stored
-              </p>
+              <div style={{ marginTop: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
+                <Lock size={10} color="#2d3f55" />
+                <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#2d3f55", letterSpacing: "0.08em" }}>
+                  Your data is never stored
+                </span>
+              </div>
             </div>
           )}
         </div>

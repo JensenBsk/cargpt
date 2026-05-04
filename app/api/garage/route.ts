@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { year, make, model, mods, hasTune, nickname } = await request.json();
+  const { year, make, model, vin, mods, hasTune, nickname } = await request.json();
 
   if (!year || !make || !model) {
     return Response.json({ error: "Missing required fields" }, { status: 400 });
@@ -47,6 +47,7 @@ export async function POST(request: Request) {
       year: parseInt(year),
       make,
       model,
+      vin: vin || null,
       mods: mods || null,
       has_tune: hasTune || false,
       nickname: nickname || null,
