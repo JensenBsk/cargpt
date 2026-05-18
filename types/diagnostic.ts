@@ -30,6 +30,18 @@ export interface CostEstimate {
   note?: string;
 }
 
+export interface PartNeeded {
+  partName: string;
+  oemPartNumber: string | null;
+  oemBrand: string | null;
+  alternatePartNumber: string | null;
+  alternateBrand: string | null;
+  qty: number;
+  estimatedPartCost: string;
+  engineNote?: string | null;
+  notes?: string | null;
+}
+
 export interface Diagnostic {
   whatsWrong: string;
   modNote?: string;
@@ -42,6 +54,7 @@ export interface Diagnostic {
   costEstimates: CostEstimate[];
   dontDoThis: string[];
   preventionTips?: string[];
+  partsNeeded?: PartNeeded[];
   mechanicEscalation: {
     needed: boolean;
     reason: string;

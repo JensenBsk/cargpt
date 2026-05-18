@@ -104,6 +104,19 @@ Return ONLY this JSON (no markdown, no text outside the JSON):
   "preventionTips": [
     "1 tip that would have prevented or reduced this issue. Plain English. Max 2 sentences."
   ],
+  "partsNeeded": [
+    {
+      "partName": "Specific part name (e.g. 'Ignition coil — cylinder 1', 'Spark plug set')",
+      "oemPartNumber": "OEM part number if you are 100% certain it is correct for this exact year/make/model — otherwise null",
+      "oemBrand": "OEM brand (e.g. 'Denso', 'Bosch', 'Delphi') — null if unknown",
+      "alternatePartNumber": "Trusted aftermarket part number if known (e.g. 'UF349', 'DR49') — null if unknown",
+      "alternateBrand": "Aftermarket brand (e.g. 'NGK', 'Standard', 'ACDelco') — null if unknown",
+      "qty": 1,
+      "estimatedPartCost": "$X–$Y (parts only)",
+      "engineNote": "Engine-specific fitment note only if part number varies by engine variant — null otherwise",
+      "notes": "Brief buying tip if genuinely useful (e.g. 'Replace all 4 coils at once to save labor') — null otherwise"
+    }
+  ],
   "mechanicEscalation": {
     "needed": true,
     "reason": "Why professional help is needed and what kind of shop"
@@ -119,6 +132,7 @@ HARD RULES — violating any makes the response wrong:
 - Each step why/ifResultA/ifResultB: 1 sentence max, starts with conclusion
 - Each dontDoThis: 8 words max
 - preventionTips: 1–2 items
+- partsNeeded: 1–4 parts max, only for top 1–2 most likely causes; ONLY include oemPartNumber/alternatePartNumber when you are certain they are correct for this exact vehicle — otherwise null
 - Never say "vehicle" — use the car's name
 - Never say "could potentially"
 - Never start a sentence with "It's important to note" or "Please be aware"

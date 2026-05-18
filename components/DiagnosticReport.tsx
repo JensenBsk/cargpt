@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Wrench, DollarSign, AlertTriangle, Send, MessageCircle, Share2, Link,
+  Wrench, DollarSign, AlertTriangle, Send, MessageCircle,
   Image as ImageIcon, MapPin, Star, AlertOctagon, Zap, ChevronDown,
   Clock, CheckCircle2, Loader2, X,
 } from "lucide-react";
 import type { Diagnostic, ChatMessage, ClarifyQuestion } from "@/types/diagnostic";
-import type { RankedCause, DiagnosticStep, CostEstimate } from "@/types/diagnostic";
+import type { RankedCause, DiagnosticStep, CostEstimate, PartNeeded } from "@/types/diagnostic";
+import { buildPartLinks } from "@/lib/partsMapping";
+import { buildTextMessage, buildEmailMessage, buildWalkInScript, type MechanicMessageContext } from "@/lib/mechanicMessage";
 import FeedbackCard from "@/components/FeedbackCard";
 import TorqueLogo from "@/components/TorqueLogo";
 
@@ -43,50 +45,6 @@ const ACCENT_BORDERS: Record<string, string> = {
   "Possible": "#1c2a3e",
   "Unlikely but serious": "#f59e0b",
 };
-
-// ── Mechanic message builders ──
-
-function buildMechanicText(issue: string, year: string, make: string, model: string, topCause: string): string {
-  const isOBDCode = /^[PCBU][0-9]{4}/i.test(issue.trim());
-  if (isOBDCode) {
-    return `Hey, looking to bring my ${year} ${make} ${model} in — it's showing a ${issue.trim().toUpperCase()} fault code. I looked into it and it sounds like it could be ${topCause}. Could you take a look and let me know what you'd charge if that's the issue? Thanks`;
-  }
-  return `Hey, looking to bring my ${year} ${make} ${model} in — it's been ${issue}. I looked into it and it might be ${topCause}. Could you take a look and give me a rough quote? Thanks`;
-}
-
-function buildMechanicEmail(issue: string, year: string, make: string, model: string, topCause: string, stepOne: string, costRange: string): string {
-  const isOBDCode = /^[PCBU][0-9]{4}/i.test(issue.trim());
-  const issueDesc = isOBDCode
-    ? `It's currently showing a ${issue.trim().toUpperCase()} fault code.`
-    : `I've been noticing ${issue}.`;
-  return `Hi,
-
-I'm hoping to bring my ${year} ${make} ${model} in for a look.
-
-${issueDesc}
-
-I looked into it and ${topCause} seems to be the most common cause — I'd love your take once you've had a chance to look at it.
-
-I read it's worth checking ${stepOne.toLowerCase()} first to confirm before replacing anything — though I'm happy to follow your lead.
-
-Could you give me a rough sense of pricing if it is ${topCause}? I've seen estimates around ${costRange} but I know it varies.
-
-Thanks — looking forward to hearing from you.`;
-}
-
-function buildMechanicWalkin(issue: string, year: string, make: string, model: string, topCause: string, stepOne: string, costRange: string): string {
-  const isOBDCode = /^[PCBU][0-9]{4}/i.test(issue.trim());
-  const issueLine = isOBDCode
-    ? `"It's showing a ${issue.trim().toUpperCase()} code"`
-    : `"I've been noticing ${issue}"`;
-  return `When you get there, mention:
-• "I have a ${year} ${make} ${model}"
-• ${issueLine}
-• "I think it might be ${topCause} — does that sound right to you?"
-• Ask: "What would you charge if that's what it is?"
-• Ask: "Is it worth doing ${stepOne.toLowerCase()} first to confirm before replacing anything?"
-• Fair price to keep in mind: ${costRange}`;
-}
 
 // ── Expandable CSS grid animation ──
 function Expandable({ open, children }: { open: boolean; children: React.ReactNode }) {
@@ -285,6 +243,7 @@ export default function DiagnosticReport({
   const [showImageModal, setShowImageModal] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [shops, setShops] = useState<{ name: string; rating?: number; reviewCount?: number; address?: string; mapsUrl: string }[]>([]);
   const [shopsLoaded, setShopsLoaded] = useState(false);
@@ -296,6 +255,16 @@ export default function DiagnosticReport({
   const topEst = currentDiagnosis.costEstimates[0];
   const firstStep = currentDiagnosis.diagnosticSteps[0];
   const verdict = currentDiagnosis.driveSafety.verdict;
+
+  const mechanicCtx: MechanicMessageContext = {
+    issue,
+    year,
+    make,
+    model,
+    topCause: topCause?.cause ?? "the issue",
+    firstStep: currentDiagnosis.diagnosticSteps[0]?.action ?? "a diagnostic check",
+    costRange: topEst?.total ?? "varies",
+  };
 
   const quickReplies = [
     "Is this safe to drive?",
@@ -321,6 +290,13 @@ export default function DiagnosticReport({
   useEffect(() => {
     if (chatExpanded) chatInputRef.current?.focus();
   }, [chatExpanded]);
+
+  useEffect(() => {
+    if (showShareSheet && !shareToken && !shareLoading) {
+      generateShare();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showShareSheet]);
 
   // ── Clarifying questions ──
   async function handleOpenQuestions() {
@@ -412,8 +388,9 @@ export default function DiagnosticReport({
     const token = await generateShare();
     if (!token) { onToast("Failed to create share link"); return; }
     await navigator.clipboard.writeText(`${APP_URL}/r/${token}`);
+    setShareCopied(true);
     onToast("Link copied!");
-    setShowShareSheet(false);
+    setTimeout(() => setShareCopied(false), 2500);
   }
 
   async function shareViaSystem() {
@@ -457,12 +434,9 @@ export default function DiagnosticReport({
 
   // ── Mechanic ──
   function currentMechanicMessage(): string {
-    const causeLabel = topCause?.cause ?? "the issue";
-    const stepLabel = currentDiagnosis.diagnosticSteps[0]?.action ?? "a diagnostic check";
-    const costLabel = topEst?.total ?? "varies";
-    if (mechanicFormat === "email") return buildMechanicEmail(issue, year, make, model, causeLabel, stepLabel, costLabel);
-    if (mechanicFormat === "walkin") return buildMechanicWalkin(issue, year, make, model, causeLabel, stepLabel, costLabel);
-    return buildMechanicText(issue, year, make, model, causeLabel);
+    if (mechanicFormat === "email") return buildEmailMessage(mechanicCtx).body;
+    if (mechanicFormat === "walkin") return buildWalkInScript(mechanicCtx);
+    return buildTextMessage(mechanicCtx);
   }
 
   async function copyMechanicMessage() {
@@ -719,33 +693,62 @@ export default function DiagnosticReport({
               </div>
             </Card>
 
-            {/* Parts finder — Part 8 */}
-            {currentDiagnosis.rankedCauses.length > 0 && (
+            {/* Parts finder — OEM part numbers */}
+            {currentDiagnosis.partsNeeded && currentDiagnosis.partsNeeded.length > 0 && (
               <Card>
-                <SectionHeader label="Find Parts" />
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {currentDiagnosis.rankedCauses.slice(0, 2).map((cause) => {
-                    const query = encodeURIComponent(`${cause.cause} ${year} ${make} ${model}`);
-                    const sources = [
-                      { name: "RockAuto", url: `https://www.rockauto.com/en/catalog/${encodeURIComponent(make)},${encodeURIComponent(model)},${year}` },
-                      { name: "AutoZone", url: `https://www.autozone.com/searchresult?searchText=${query}` },
-                      { name: "Amazon", url: `https://www.amazon.com/s?k=${query}` },
-                      { name: "eBay", url: `https://www.ebay.com/sch/i.html?_nkw=${query}` },
-                    ];
+                <SectionHeader label="Parts You May Need" />
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {currentDiagnosis.partsNeeded.map((part: PartNeeded, i: number) => {
+                    const links = buildPartLinks(part, year, make, model);
                     return (
-                      <div key={cause.rank}>
-                        <div style={{ fontSize: "12px", fontWeight: 600, color: "#7d8fa8", marginBottom: "6px" }}>{cause.cause}</div>
+                      <div key={i} style={{ backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", padding: "12px", boxSizing: "border-box" }}>
+                        {/* Part name + qty + cost */}
+                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px", marginBottom: "10px" }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: "14px", fontWeight: 600, color: "#dce8f5", lineHeight: 1.3 }}>{part.partName}</div>
+                            {part.qty > 1 && <div style={{ fontSize: "11px", color: "#4a5c72", marginTop: "2px" }}>Qty: {part.qty}</div>}
+                            {part.engineNote && <div style={{ fontSize: "11px", color: "#4a5c72", marginTop: "2px", fontStyle: "italic" }}>{part.engineNote}</div>}
+                          </div>
+                          <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "14px", fontWeight: 700, color: "#4a9eff", flexShrink: 0 }}>{part.estimatedPartCost}</div>
+                        </div>
+
+                        {/* Part numbers */}
+                        <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+                          <div style={{ flex: 1, backgroundColor: "#060810", border: "1px solid #172134", borderRadius: "6px", padding: "7px 10px" }}>
+                            <div style={{ fontSize: "9px", fontWeight: 700, color: "#2d3f55", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px" }}>OEM {part.oemBrand ? `· ${part.oemBrand}` : ""}</div>
+                            {part.oemPartNumber ? (
+                              <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "13px", color: "#4a9eff", fontWeight: 600 }}>{part.oemPartNumber}</div>
+                            ) : (
+                              <div style={{ fontSize: "12px", color: "#4a5c72", fontStyle: "italic" }}>Verify fitment</div>
+                            )}
+                          </div>
+                          <div style={{ flex: 1, backgroundColor: "#060810", border: "1px solid #172134", borderRadius: "6px", padding: "7px 10px" }}>
+                            <div style={{ fontSize: "9px", fontWeight: 700, color: "#2d3f55", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px" }}>Aftermarket {part.alternateBrand ? `· ${part.alternateBrand}` : ""}</div>
+                            {part.alternatePartNumber ? (
+                              <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "13px", color: "#7d8fa8", fontWeight: 600 }}>{part.alternatePartNumber}</div>
+                            ) : (
+                              <div style={{ fontSize: "12px", color: "#4a5c72", fontStyle: "italic" }}>Verify fitment</div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Buying note */}
+                        {part.notes && (
+                          <div style={{ fontSize: "12px", color: "#4a5c72", fontStyle: "italic", marginBottom: "8px", lineHeight: 1.4 }}>{part.notes}</div>
+                        )}
+
+                        {/* Retailer links */}
                         <div style={{ display: "flex", flexWrap: "wrap" as const, gap: "6px" }}>
-                          {sources.map(src => (
-                            <a key={src.name} href={src.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", height: "30px", padding: "0 12px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "20px", fontSize: "12px", color: "#7d8fa8", textDecoration: "none", whiteSpace: "nowrap" as const }}>
-                              {src.name}
+                          {links.map(link => (
+                            <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", height: "28px", padding: "0 10px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "20px", fontSize: "11px", color: "#7d8fa8", textDecoration: "none", whiteSpace: "nowrap" as const }}>
+                              {link.name}
                             </a>
                           ))}
                         </div>
                       </div>
                     );
                   })}
-                  <p style={{ margin: 0, fontSize: "11px", color: "#2d3f55", lineHeight: 1.4 }}>Part compatibility is not guaranteed — always verify fitment before purchasing.</p>
+                  <p style={{ margin: 0, fontSize: "11px", color: "#2d3f55", lineHeight: 1.4 }}>Part numbers are AI-generated — always verify fitment for your exact vehicle before purchasing.</p>
                 </div>
               </Card>
             )}
@@ -907,39 +910,66 @@ export default function DiagnosticReport({
       </div>
 
       {/* ── Share Sheet ── */}
-      {showShareSheet && (
-        <div onClick={() => setShowShareSheet(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "560px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "20px 20px 0 0", padding: "20px 16px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", animation: "view-fade-in 200ms ease", boxSizing: "border-box" }}>
-            <div style={{ width: "32px", height: "4px", backgroundColor: "#162232", borderRadius: "2px", margin: "0 auto 20px" }} />
-            <div style={{ fontSize: "16px", fontWeight: 700, color: "#dce8f5", marginBottom: "16px" }}>Share Diagnosis</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <button onClick={copyShareLink} disabled={shareLoading} className="tap-target" style={{ height: "52px", display: "flex", alignItems: "center", gap: "14px", backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "12px", padding: "0 16px", cursor: "pointer", color: "#dce8f5", width: "100%", boxSizing: "border-box", opacity: shareLoading ? 0.5 : 1 }}>
-                <Link size={18} color="#4a9eff" />
-                <div style={{ textAlign: "left" }}>
-                  <div style={{ fontSize: "14px", fontWeight: 600 }}>Copy link</div>
-                  <div style={{ fontSize: "11px", color: "#4a5c72" }}>{shareLoading ? "Creating share…" : "torqueapp.co/r/…"}</div>
+      {showShareSheet && (() => {
+        const shareUrl = shareToken ? `${APP_URL}/r/${shareToken}` : null;
+        const shareText = `Check out this diagnosis for my ${year} ${make} ${model}`;
+        const emailSubject = encodeURIComponent(`${year} ${make} ${model} diagnosis — Torque`);
+        const emailBody = encodeURIComponent(`${shareText}\n\n${shareUrl ?? ""}`);
+        const tweetText = encodeURIComponent(`Diagnosed my ${year} ${make} ${model} with Torque`);
+        const chipStyle: React.CSSProperties = {
+          display: "flex", alignItems: "center", justifyContent: "center", height: "44px",
+          backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "10px",
+          color: "#7d8fa8", fontWeight: 600, fontSize: "13px", textDecoration: "none",
+          cursor: shareUrl ? "pointer" : "not-allowed", opacity: shareUrl ? 1 : 0.4,
+          pointerEvents: shareUrl ? "auto" : "none",
+        };
+        return (
+          <div onClick={() => setShowShareSheet(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "560px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "20px 20px 0 0", padding: "20px 16px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", animation: "view-fade-in 200ms ease", boxSizing: "border-box" }}>
+              <div style={{ width: "32px", height: "4px", backgroundColor: "#162232", borderRadius: "2px", margin: "0 auto 20px" }} />
+              <div style={{ fontSize: "16px", fontWeight: 700, color: "#dce8f5", marginBottom: "16px" }}>Share Diagnosis</div>
+
+              {/* URL row */}
+              <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
+                <div style={{ flex: 1, height: "44px", padding: "0 12px", backgroundColor: "#060810", border: "1px solid #172134", borderRadius: "8px", display: "flex", alignItems: "center", overflow: "hidden", minWidth: 0 }}>
+                  {shareLoading ? (
+                    <span style={{ fontSize: "12px", color: "#4a5c72" }}>Generating link…</span>
+                  ) : shareUrl ? (
+                    <span style={{ fontSize: "12px", color: "#7d8fa8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shareUrl.replace(/^https?:\/\//, "")}</span>
+                  ) : (
+                    <span style={{ fontSize: "12px", color: "#4a5c72" }}>Could not generate link</span>
+                  )}
                 </div>
-              </button>
-              {"share" in navigator && (
-                <button onClick={shareViaSystem} disabled={shareLoading} className="tap-target" style={{ height: "52px", display: "flex", alignItems: "center", gap: "14px", backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "12px", padding: "0 16px", cursor: "pointer", color: "#dce8f5", width: "100%", boxSizing: "border-box", opacity: shareLoading ? 0.5 : 1 }}>
-                  <Share2 size={18} color="#4a9eff" />
-                  <div style={{ textAlign: "left" }}>
-                    <div style={{ fontSize: "14px", fontWeight: 600 }}>Share via…</div>
-                    <div style={{ fontSize: "11px", color: "#4a5c72" }}>iMessage, WhatsApp, Reddit…</div>
-                  </div>
+                <button
+                  onClick={copyShareLink}
+                  disabled={!shareUrl}
+                  className="tap-target"
+                  style={{ height: "44px", padding: "0 16px", backgroundColor: shareCopied ? "#14532d" : "#4a9eff", border: shareCopied ? "1px solid #166534" : "none", borderRadius: "8px", color: shareCopied ? "#4ade80" : "white", fontWeight: 600, fontSize: "13px", cursor: shareUrl ? "pointer" : "not-allowed", opacity: shareUrl ? 1 : 0.4, whiteSpace: "nowrap", flexShrink: 0, transition: "background-color 200ms" }}
+                >
+                  {shareCopied ? "✓ Copied" : "Copy"}
                 </button>
-              )}
+              </div>
+
+              {/* Social chips */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "14px" }}>
+                <a href={shareUrl ? `sms:?body=${encodeURIComponent(shareText + " " + shareUrl)}` : "#"} style={chipStyle}>Messages</a>
+                <a href={shareUrl ? `mailto:?subject=${emailSubject}&body=${emailBody}` : "#"} style={chipStyle}>Email</a>
+                <a href={shareUrl ? `https://x.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${tweetText}` : "#"} target="_blank" rel="noopener noreferrer" style={chipStyle}>X / Twitter</a>
+                <a href={shareUrl ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}` : "#"} target="_blank" rel="noopener noreferrer" style={chipStyle}>Facebook</a>
+              </div>
+
+              {/* Download image */}
               <button onClick={() => { setShowShareSheet(false); setShowImageModal(true); }} className="tap-target" style={{ height: "52px", display: "flex", alignItems: "center", gap: "14px", backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "12px", padding: "0 16px", cursor: "pointer", color: "#dce8f5", width: "100%", boxSizing: "border-box" }}>
                 <ImageIcon size={18} color="#4a9eff" />
                 <div style={{ textAlign: "left" }}>
-                  <div style={{ fontSize: "14px", fontWeight: 600 }}>Download image</div>
-                  <div style={{ fontSize: "11px", color: "#4a5c72" }}>Save as shareable card</div>
+                  <div style={{ fontSize: "14px", fontWeight: 600 }}>Download image card</div>
+                  <div style={{ fontSize: "11px", color: "#4a5c72" }}>Save a shareable summary image</div>
                 </div>
               </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Send to Mechanic Modal ── */}
       {showMechanicModal && (
@@ -967,7 +997,7 @@ export default function DiagnosticReport({
               {mechanicCopied ? "✓ Copied!" : "Copy Message"}
             </button>
             {mechanicFormat === "email" && (
-              <a href={`mailto:?subject=${encodeURIComponent(`Service inquiry — ${year} ${make} ${model}`)}&body=${encodeURIComponent(currentMechanicMessage())}`} style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "44px", backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "8px", color: "#7d8fa8", fontWeight: 500, fontSize: "14px", textDecoration: "none" }}>
+              <a href={`mailto:?subject=${encodeURIComponent(buildEmailMessage(mechanicCtx).subject)}&body=${encodeURIComponent(currentMechanicMessage())}`} style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "44px", backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "8px", color: "#7d8fa8", fontWeight: 500, fontSize: "14px", textDecoration: "none" }}>
                 Open in Mail ↗
               </a>
             )}
