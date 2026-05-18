@@ -13,7 +13,13 @@ export interface DiagnosticStep {
   ifResultA: string;
   ifResultB: string;
   cost: string;
+  time?: string;
   tools: string;
+}
+
+export interface ClarifyQuestion {
+  question: string;
+  options: string[];
 }
 
 export interface CostEstimate {
