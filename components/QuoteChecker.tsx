@@ -51,6 +51,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
   const [error, setError] = useState("");
   const [result, setResult] = useState<QuoteAnalysis | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showRights, setShowRights] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const currentYear = new Date().getFullYear();
@@ -154,6 +155,9 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
                 {overall.label}
               </span>
             </div>
+            <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid #1e2329" }}>
+              <span style={{ fontSize: "11px", color: "#4a5c72" }}>✓ Independent analysis — Torque has no relationship with any mechanic or repair shop</span>
+            </div>
           </div>
 
           {/* Red flags */}
@@ -200,6 +204,32 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
             </div>
           </div>
 
+          {/* Customer rights */}
+          <div style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "10px", overflow: "hidden" }}>
+            <button onClick={() => setShowRights(v => !v)} style={{ width: "100%", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "transparent", border: "none", cursor: "pointer" }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#7d8fa8" }}>⚖️ Your rights as a customer</span>
+              <span style={{ fontSize: "12px", color: "#4a5c72" }}>{showRights ? "↑" : "↓"}</span>
+            </button>
+            {showRights && (
+              <div style={{ padding: "0 16px 14px", borderTop: "1px solid #1e2329" }}>
+                <ul style={{ margin: "12px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {[
+                    "You can always ask for an itemized invoice showing parts cost separately from labor.",
+                    "You have the right to get your old parts back after any repair.",
+                    "You can get a second opinion before approving any work — a good shop won't pressure you.",
+                    "If labor exceeds the estimate by more than 10%, the shop should have called you first (required by law in most US states).",
+                    "You never have to approve additional work discovered during a repair without a new estimate.",
+                  ].map((right, i) => (
+                    <li key={i} style={{ display: "flex", gap: "8px", fontSize: "13px", color: "#7d8fa8", lineHeight: 1.5 }}>
+                      <span style={{ color: "#4a9eff", flexShrink: 0, fontWeight: 700 }}>›</span>
+                      {right}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
           {/* Negotiation script */}
           <div style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "10px", padding: "14px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
@@ -238,7 +268,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
               </h1>
             </div>
             <p style={{ color: "#7d8fa8", fontSize: "14px", margin: 0 }}>
-              Find out if your mechanic is charging fair prices.
+              Find out if your mechanic is being fair.
             </p>
           </div>
 

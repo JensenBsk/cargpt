@@ -41,6 +41,7 @@ export interface Diagnostic {
   diagnosticSteps: DiagnosticStep[];
   costEstimates: CostEstimate[];
   dontDoThis: string[];
+  preventionTips?: string[];
   mechanicEscalation: {
     needed: boolean;
     reason: string;

@@ -10,6 +10,7 @@ import BottomNav, { type AppTab } from "@/components/BottomNav";
 import TorqueLogo from "@/components/TorqueLogo";
 import VinInput from "@/components/VinInput";
 import ErrorCard, { type ErrorType } from "@/components/ErrorCard";
+import OnboardingCarousel from "@/components/OnboardingCarousel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { resizeImage } from "@/utils/resizeImage";
@@ -62,8 +63,18 @@ export default function Home() {
   const [quoteResetKey, setQuoteResetKey] = useState(0);
   const [quoteHasResult, setQuoteHasResult] = useState(false);
   const [dashboardImage, setDashboardImage] = useState<string | null>(null);
+  const [engineBayImage, setEngineBayImage] = useState<string | null>(null);
   const [vinData, setVinData] = useState<{ year: string; make: string; model: string; engine?: string; fuelType?: string; drivetrain?: string } | null>(null);
   const [isOnline, setIsOnline] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  // Audio recording
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [audioTranscript, setAudioTranscript] = useState("");
+  const [audioDraft, setAudioDraft] = useState("");
+  const [audioSaved, setAudioSaved] = useState(false);
+  const recognitionRef = useRef<{ stop(): void; abort(): void } | null>(null);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const yearRef = useRef<HTMLDivElement>(null);
   const makeRef = useRef<HTMLDivElement>(null);
@@ -84,6 +95,12 @@ export default function Home() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem("torque_onboarded")) setShowOnboarding(true);
+    } catch { /* ignore */ }
   }, []);
 
   useEffect(() => {
@@ -130,6 +147,8 @@ export default function Home() {
           hasTune: modMode ? hasTune : false,
           zip: zip.length === 5 ? zip : "",
           dashboardImage: dashboardImage ?? undefined,
+          engineBayImage: engineBayImage ?? undefined,
+          audioTranscript: audioTranscript || undefined,
           vinData: vinData ?? undefined,
         }),
       });
@@ -183,6 +202,10 @@ export default function Home() {
     setIssue("");
     setErrorType(null);
     setDashboardImage(null);
+    setEngineBayImage(null);
+    setAudioTranscript("");
+    setAudioDraft("");
+    setAudioSaved(false);
   }
 
   function handleVinDecode(data: { year: string; make: string; model: string; engine?: string; fuelType?: string; drivetrain?: string }) {
@@ -198,6 +221,77 @@ export default function Home() {
     if (!file) return;
     const resized = await resizeImage(file);
     setDashboardImage(resized);
+  }
+
+  async function handleEnginePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const resized = await resizeImage(file);
+    setEngineBayImage(resized);
+  }
+
+  function finishOnboarding() {
+    try { localStorage.setItem("torque_onboarded", "1"); } catch { /* ignore */ }
+    setShowOnboarding(false);
+  }
+
+  function startRecording() {
+    type SpeechRecognitionType = {
+      continuous: boolean; interimResults: boolean; maxAlternatives: number;
+      onresult: ((e: { results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
+      onerror: (() => void) | null; onend: (() => void) | null;
+      start(): void; stop(): void; abort(): void;
+    };
+    type WindowWithSR = Window & { SpeechRecognition?: new () => SpeechRecognitionType; webkitSpeechRecognition?: new () => SpeechRecognitionType };
+    const SR = (window as WindowWithSR).SpeechRecognition || (window as WindowWithSR).webkitSpeechRecognition;
+    if (!SR) { toast("Voice recording requires Chrome or Safari"); return; }
+    const recog = new SR();
+    recog.continuous = true;
+    recog.interimResults = true;
+    recog.maxAlternatives = 1;
+    let finalText = "";
+    recog.onresult = (e) => {
+      let interim = "";
+      for (let i = 0; i < (e.results as ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>).length; i++) {
+        const r = (e.results as ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>)[i];
+        if (r.isFinal) { finalText += r[0].transcript + " "; }
+        else { interim = r[0].transcript; }
+      }
+      setAudioDraft(finalText + interim);
+    };
+    recog.onerror = () => stopRecording();
+    recog.onend = () => stopRecording();
+    recog.start();
+    recognitionRef.current = recog;
+    setIsRecording(true);
+    setAudioDraft("");
+    setAudioSaved(false);
+    setRecordingSeconds(0);
+    recordingTimerRef.current = setInterval(() => {
+      setRecordingSeconds(s => {
+        if (s >= 29) { stopRecording(); return 30; }
+        return s + 1;
+      });
+    }, 1000);
+  }
+
+  function stopRecording() {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    if (recordingTimerRef.current) { clearInterval(recordingTimerRef.current); recordingTimerRef.current = null; }
+    setIsRecording(false);
+  }
+
+  function useRecording() {
+    setAudioTranscript(audioDraft.trim());
+    setAudioSaved(true);
+  }
+
+  function clearRecording() {
+    setAudioTranscript("");
+    setAudioDraft("");
+    setAudioSaved(false);
+    setIsRecording(false);
   }
 
   function handleSelectCar(car: { year: string; make: string; model: string; mods: string; hasTune: boolean }) {
@@ -326,6 +420,7 @@ export default function Home() {
               mods={modMode ? mods : ""}
               hasTune={modMode ? hasTune : false}
               zip={zip.length === 5 ? zip : ""}
+              hasAudio={!!audioTranscript}
               chatHistory={chatHistory}
               setChatHistory={setChatHistory}
               onNewDiagnosis={handleNewDiagnosis}
@@ -417,20 +512,69 @@ export default function Home() {
                       <div style={{ position: "relative", display: "inline-block", maxWidth: "100%" }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={dashboardImage} alt="Dashboard" style={{ height: "80px", borderRadius: "8px", border: "1px solid #172134", objectFit: "cover", display: "block" }} />
-                        <button
-                          type="button"
-                          onClick={() => setDashboardImage(null)}
-                          style={{ position: "absolute", top: "-6px", right: "-6px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "#162232", border: "1px solid #172134", color: "#7d8fa8", fontSize: "11px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
-                        >
-                          ✕
-                        </button>
+                        <button type="button" onClick={() => setDashboardImage(null)} style={{ position: "absolute", top: "-6px", right: "-6px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "#162232", border: "1px solid #172134", color: "#7d8fa8", fontSize: "11px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>✕</button>
                       </div>
                     ) : (
                       <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 14px", boxSizing: "border-box", backgroundColor: "#101822", border: "1px dashed #172134", borderRadius: "10px", cursor: "pointer", fontSize: "13px", color: "#4a5c72", width: "100%" }}>
                         <Camera size={14} color="#4a5c72" />
-                        <span>Add photo</span>
+                        <span>Dashboard / warning lights</span>
                         <input type="file" accept="image/*" capture="environment" onChange={handleDashboardPhoto} style={{ display: "none" }} />
                       </label>
+                    )}
+                  </div>
+
+                  {/* Engine bay photo */}
+                  <div>
+                    <label style={labelStyle}>Engine Bay Photo <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#2d3f55" }}>optional</span></label>
+                    {engineBayImage ? (
+                      <div style={{ position: "relative", display: "inline-block", maxWidth: "100%" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={engineBayImage} alt="Engine bay" style={{ height: "80px", borderRadius: "8px", border: "1px solid #172134", objectFit: "cover", display: "block" }} />
+                        <button type="button" onClick={() => setEngineBayImage(null)} style={{ position: "absolute", top: "-6px", right: "-6px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "#162232", border: "1px solid #172134", color: "#7d8fa8", fontSize: "11px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>✕</button>
+                      </div>
+                    ) : (
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 14px", boxSizing: "border-box", backgroundColor: "#101822", border: "1px dashed #172134", borderRadius: "10px", cursor: "pointer", fontSize: "13px", color: "#4a5c72", width: "100%" }}>
+                        <Camera size={14} color="#4a5c72" />
+                        <span>Engine bay photo</span>
+                        <input type="file" accept="image/*" capture="environment" onChange={handleEnginePhoto} style={{ display: "none" }} />
+                      </label>
+                    )}
+                  </div>
+
+                  {/* Audio recording */}
+                  <div style={{ borderTop: "1px solid #1c2a3e", paddingTop: "14px" }}>
+                    <label style={labelStyle}>Record the sound <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#2d3f55" }}>optional</span></label>
+                    <div style={{ fontSize: "11px", color: "#4a5c72", marginBottom: "8px" }}>Tap to record a knock, squeal, rattle or noise your car is making</div>
+                    {audioSaved ? (
+                      <div style={{ backgroundColor: "rgba(74,158,255,0.07)", border: "1px solid rgba(74,158,255,0.2)", borderRadius: "10px", padding: "10px 12px" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                          <span style={{ fontSize: "11px", fontWeight: 700, color: "#4a9eff", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>🎙️ Recording saved</span>
+                          <button type="button" onClick={clearRecording} style={{ fontSize: "11px", color: "#4a5c72", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: 0 }}>Re-record</button>
+                        </div>
+                        <p style={{ margin: 0, fontSize: "13px", color: "#7d8fa8", lineHeight: 1.5, fontStyle: "italic" }}>&quot;{audioTranscript}&quot;</p>
+                      </div>
+                    ) : isRecording ? (
+                      <div style={{ backgroundColor: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "10px", padding: "12px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                          <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#ef4444", flexShrink: 0 }} className="badge-pulse-stop" />
+                          <span style={{ fontSize: "13px", color: "#ef4444", fontWeight: 600 }}>Recording — {recordingSeconds}s / 30s</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "3px", height: "24px", marginBottom: "10px" }}>
+                          {Array.from({ length: 20 }).map((_, i) => (
+                            <div key={i} className="typing-dot" style={{ width: "3px", height: `${8 + (i % 7) * 2}px`, borderRadius: "2px", backgroundColor: "#ef4444", opacity: 0.7, margin: 0 }} />
+                          ))}
+                        </div>
+                        {audioDraft && <p style={{ margin: "0 0 10px", fontSize: "12px", color: "#7d8fa8", lineHeight: 1.4, fontStyle: "italic" }}>&quot;{audioDraft}&quot;</p>}
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button type="button" onClick={stopRecording} style={{ flex: 1, height: "38px", backgroundColor: "transparent", border: "1px solid rgba(239,68,68,0.3)", borderRadius: "8px", color: "#ef4444", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>Stop</button>
+                          {audioDraft.trim() && <button type="button" onClick={useRecording} style={{ flex: 1, height: "38px", backgroundColor: "rgba(74,158,255,0.1)", border: "1px solid rgba(74,158,255,0.3)", borderRadius: "8px", color: "#4a9eff", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>Use this</button>}
+                        </div>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={startRecording} className="tap-target" style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 14px", boxSizing: "border-box", backgroundColor: "#101822", border: "1px dashed #172134", borderRadius: "10px", cursor: "pointer", fontSize: "13px", color: "#4a5c72", width: "100%" }}>
+                        <span style={{ fontSize: "16px" }}>🎙️</span>
+                        <span>Tap to record a sound</span>
+                      </button>
                     )}
                   </div>
 
@@ -512,7 +656,7 @@ export default function Home() {
               <div style={{ marginTop: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <Lock size={10} color="#2d3f55" />
                 <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#2d3f55", letterSpacing: "0.08em" }}>
-                  Your data is never stored
+                  No subscription · No hidden fees · Your data is never sold
                 </span>
               </div>
             </div>
@@ -566,6 +710,7 @@ export default function Home() {
 
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+      {showOnboarding && <OnboardingCarousel onDone={finishOnboarding} />}
     </>
   );
 }

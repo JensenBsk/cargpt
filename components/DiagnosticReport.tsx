@@ -22,6 +22,7 @@ interface Props {
   mods?: string;
   hasTune?: boolean;
   zip?: string;
+  hasAudio?: boolean;
   chatHistory: ChatMessage[];
   setChatHistory: (h: ChatMessage[]) => void;
   onNewDiagnosis: () => void;
@@ -116,33 +117,46 @@ function StepPills({ cost, time, tools }: { cost?: string; time?: string; tools?
 }
 
 // ── Answer Card ──
-function AnswerCard({ topCause, firstStep, topEst }: {
+function AnswerCard({ topCause, firstStep, topEst, hasAudio, eli5Mode, eli5Text, eli5Loading, onEli5 }: {
   topCause: RankedCause;
   firstStep: DiagnosticStep;
   topEst?: CostEstimate;
+  hasAudio?: boolean;
+  eli5Mode: boolean;
+  eli5Text: string | null;
+  eli5Loading: boolean;
+  onEli5: () => void;
 }) {
   const lhColor = LIKELIHOOD_COLORS[topCause.likelihood] ?? { bg: "rgba(107,114,128,0.18)", text: "#7d8fa8" };
   return (
     <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderLeft: "3px solid #4a9eff", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
       {/* Most likely */}
       <div>
-        <div style={{ fontSize: "11px", fontWeight: 600, color: "#4a5c72", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "5px" }}>Most likely</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "5px" }}>
+          <div style={{ fontSize: "11px", fontWeight: 600, color: "#4a5c72", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>Most likely</div>
+          {hasAudio && <span style={{ fontSize: "10px", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.08)", border: "1px solid rgba(74,158,255,0.2)", borderRadius: "20px", padding: "2px 8px" }}>🎙️ Audio analyzed</span>}
+        </div>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
           <span style={{ fontSize: "18px", fontWeight: 700, color: "#dce8f5", lineHeight: 1.2, flex: 1 }}>{topCause.cause}</span>
           <div style={{ display: "flex", gap: "5px", flexShrink: 0, marginTop: "2px" }}>
             {topCause.modRelated && (
               <span style={{ backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "4px" }}>MOD</span>
             )}
-            <span style={{ backgroundColor: lhColor.bg, color: lhColor.text, fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" }}>{topCause.likelihood}</span>
+            <span style={{ backgroundColor: lhColor.bg, color: lhColor.text, fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" as const }}>{topCause.likelihood}</span>
           </div>
         </div>
+        {eli5Mode && eli5Text && (
+          <div style={{ backgroundColor: "rgba(74,158,255,0.06)", border: "1px solid rgba(74,158,255,0.15)", borderRadius: "8px", padding: "10px 12px", marginTop: "10px" }}>
+            <p style={{ margin: 0, fontSize: "13px", color: "#7d8fa8", lineHeight: 1.6 }}>{eli5Text}</p>
+          </div>
+        )}
       </div>
 
       <div style={{ height: "1px", backgroundColor: "#172134" }} />
 
       {/* First step */}
       <div>
-        <div style={{ fontSize: "11px", fontWeight: 600, color: "#4a5c72", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>Do this first</div>
+        <div style={{ fontSize: "11px", fontWeight: 600, color: "#4a5c72", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: "6px" }}>Do this first</div>
         <div style={{ fontSize: "15px", fontWeight: 600, color: "#dce8f5", lineHeight: 1.4 }}>{firstStep.action}</div>
         <StepPills cost={firstStep.cost} time={firstStep.time} tools={firstStep.tools} />
       </div>
@@ -166,6 +180,16 @@ function AnswerCard({ topCause, firstStep, topEst }: {
           <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "16px", fontWeight: 700, color: "#4a9eff" }}>{topEst.total}</span>
         </div>
       )}
+
+      {/* ELI5 toggle */}
+      <button
+        onClick={onEli5}
+        disabled={eli5Loading}
+        className="tap-target"
+        style={{ width: "100%", height: "34px", backgroundColor: "transparent", border: "1px solid #172134", borderRadius: "8px", color: "#4a5c72", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+      >
+        {eli5Loading ? "Simplifying…" : eli5Mode ? "🔄 Regular explanation" : "🔄 Simpler explanation"}
+      </button>
     </div>
   );
 }
@@ -220,7 +244,7 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
 
 // ── Main component ──
 export default function DiagnosticReport({
-  diagnosis, year, make, model, issue, mods, zip, chatHistory, setChatHistory, onNewDiagnosis, diagnosisId, onToast,
+  diagnosis, year, make, model, issue, mods, zip, hasAudio, chatHistory, setChatHistory, onNewDiagnosis, diagnosisId, onToast,
 }: Props) {
   // Refined diagnosis state — updates in place when user answers clarifying questions
   const [currentDiagnosis, setCurrentDiagnosis] = useState<Diagnostic>(diagnosis);
@@ -236,6 +260,12 @@ export default function DiagnosticReport({
 
   // Steps accordion (for full diagnosis section)
   const [expandedStep, setExpandedStep] = useState<number | null>(0);
+  // Causes progressive disclosure
+  const [expandedCauseIdx, setExpandedCauseIdx] = useState<number | null>(null);
+  // ELI5 mode
+  const [eli5Mode, setEli5Mode] = useState(false);
+  const [eli5Text, setEli5Text] = useState<string | null>(null);
+  const [eli5Loading, setEli5Loading] = useState(false);
 
   // Chat
   const [chatExpanded, setChatExpanded] = useState(false);
@@ -268,11 +298,10 @@ export default function DiagnosticReport({
   const verdict = currentDiagnosis.driveSafety.verdict;
 
   const quickReplies = [
-    "Is this a DIY job?",
+    "Is this safe to drive?",
+    "Can I fix this myself?",
     "What parts do I need?",
-    "How urgent is this really?",
-    topCause ? `Find ${topCause.cause} on RockAuto` : "Find parts on RockAuto",
-    "What questions should I ask the mechanic?",
+    "How urgent is this?",
   ];
 
   useEffect(() => {
@@ -344,6 +373,22 @@ export default function DiagnosticReport({
   }
 
   const hasAnswers = Object.values(selectedAnswers).some(a => a.length > 0);
+
+  async function handleEli5() {
+    if (eli5Text) { setEli5Mode(v => !v); return; }
+    setEli5Loading(true);
+    try {
+      const res = await fetch("/api/simplify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ whatsWrong: currentDiagnosis.whatsWrong, causeTitle: topCause?.cause, causeReasoning: topCause?.reasoning }),
+      });
+      const data = await res.json();
+      if (data.simpleExplanation) { setEli5Text(data.simpleExplanation); setEli5Mode(true); }
+    } catch { /* ignore */ } finally {
+      setEli5Loading(false);
+    }
+  }
 
   // ── Share ──
   async function generateShare(): Promise<string | null> {
@@ -516,7 +561,7 @@ export default function DiagnosticReport({
 
         {/* 3. Answer Card */}
         {topCause && firstStep && (
-          <AnswerCard topCause={topCause} firstStep={firstStep} topEst={topEst} />
+          <AnswerCard topCause={topCause} firstStep={firstStep} topEst={topEst} hasAudio={hasAudio} eli5Mode={eli5Mode} eli5Text={eli5Text} eli5Loading={eli5Loading} onEli5={handleEli5} />
         )}
 
         {/* 4. First warning (if any) */}
@@ -557,26 +602,35 @@ export default function DiagnosticReport({
               <p style={{ margin: 0, fontSize: "14px", color: "#7d8fa8", lineHeight: 1.7 }}>{currentDiagnosis.whatsWrong}</p>
             </Card>
 
-            {/* All causes */}
+            {/* All causes — progressive disclosure */}
             <Card>
               <SectionHeader label="Likely Causes" />
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {currentDiagnosis.rankedCauses.map((cause) => {
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {currentDiagnosis.rankedCauses.map((cause, causeIdx) => {
                   const colors = LIKELIHOOD_COLORS[cause.likelihood] ?? { bg: "rgba(107,114,128,0.18)", text: "#7d8fa8" };
                   const accentColor = ACCENT_BORDERS[cause.likelihood] ?? "#1c2a3e";
+                  const isOpen = expandedCauseIdx === causeIdx;
                   return (
-                    <div key={cause.rank} style={{ backgroundColor: "#101822", border: "1px solid #172134", borderLeft: `3px solid ${accentColor}`, borderRadius: "8px", padding: "12px", overflow: "hidden" }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "8px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                    <div key={cause.rank} style={{ backgroundColor: "#101822", border: "1px solid #172134", borderLeft: `3px solid ${accentColor}`, borderRadius: "8px", overflow: "hidden" }}>
+                      <button
+                        onClick={() => setExpandedCauseIdx(isOpen ? null : causeIdx)}
+                        style={{ width: "100%", padding: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", backgroundColor: "transparent", border: "none", cursor: "pointer", textAlign: "left" as const }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
                           <span style={{ width: "22px", height: "22px", borderRadius: "6px", backgroundColor: "rgba(74,158,255,0.15)", border: "1px solid rgba(74,158,255,0.3)", color: "#4a9eff", fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{cause.rank}</span>
-                          <span style={{ fontSize: "15px", fontWeight: 600, color: "#dce8f5", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cause.cause}</span>
+                          <span style={{ fontSize: "14px", fontWeight: 600, color: "#dce8f5", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const, flex: 1 }}>{cause.cause}</span>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
                           {cause.modRelated && <span style={{ backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "4px" }}>MOD</span>}
-                          <span style={{ backgroundColor: colors.bg, color: colors.text, fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" }}>{cause.likelihood}</span>
+                          <span style={{ backgroundColor: colors.bg, color: colors.text, fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" as const }}>{cause.likelihood}</span>
+                          <ChevronDown size={13} color="#4a5c72" style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms", flexShrink: 0 }} />
                         </div>
-                      </div>
-                      <p style={{ margin: 0, fontSize: "13px", color: "#6a7e96", lineHeight: 1.5, paddingLeft: "30px", wordBreak: "break-word" }}>{cause.reasoning}</p>
+                      </button>
+                      {isOpen && (
+                        <div style={{ padding: "0 12px 12px 42px", borderTop: "1px solid #172134" }}>
+                          <p style={{ margin: "10px 0 0", fontSize: "13px", color: "#6a7e96", lineHeight: 1.6, wordBreak: "break-word" as const }}>{cause.reasoning}</p>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -624,6 +678,23 @@ export default function DiagnosticReport({
               </div>
             </Card>
 
+            {/* Prevention tips — Part 9 */}
+            {currentDiagnosis.preventionTips && currentDiagnosis.preventionTips.length > 0 && (
+              <div style={{ backgroundColor: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.15)", borderRadius: "10px", padding: "14px 16px" }}>
+                <div style={{ fontSize: "11px", fontWeight: 600, color: "#22c55e", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: "10px" }}>
+                  🛡️ Prevent this next time
+                </div>
+                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {currentDiagnosis.preventionTips.map((tip, i) => (
+                    <li key={i} style={{ display: "flex", gap: "8px", fontSize: "13px", color: "#7d8fa8", lineHeight: 1.5 }}>
+                      <span style={{ color: "#22c55e", flexShrink: 0 }}>›</span>
+                      {tip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Cost estimates */}
             <Card>
               <SectionHeader label="Cost Estimates" />
@@ -647,6 +718,37 @@ export default function DiagnosticReport({
                 ))}
               </div>
             </Card>
+
+            {/* Parts finder — Part 8 */}
+            {currentDiagnosis.rankedCauses.length > 0 && (
+              <Card>
+                <SectionHeader label="Find Parts" />
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {currentDiagnosis.rankedCauses.slice(0, 2).map((cause) => {
+                    const query = encodeURIComponent(`${cause.cause} ${year} ${make} ${model}`);
+                    const sources = [
+                      { name: "RockAuto", url: `https://www.rockauto.com/en/catalog/${encodeURIComponent(make)},${encodeURIComponent(model)},${year}` },
+                      { name: "AutoZone", url: `https://www.autozone.com/searchresult?searchText=${query}` },
+                      { name: "Amazon", url: `https://www.amazon.com/s?k=${query}` },
+                      { name: "eBay", url: `https://www.ebay.com/sch/i.html?_nkw=${query}` },
+                    ];
+                    return (
+                      <div key={cause.rank}>
+                        <div style={{ fontSize: "12px", fontWeight: 600, color: "#7d8fa8", marginBottom: "6px" }}>{cause.cause}</div>
+                        <div style={{ display: "flex", flexWrap: "wrap" as const, gap: "6px" }}>
+                          {sources.map(src => (
+                            <a key={src.name} href={src.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", height: "30px", padding: "0 12px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "20px", fontSize: "12px", color: "#7d8fa8", textDecoration: "none", whiteSpace: "nowrap" as const }}>
+                              {src.name}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <p style={{ margin: 0, fontSize: "11px", color: "#2d3f55", lineHeight: 1.4 }}>Part compatibility is not guaranteed — always verify fitment before purchasing.</p>
+                </div>
+              </Card>
+            )}
 
             {/* All warnings */}
             {currentDiagnosis.dontDoThis.length > 0 && (
@@ -705,7 +807,19 @@ export default function DiagnosticReport({
             )}
 
             {/* Outcome tracking */}
-            <FeedbackCard diagnosisId={diagnosisId} />
+            <FeedbackCard
+              diagnosisId={diagnosisId}
+              year={year}
+              make={make}
+              model={model}
+              repairLabel={topCause?.cause}
+              onRepairSaved={(entry) => {
+                try {
+                  const existing = JSON.parse(localStorage.getItem("torque_repairs") || "[]");
+                  localStorage.setItem("torque_repairs", JSON.stringify([entry, ...existing]));
+                } catch { /* ignore */ }
+              }}
+            />
 
             {/* Send to Mechanic */}
             <Card>

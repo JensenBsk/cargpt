@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import VinInput from "@/components/VinInput";
 import { AlertTriangle } from "lucide-react";
 import type { Diagnostic } from "@/types/diagnostic";
+import type { RepairEntry } from "@/types/repairs";
 
 const LS_KEY = "torque_diagnosis_history";
 
@@ -89,11 +90,22 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
   const [maintLoading, setMaintLoading] = useState<Record<string, boolean>>({});
   const [maintResults, setMaintResults] = useState<Record<string, MaintenanceItem[]>>({});
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  const [repairs, setRepairs] = useState<RepairEntry[]>([]);
+  const [showRepairSection, setShowRepairSection] = useState<string | null>(null);
+  const [showAddRepair, setShowAddRepair] = useState<string | null>(null);
+  const [repairForm, setRepairForm] = useState({ name: "", cost: "", who: "diy" as "diy" | "shop", shop: "" });
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(LS_KEY);
       if (stored) setHistoryItems(JSON.parse(stored));
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("torque_repairs");
+      if (stored) setRepairs(JSON.parse(stored));
     } catch { /* ignore */ }
   }, []);
 
@@ -170,7 +182,8 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
         <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔒</div>
         <div style={{ fontSize: "18px", fontWeight: 700, color: "#dce8f5", marginBottom: "8px" }}>Sign in to use My Garage</div>
         <div style={{ fontSize: "14px", color: "#7d8fa8", marginBottom: "28px", lineHeight: 1.6 }}>
-          Save your cars and see your diagnosis history in one place.
+          Save your cars and track repairs over time.<br />
+          <span style={{ fontSize: "13px", color: "#4a5c72" }}>Your garage data is stored locally on your device until you sign in.</span>
         </div>
         <button onClick={onRequestSignIn} className="tap-target" style={{ height: "48px", padding: "0 28px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: "pointer" }}>
           Sign In
@@ -302,6 +315,81 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                     </button>
                   </div>
                 </div>
+
+                {/* Repair history */}
+                {(() => {
+                  const carKey = `${car.year}_${car.make}_${car.model}`;
+                  const carRepairs = repairs.filter(r => r.carKey === carKey).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                  const isRepairOpen = showRepairSection === carKey;
+                  return (
+                    <div style={{ borderTop: "1px solid #1e2329" }}>
+                      <button
+                        onClick={() => setShowRepairSection(isRepairOpen ? null : carKey)}
+                        style={{ width: "100%", padding: "10px 16px", fontSize: "12px", color: "#7d8fa8", backgroundColor: "transparent", border: "none", cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between" }}
+                      >
+                        <span>Repair history ({carRepairs.length})</span>
+                        <span style={{ color: "#4a9eff" }}>+ Add</span>
+                      </button>
+                      {isRepairOpen && (
+                        <div style={{ padding: "0 16px 12px" }}>
+                          {carRepairs.length > 0 && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "5px", marginBottom: "10px" }}>
+                              {carRepairs.map(rep => (
+                                <div key={rep.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "7px 10px", backgroundColor: "#060810", borderRadius: "7px" }}>
+                                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#22c55e", flexShrink: 0 }} />
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: "13px", color: "#dce8f5", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rep.repairName}</div>
+                                    <div style={{ fontSize: "11px", color: "#4a5c72" }}>{rep.who === "shop" && rep.shopName ? rep.shopName : rep.who === "shop" ? "Shop" : "DIY"}{rep.cost ? ` · ${rep.cost}` : ""}</div>
+                                  </div>
+                                  <div style={{ fontSize: "11px", color: "#4a5c72", flexShrink: 0 }}>{formatDate(rep.date)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {showAddRepair === carKey ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                              <input type="text" value={repairForm.name} onChange={e => setRepairForm(f => ({ ...f, name: e.target.value }))} placeholder="What was repaired?" style={{ ...inputStyle, height: "38px", fontSize: "14px" }} />
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                                <input type="text" value={repairForm.cost} onChange={e => setRepairForm(f => ({ ...f, cost: e.target.value }))} placeholder="Cost (optional)" style={{ ...inputStyle, height: "38px", fontSize: "14px" }} />
+                                <div style={{ display: "flex", gap: "4px" }}>
+                                  {(["diy", "shop"] as const).map(w => (
+                                    <button key={w} type="button" onClick={() => setRepairForm(f => ({ ...f, who: w }))} style={{ flex: 1, height: "38px", fontSize: "12px", fontWeight: 600, border: "none", borderRadius: "6px", cursor: "pointer", backgroundColor: repairForm.who === w ? "#4a9eff" : "#101822", color: repairForm.who === w ? "white" : "#7d8fa8", transition: "background-color 150ms" }}>
+                                      {w.toUpperCase()}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              {repairForm.who === "shop" && <input type="text" value={repairForm.shop} onChange={e => setRepairForm(f => ({ ...f, shop: e.target.value }))} placeholder="Shop name (optional)" style={{ ...inputStyle, height: "38px", fontSize: "14px" }} />}
+                              <div style={{ display: "flex", gap: "8px" }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (!repairForm.name.trim()) return;
+                                    const entry: RepairEntry = { id: Date.now().toString(), carKey, repairName: repairForm.name.trim(), date: new Date().toISOString(), cost: repairForm.cost || undefined, who: repairForm.who, shopName: repairForm.shop || undefined };
+                                    const next = [entry, ...repairs];
+                                    setRepairs(next);
+                                    try { localStorage.setItem("torque_repairs", JSON.stringify(next)); } catch { /* ignore */ }
+                                    setRepairForm({ name: "", cost: "", who: "diy", shop: "" });
+                                    setShowAddRepair(null);
+                                  }}
+                                  disabled={!repairForm.name.trim()}
+                                  style={{ flex: 1, height: "38px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "13px", border: "none", borderRadius: "8px", cursor: "pointer", opacity: repairForm.name.trim() ? 1 : 0.4 }}
+                                >
+                                  Save Repair
+                                </button>
+                                <button type="button" onClick={() => setShowAddRepair(null)} style={{ height: "38px", padding: "0 14px", backgroundColor: "transparent", border: "1px solid #172134", color: "#4a5c72", fontSize: "13px", borderRadius: "8px", cursor: "pointer" }}>Cancel</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button type="button" onClick={() => setShowAddRepair(carKey)} style={{ width: "100%", height: "34px", backgroundColor: "transparent", border: "1px dashed #172134", borderRadius: "8px", color: "#4a5c72", fontSize: "12px", cursor: "pointer" }}>
+                              + Add repair manually
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Maintenance section */}
                 <div style={{ borderTop: "1px solid #1e2329" }}>
