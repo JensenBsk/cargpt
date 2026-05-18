@@ -257,11 +257,16 @@ export const CODE_NAMES: Record<string, string> = {
 };
 
 export function isOBDCode(input: string): boolean {
-  return /^[PCBU][0-9]{4}$/i.test(input.trim());
+  return /^[PCBU][0-9]{4}/i.test(input.trim());
+}
+
+export function extractCode(input: string): string {
+  const match = input.trim().match(/^([PCBU][0-9]{4})/i);
+  return match ? match[1].toUpperCase() : input;
 }
 
 export function formatCode(code: string): string {
-  const upper = code.trim().toUpperCase();
+  const upper = extractCode(code);
   const name = CODE_NAMES[upper];
   return name ? `${upper} — ${name}` : upper;
 }

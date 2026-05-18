@@ -94,10 +94,10 @@ Return ONLY this JSON (no markdown, no text outside the JSON):
   "costEstimates": [
     {
       "fix": "Repair name",
-      "parts": "$X–$Y",
-      "labor": "$X–$Y",
+      "parts": "$X–$Y (range only — no parentheticals, no per-unit notes)",
+      "labor": "$X–$Y (range only — no parentheticals)",
       "total": "$X–$Y",
-      "note": "Optional: dealer vs independent, ZIP code impact"
+      "note": "Optional: put any clarifying info HERE — e.g. 'per injector', 'dealer vs independent', ZIP code impact"
     }
   ],
   "dontDoThis": ["MAX 8 WORDS. Blunt. No explanation."],
@@ -132,6 +132,7 @@ HARD RULES — violating any makes the response wrong:
 - Each step why/ifResultA/ifResultB: 1 sentence max, starts with conclusion
 - Each dontDoThis: 8 words max
 - preventionTips: 1–2 items
+- costEstimates parts/labor fields: dollar range ONLY — e.g. "$30–$60". Any notes go in the "note" field. Never put parentheticals inside parts or labor values.
 - partsNeeded: 1–4 parts max, only for top 1–2 most likely causes; ONLY include oemPartNumber/alternatePartNumber when you are certain they are correct for this exact vehicle — otherwise null
 - Never say "vehicle" — use the car's name
 - Never say "could potentially"

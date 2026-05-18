@@ -15,6 +15,8 @@ import TorqueLogo from "@/components/TorqueLogo";
 
 const APP_URL = typeof window !== "undefined" ? window.location.origin : "https://mechanic-ai-dun.vercel.app";
 
+const cap = (s: string) => s.split(" ").map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
+
 interface Props {
   diagnosis: Diagnostic;
   year: string;
@@ -259,8 +261,8 @@ export default function DiagnosticReport({
   const mechanicCtx: MechanicMessageContext = {
     issue,
     year,
-    make,
-    model,
+    make: cap(make),
+    model: cap(model),
     topCause: topCause?.cause ?? "the issue",
     firstStep: currentDiagnosis.diagnosticSteps[0]?.action ?? "a diagnostic check",
     costRange: topEst?.total ?? "varies",
@@ -378,7 +380,10 @@ export default function DiagnosticReport({
       });
       const data = await res.json();
       if (data.token) { setShareToken(data.token); return data.token; }
-    } catch { /* ignore */ } finally {
+      console.error("[share] API error:", data.error);
+    } catch (err) {
+      console.error("[share] Fetch error:", err);
+    } finally {
       setShareLoading(false);
     }
     return null;
@@ -398,7 +403,7 @@ export default function DiagnosticReport({
     if (!token) return;
     const url = `${APP_URL}/r/${token}`;
     try {
-      await navigator.share({ title: `${year} ${make} ${model} Diagnosis`, text: `I diagnosed my ${year} ${make} ${model} with Torque`, url });
+      await navigator.share({ title: `${year} ${cap(make)} ${cap(model)} Diagnosis`, text: `I diagnosed my ${year} ${cap(make)} ${cap(model)} with Torque`, url });
       setShowShareSheet(false);
     } catch { /* user cancelled */ }
   }
@@ -492,7 +497,7 @@ export default function DiagnosticReport({
       <div style={{ position: "sticky", top: 0, zIndex: 10, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "rgba(6,8,16,0.96)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid #172134", boxSizing: "border-box" }}>
         <TorqueLogo markSize={28} showWordmark wordmarkSize={14} glow="soft" />
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <span style={{ fontSize: "11px", color: "#4a5c72" }}>{year} {make} {model}</span>
+          <span style={{ fontSize: "11px", color: "#4a5c72" }}>{year} {cap(make)} {cap(model)}</span>
           <button onClick={() => setShowShareSheet(true)} style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.35)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}>
             ↑ Share
           </button>
@@ -676,16 +681,21 @@ export default function DiagnosticReport({
                 {currentDiagnosis.costEstimates.map((est, i) => (
                   <div key={i} style={{ backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", padding: "12px", boxSizing: "border-box" }}>
                     <div style={{ fontSize: "14px", fontWeight: 600, color: "#dce8f5", marginBottom: "8px", wordBreak: "break-word" }}>{est.fix}</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
-                      {(["Parts", "Labor", "Total"] as const).map((label, li) => {
-                        const val = li === 0 ? est.parts : li === 1 ? est.labor : est.total;
-                        return (
-                          <div key={label}>
-                            <div style={{ fontSize: "9px", color: "#2d3f55", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px", fontWeight: 600 }}>{label}</div>
-                            <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: li === 2 ? "15px" : "12px", color: li === 2 ? "#4a9eff" : "#7d8fa8", fontWeight: li === 2 ? 700 : 400, wordBreak: "break-word" }}>{val}</div>
-                          </div>
-                        );
-                      })}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div style={{ display: "flex", gap: "12px" }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "9px", color: "#2d3f55", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px", fontWeight: 600 }}>Parts</div>
+                          <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "12px", color: "#7d8fa8", wordBreak: "break-word" }}>{est.parts}</div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "9px", color: "#2d3f55", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px", fontWeight: 600 }}>Labor</div>
+                          <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "12px", color: "#7d8fa8", wordBreak: "break-word" }}>{est.labor}</div>
+                        </div>
+                      </div>
+                      <div style={{ borderTop: "1px solid #172134", paddingTop: "8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ fontSize: "9px", color: "#2d3f55", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Total</div>
+                        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "16px", color: "#4a9eff", fontWeight: 700, whiteSpace: "nowrap" }}>{est.total}</div>
+                      </div>
                     </div>
                     {est.note && <div style={{ marginTop: "8px", fontSize: "12px", color: "#4a5c72", fontStyle: "italic", wordBreak: "break-word" }}>{est.note}</div>}
                   </div>
@@ -912,10 +922,11 @@ export default function DiagnosticReport({
       {/* ── Share Sheet ── */}
       {showShareSheet && (() => {
         const shareUrl = shareToken ? `${APP_URL}/r/${shareToken}` : null;
-        const shareText = `Check out this diagnosis for my ${year} ${make} ${model}`;
-        const emailSubject = encodeURIComponent(`${year} ${make} ${model} diagnosis — Torque`);
+        const carName = `${year} ${cap(make)} ${cap(model)}`;
+        const shareText = `Check out this diagnosis for my ${carName}`;
+        const emailSubject = encodeURIComponent(`${carName} diagnosis — Torque`);
         const emailBody = encodeURIComponent(`${shareText}\n\n${shareUrl ?? ""}`);
-        const tweetText = encodeURIComponent(`Diagnosed my ${year} ${make} ${model} with Torque`);
+        const tweetText = encodeURIComponent(`Diagnosed my ${carName} with Torque`);
         const chipStyle: React.CSSProperties = {
           display: "flex", alignItems: "center", justifyContent: "center", height: "44px",
           backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "10px",
@@ -926,8 +937,13 @@ export default function DiagnosticReport({
         return (
           <div onClick={() => setShowShareSheet(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
             <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "560px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "20px 20px 0 0", padding: "20px 16px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", animation: "view-fade-in 200ms ease", boxSizing: "border-box" }}>
-              <div style={{ width: "32px", height: "4px", backgroundColor: "#162232", borderRadius: "2px", margin: "0 auto 20px" }} />
-              <div style={{ fontSize: "16px", fontWeight: 700, color: "#dce8f5", marginBottom: "16px" }}>Share Diagnosis</div>
+              <div style={{ width: "32px", height: "4px", backgroundColor: "#162232", borderRadius: "2px", margin: "0 auto 16px" }} />
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+                <div style={{ fontSize: "16px", fontWeight: 700, color: "#dce8f5" }}>Share Diagnosis</div>
+                <button onClick={() => setShowShareSheet(false)} style={{ background: "none", border: "none", color: "#4a5c72", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}>
+                  <X size={18} />
+                </button>
+              </div>
 
               {/* URL row */}
               <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
@@ -976,7 +992,12 @@ export default function DiagnosticReport({
         <div onClick={() => setShowMechanicModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
           <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "560px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "16px 16px 0 0", padding: "20px 16px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", boxSizing: "border-box" }}>
             <div style={{ width: "32px", height: "4px", backgroundColor: "#162232", borderRadius: "2px", margin: "0 auto 16px" }} />
-            <div style={{ fontSize: "16px", fontWeight: 700, color: "#dce8f5", marginBottom: "14px" }}>Send to Your Mechanic</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+              <div style={{ fontSize: "16px", fontWeight: 700, color: "#dce8f5" }}>Send to Your Mechanic</div>
+              <button onClick={() => setShowMechanicModal(false)} style={{ background: "none", border: "none", color: "#4a5c72", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}>
+                <X size={18} />
+              </button>
+            </div>
             <div style={{ display: "flex", gap: "4px", backgroundColor: "#060810", borderRadius: "10px", padding: "3px", marginBottom: "14px" }}>
               {(["text", "email", "walkin"] as const).map((fmt) => (
                 <button key={fmt} onClick={() => setMechanicFormat(fmt)} style={{ flex: 1, height: "34px", fontSize: "13px", fontWeight: 600, border: "none", borderRadius: "8px", cursor: "pointer", backgroundColor: mechanicFormat === fmt ? "#101822" : "transparent", color: mechanicFormat === fmt ? "#dce8f5" : "#4a5c72", transition: "background-color 150ms" }}>
@@ -987,7 +1008,7 @@ export default function DiagnosticReport({
             {mechanicFormat === "email" && (
               <div style={{ backgroundColor: "#060810", border: "1px solid #172134", borderRadius: "8px", padding: "8px 12px", marginBottom: "8px" }}>
                 <span style={{ fontSize: "10px", fontWeight: 600, color: "#2d3f55", textTransform: "uppercase", letterSpacing: "0.08em" }}>Subject: </span>
-                <span style={{ fontSize: "13px", color: "#7d8fa8" }}>Service inquiry — {year} {make} {model}</span>
+                <span style={{ fontSize: "13px", color: "#7d8fa8" }}>Service inquiry — {year} {cap(make)} {cap(model)}</span>
               </div>
             )}
             <div style={{ backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "10px", padding: "14px", marginBottom: "14px", maxHeight: "220px", overflowY: "auto", boxSizing: "border-box" }}>
@@ -1019,7 +1040,7 @@ export default function DiagnosticReport({
                 <Wrench size={14} color="#4a9eff" />
                 <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontSize: "14px", fontWeight: 700, color: "#4a9eff", letterSpacing: "0.12em" }}>TORQUE</span>
               </div>
-              <div style={{ fontSize: "24px", fontWeight: 800, color: "#dce8f5", marginBottom: "4px", lineHeight: 1.1 }}>{year} {make} {model}</div>
+              <div style={{ fontSize: "24px", fontWeight: 800, color: "#dce8f5", marginBottom: "4px", lineHeight: 1.1 }}>{year} {cap(make)} {cap(model)}</div>
               <div style={{ fontSize: "13px", color: "#4a5c72", marginBottom: "20px", lineHeight: 1.4, wordBreak: "break-word" }}>{issue.length > 72 ? issue.slice(0, 69) + "…" : issue}</div>
               {verdict !== "OKAY" ? (
                 <div style={{ padding: "12px 16px", borderRadius: "10px", marginBottom: "18px", backgroundColor: verdict === "STOP" ? "#120608" : "#120d02", borderLeft: `4px solid ${verdict === "STOP" ? "#ef4444" : "#f59e0b"}` }}>
