@@ -256,7 +256,8 @@ export default function Home() {
 
   const allFilled = !!year && !!make && !!model && !!issue.trim();
   const buttonBg = errorType ? "#f59e0b" : "linear-gradient(135deg, #4a9eff 0%, #2d6fd6 100%)";
-  const buttonText = loading ? `Analyzing your ${make || "car"}…` : errorType ? "Try Again" : "Diagnose";
+  const capMake = make ? make.charAt(0).toUpperCase() + make.slice(1) : "";
+  const buttonText = loading ? `Analyzing your ${capMake || "car"}…` : errorType ? "Try Again" : "Diagnose";
 
   return (
     <>
@@ -367,9 +368,10 @@ export default function Home() {
                       <input
                         type="text"
                         value={make}
-                        onChange={(e) => { setMake(e.target.value); if (showErrors) setShowErrors(false); }}
+                        onChange={(e) => { const v = e.target.value; setMake(v ? v.charAt(0).toUpperCase() + v.slice(1) : v); if (showErrors) setShowErrors(false); }}
                         placeholder="Make"
                         autoComplete="off"
+                        autoCapitalize="words"
                         style={{ ...fieldStyle, borderColor: showErrors && !make ? "#ef4444" : "#172134" }}
                       />
                     </div>

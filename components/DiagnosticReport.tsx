@@ -485,7 +485,7 @@ export default function DiagnosticReport({
 
       {/* Refining banner */}
       {refining && (
-        <div style={{ position: "fixed", top: "52px", left: 0, right: 0, zIndex: 9, backgroundColor: "rgba(74,158,255,0.12)", borderBottom: "1px solid rgba(74,158,255,0.25)", padding: "8px 16px", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#4a9eff" }}>
+        <div style={{ position: "sticky", top: "52px", zIndex: 9, backgroundColor: "rgba(74,158,255,0.12)", borderBottom: "1px solid rgba(74,158,255,0.25)", padding: "8px 16px", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#4a9eff" }}>
           <Loader2 size={13} style={{ animation: "spin 1s linear infinite", flexShrink: 0 }} />
           Refining diagnosis based on your answers…
         </div>
@@ -543,7 +543,7 @@ export default function DiagnosticReport({
             style={{ flex: 1, height: "44px", backgroundColor: "rgba(74,158,255,0.08)", border: "1px solid rgba(74,158,255,0.3)", borderRadius: "10px", color: "#4a9eff", fontWeight: 600, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
           >
             <MessageCircle size={14} />
-            {isRefined ? "Refine again" : "Ask a question"}
+            {isRefined ? "Refine again" : "Answer a few questions"}
           </button>
         </div>
 
@@ -722,69 +722,70 @@ export default function DiagnosticReport({
               </button>
             </Card>
 
-            {/* Chat */}
-            <Card>
-              <SectionHeader label="Ask a Follow-Up" />
-              {!chatExpanded ? (
-                <div
-                  onClick={() => setChatExpanded(true)}
-                  style={{ display: "flex", alignItems: "center", gap: "10px", height: "44px", padding: "0 12px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", cursor: "text" }}
-                >
-                  <span style={{ fontSize: "14px", color: "#2d3f55", flex: 1 }}>Ask anything about this diagnosis…</span>
-                  <ChevronDown size={14} color="#2d3f55" />
-                </div>
-              ) : (
-                <>
-                  {chatMessages.length > 0 && (
-                    <div style={{ marginBottom: "12px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "280px", overflowY: "auto" }}>
-                      {chatMessages.map((msg, i) => (
-                        <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
-                          {msg.role === "assistant" && msg.text === "" ? (
-                            <div style={{ padding: "10px 14px", borderRadius: "12px", backgroundColor: "#101822" }}>
-                              <span className="typing-dot" /><span className="typing-dot" /><span className="typing-dot" />
-                            </div>
-                          ) : (
-                            <div style={{ maxWidth: "85%", padding: "8px 12px", borderRadius: "12px", fontSize: "14px", lineHeight: 1.5, backgroundColor: msg.role === "user" ? "#4a9eff" : "#101822", color: msg.role === "user" ? "white" : "#7d8fa8", wordBreak: "break-word" }}>
-                              {msg.text}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                      <div ref={chatEndRef} />
-                    </div>
-                  )}
-                  {showQuickReplies && chatMessages.length === 0 && (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "10px" }}>
-                      {quickReplies.map((reply) => (
-                        <button key={reply} onClick={() => handleChatSubmit(reply)} className="tap-target" style={{ fontSize: "12px", padding: "6px 12px", borderRadius: "20px", border: "1px solid #1c2a3e", backgroundColor: "#101822", color: "#7d8fa8", cursor: "pointer", whiteSpace: "nowrap" }}>
-                          {reply}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <form onSubmit={(e) => { e.preventDefault(); handleChatSubmit(); }} style={{ display: "flex", gap: "8px" }}>
-                    <input
-                      ref={chatInputRef}
-                      type="text"
-                      value={chatInput}
-                      onChange={(e) => { setChatInput(e.target.value); if (e.target.value) setShowQuickReplies(false); else if (chatMessages.length === 0) setShowQuickReplies(true); }}
-                      placeholder="Ask anything about this diagnosis..."
-                      style={{ flex: 1, minWidth: 0, height: "44px", padding: "0 12px", fontSize: "16px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", color: "#dce8f5" }}
-                    />
-                    <button
-                      type="submit"
-                      disabled={!chatInput.trim() || chatLoading}
-                      style={{ height: "44px", padding: "0 18px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "14px", border: "none", borderRadius: "8px", cursor: chatInput.trim() && !chatLoading ? "pointer" : "not-allowed", opacity: chatInput.trim() && !chatLoading ? 1 : 0.4, flexShrink: 0 }}
-                    >
-                      Ask
-                    </button>
-                  </form>
-                </>
-              )}
-            </Card>
 
           </div>
         </Expandable>
+
+        {/* Chat — always visible */}
+        <Card>
+          <SectionHeader label="Ask a Follow-Up" />
+          {!chatExpanded ? (
+            <div
+              onClick={() => setChatExpanded(true)}
+              style={{ display: "flex", alignItems: "center", gap: "10px", height: "44px", padding: "0 12px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", cursor: "text" }}
+            >
+              <span style={{ fontSize: "14px", color: "#2d3f55", flex: 1 }}>Ask anything about this diagnosis…</span>
+              <ChevronDown size={14} color="#2d3f55" />
+            </div>
+          ) : (
+            <>
+              {chatMessages.length > 0 && (
+                <div style={{ marginBottom: "12px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "280px", overflowY: "auto" }}>
+                  {chatMessages.map((msg, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+                      {msg.role === "assistant" && msg.text === "" ? (
+                        <div style={{ padding: "10px 14px", borderRadius: "12px", backgroundColor: "#101822" }}>
+                          <span className="typing-dot" /><span className="typing-dot" /><span className="typing-dot" />
+                        </div>
+                      ) : (
+                        <div style={{ maxWidth: "85%", padding: "8px 12px", borderRadius: "12px", fontSize: "14px", lineHeight: 1.5, backgroundColor: msg.role === "user" ? "#4a9eff" : "#101822", color: msg.role === "user" ? "white" : "#7d8fa8", wordBreak: "break-word" }}>
+                          {msg.text}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <div ref={chatEndRef} />
+                </div>
+              )}
+              {showQuickReplies && chatMessages.length === 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "10px" }}>
+                  {quickReplies.map((reply) => (
+                    <button key={reply} onClick={() => handleChatSubmit(reply)} className="tap-target" style={{ fontSize: "12px", padding: "6px 12px", borderRadius: "20px", border: "1px solid #1c2a3e", backgroundColor: "#101822", color: "#7d8fa8", cursor: "pointer", whiteSpace: "nowrap" }}>
+                      {reply}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <form onSubmit={(e) => { e.preventDefault(); handleChatSubmit(); }} style={{ display: "flex", gap: "8px" }}>
+                <input
+                  ref={chatInputRef}
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => { setChatInput(e.target.value); if (e.target.value) setShowQuickReplies(false); else if (chatMessages.length === 0) setShowQuickReplies(true); }}
+                  placeholder="Ask anything about this diagnosis..."
+                  style={{ flex: 1, minWidth: 0, height: "44px", padding: "0 12px", fontSize: "16px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", color: "#dce8f5" }}
+                />
+                <button
+                  type="submit"
+                  disabled={!chatInput.trim() || chatLoading}
+                  style={{ height: "44px", padding: "0 18px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "14px", border: "none", borderRadius: "8px", cursor: chatInput.trim() && !chatLoading ? "pointer" : "not-allowed", opacity: chatInput.trim() && !chatLoading ? 1 : 0.4, flexShrink: 0 }}
+                >
+                  Ask
+                </button>
+              </form>
+            </>
+          )}
+        </Card>
 
         <p style={{ textAlign: "center", fontSize: "12px", color: "#4a5c72", opacity: 0.4, paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))", margin: "8px 0 0" }}>
           AI diagnosis is for guidance only. Always verify with a qualified mechanic.
