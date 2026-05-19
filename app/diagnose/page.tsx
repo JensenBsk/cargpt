@@ -351,7 +351,7 @@ export default function Home() {
   const allFilled = !!year && !!make && !!model && !!issue.trim();
   const buttonBg = errorType ? "#f59e0b" : "linear-gradient(135deg, #4a9eff 0%, #2d6fd6 100%)";
   const capMake = make ? make.charAt(0).toUpperCase() + make.slice(1) : "";
-  const buttonText = loading ? `Analyzing your ${capMake || "car"}…` : errorType ? "Try Again" : "Diagnose";
+  const buttonText = loading ? `Carlos is analyzing your ${capMake || "car"}…` : errorType ? "Try Again" : "Ask Carlos";
 
   return (
     <>
@@ -365,7 +365,7 @@ export default function Home() {
         }}>
           <WifiOff size={13} color="#ef4444" />
           <span style={{ fontSize: "13px", color: "#fca5a5", fontWeight: 500 }}>
-            No internet connection — reconnect to use Torque
+            No internet connection — reconnect to use Carlos
           </span>
         </div>
       )}
@@ -436,7 +436,7 @@ export default function Home() {
                   What&apos;s wrong<br />with your car?
                 </h1>
                 <p style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", letterSpacing: "0.15em", color: "#2d3f55", margin: 0, textTransform: "uppercase" }}>
-                  AI Mechanic · Instant Answers
+                  Tell Carlos — he&apos;ll figure it out.
                 </p>
               </div>
 

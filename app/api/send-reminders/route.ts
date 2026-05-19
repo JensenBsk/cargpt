@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       included_segments: ["Subscribed Users"],
       headings: { en: "Time to check your maintenance schedule" },
       contents: {
-        en: "Open Torque to see what's due or overdue on your car. Takes 30 seconds.",
+        en: "Open Carlos to see what's due or overdue on your car. Takes 30 seconds.",
       },
       url: `${process.env.NEXT_PUBLIC_APP_URL || ""}/diagnose`,
       chrome_web_icon: `${process.env.NEXT_PUBLIC_APP_URL || ""}/icon-192.png`,

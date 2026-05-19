@@ -64,7 +64,7 @@ export default function TorqueLogo({
             userSelect: "none",
           }}
         >
-          TORQUE
+          CARLOS
         </span>
       )}
     </div>

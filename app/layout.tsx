@@ -32,9 +32,22 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Torque — Your car. Decoded.",
+  title: "Carlos — Your AI Mechanic",
   description:
-    "AI-powered car diagnostic assistant. Get ranked causes, step-by-step tests, and real repair cost estimates.",
+    "Describe your car problem. Carlos gives you a real diagnosis — ranked causes, step-by-step checks, and fair cost estimates. Free. No hardware needed.",
+  metadataBase: new URL("https://mchaniccarlos.com"),
+  openGraph: {
+    title: "Carlos — Your AI Mechanic",
+    description: "Get a real car diagnosis in seconds. Free.",
+    url: "https://mchaniccarlos.com",
+    siteName: "Mechanic Carlos",
+    images: ["/og-image.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Carlos — Your AI Mechanic",
+    description: "Get a real car diagnosis in seconds. Free.",
+  },
 };
 
 export default function RootLayout({

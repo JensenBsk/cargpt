@@ -62,7 +62,7 @@ const ERROR_CONFIG: Record<ErrorType, {
   },
   free_limit: {
     title: "You've used your 3 free diagnoses this month",
-    body: "Upgrade to Torque Pro for unlimited diagnoses, quote checks, and more.",
+    body: "Upgrade to Carlos Pro for unlimited diagnoses, quote checks, and more.",
     primary: "See Plans",
     secondary: "Maybe Later",
   },

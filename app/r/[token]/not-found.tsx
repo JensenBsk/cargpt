@@ -5,7 +5,7 @@ export default function NotFound() {
     <div style={{ minHeight: "100dvh", backgroundColor: "#060810", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 16px", fontFamily: "system-ui, sans-serif" }}>
       <div style={{ maxWidth: "380px", width: "100%", textAlign: "center" }}>
         <div style={{ fontFamily: "var(--font-jetbrains, monospace)", fontSize: "11px", fontWeight: 700, color: "#4a5c72", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "16px" }}>
-          TORQUE
+          CARLOS
         </div>
         <div style={{ fontFamily: "var(--font-jetbrains, monospace)", fontSize: "64px", fontWeight: 700, color: "#172134", lineHeight: 1, marginBottom: "16px" }}>
           404

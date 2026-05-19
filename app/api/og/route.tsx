@@ -52,7 +52,7 @@ export async function GET(request: Request) {
           {/* Brand */}
           <div style={{ display: "flex", marginBottom: "36px" }}>
             <span style={{ fontSize: 26, fontWeight: 900, color: "#3b82f6", letterSpacing: "0.2em" }}>
-              TORQUE
+              CARLOS
             </span>
           </div>
 
@@ -105,8 +105,8 @@ export async function GET(request: Request) {
               borderTop: "1px solid #1e2329",
             }}
           >
-            <div style={{ fontSize: 15, color: "#4b5563" }}>AI diagnosis · verify with a mechanic</div>
-            <div style={{ fontSize: 19, color: "#3b82f6", fontWeight: 700 }}>torqueapp.co</div>
+            <div style={{ fontSize: 15, color: "#4b5563" }}>Get your free diagnosis → mchaniccarlos.com</div>
+            <div style={{ fontSize: 19, color: "#3b82f6", fontWeight: 700 }}>mchaniccarlos.com</div>
           </div>
         </div>
       ),
@@ -133,7 +133,7 @@ function fallbackImage() {
         }}
       >
         <span style={{ fontSize: 48, fontWeight: 900, color: "#3b82f6", letterSpacing: "0.2em" }}>
-          TORQUE
+          CARLOS
         </span>
       </div>
     ),

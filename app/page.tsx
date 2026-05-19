@@ -7,16 +7,15 @@ export default function LandingPage() {
       {/* ── NAV ── */}
       <nav style={{ position: "sticky", top: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "52px", backgroundColor: "rgba(6,8,16,0.95)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid #172134" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          {/* Torque logo mark */}
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="#4a9eff" strokeWidth="1.5" />
             <circle cx="12" cy="12" r="4" fill="#4a9eff" />
             <path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
           </svg>
-          <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "18px", letterSpacing: "0.06em", textTransform: "uppercase" as const, color: "#dce8f5" }}>TORQUE</span>
+          <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "18px", letterSpacing: "0.06em", textTransform: "uppercase" as const, color: "#dce8f5" }}>CARLOS</span>
         </div>
         <Link href="/diagnose" style={{ fontSize: "13px", fontWeight: 600, padding: "6px 14px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.4)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.08)", textDecoration: "none" }}>
-          Try it free
+          Ask Carlos — Free
         </Link>
       </nav>
 
@@ -24,35 +23,38 @@ export default function LandingPage() {
       <section style={{ padding: "64px 20px 56px", textAlign: "center", maxWidth: "600px", margin: "0 auto" }}>
         {/* Pill badge */}
         <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "rgba(74,158,255,0.08)", border: "1px solid rgba(74,158,255,0.22)", borderRadius: "20px", padding: "5px 12px", marginBottom: "24px" }}>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <circle cx="5" cy="5" r="4" fill="#4a9eff" opacity="0.8" />
-            <circle cx="5" cy="5" r="2" fill="#4a9eff" />
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2 6.5L1 9l2-1 1 2 1-3.5" stroke="#4a9eff" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M7 1h4v4" stroke="#4a9eff" strokeWidth="1.3" strokeLinecap="round" />
+            <path d="M6 6l5-5" stroke="#4a9eff" strokeWidth="1.3" strokeLinecap="round" />
           </svg>
-          <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", color: "#4a9eff", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>AI Mechanic · Free</span>
+          <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", color: "#4a9eff", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>AI Mechanic · Free · No Hardware Needed</span>
         </div>
 
         <h1 style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "clamp(38px, 9vw, 56px)", lineHeight: 1.05, letterSpacing: "-0.01em", textTransform: "uppercase" as const, color: "#dce8f5", margin: "0 0 20px" }}>
           Your car has a problem.<br />
-          <span style={{ color: "#4a9eff" }}>We&apos;ll tell you exactly<br />what to do.</span>
+          <span style={{ color: "#4a9eff" }}>Carlos knows<br />what to do.</span>
         </h1>
 
-        <p style={{ fontSize: "17px", color: "#7d8fa8", lineHeight: 1.6, margin: "0 0 36px", maxWidth: "440px", display: "inline-block" }}>
-          Describe your symptom or paste an OBD code. Get ranked causes, step-by-step diagnosis, and real cost estimates — in seconds.
+        <p style={{ fontSize: "17px", color: "#7d8fa8", lineHeight: 1.65, margin: "0 0 36px", maxWidth: "440px", display: "inline-block" }}>
+          Describe your symptoms or paste an OBD code.<br />
+          Carlos gives you a real answer — ranked causes,<br />
+          step-by-step checks, and fair cost estimates.<br />
+          In seconds. Free.
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
           <Link href="/diagnose" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", maxWidth: "360px", height: "54px", background: "linear-gradient(135deg, #4a9eff 0%, #2d6fd6 100%)", color: "white", fontWeight: 700, fontSize: "16px", letterSpacing: "0.04em", borderRadius: "12px", textDecoration: "none", boxShadow: "0 6px 24px rgba(74,158,255,0.32)" }}>
-            Diagnose My Car — Free
+            Ask Carlos — It&apos;s Free
           </Link>
-          <a href="#example" style={{ fontSize: "14px", color: "#4a5c72", textDecoration: "none" }}>See an example diagnosis ↓</a>
+          <Link href="/diagnose?tab=quote" style={{ fontSize: "14px", color: "#4a5c72", textDecoration: "none" }}>
+            Check a Mechanic Quote →
+          </Link>
         </div>
 
         {/* Trust line */}
-        <div style={{ marginTop: "28px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-            <path d="M5.5 1L6.8 4H10L7.5 6.1 8.4 9.5 5.5 7.5 2.6 9.5 3.5 6.1 1 4H4.2L5.5 1Z" fill="#4a5c72" />
-          </svg>
-          <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#2d3f55", letterSpacing: "0.12em", textTransform: "uppercase" as const }}>No subscription · No account required · Your data is never sold</span>
+        <div style={{ marginTop: "28px", fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#2d3f55", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>
+          No account required · No credit card · No hardware to buy
         </div>
       </section>
 
@@ -61,14 +63,14 @@ export default function LandingPage() {
         <div style={{ maxWidth: "600px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "40px" }}>
             <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#4a9eff", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase" as const }}>How It Works</span>
-            <h2 style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "32px", textTransform: "uppercase" as const, color: "#dce8f5", margin: "8px 0 0", letterSpacing: "-0.01em" }}>Three Steps. Real Answers.</h2>
+            <h2 style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "32px", textTransform: "uppercase" as const, color: "#dce8f5", margin: "8px 0 0" }}>Carlos thinks like a mechanic.</h2>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             {[
               {
                 n: "01",
-                title: "Tell us your car and symptom",
-                body: "Year, make, model. Then describe what's wrong — rough idle, warning light, weird noise — or paste your OBD code.",
+                title: "Tell Carlos what's wrong",
+                body: "Your car year, make, and model. Then describe the symptom, paste the code, or snap a photo of your dashboard lights.",
                 icon: (
                   <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
                     <rect x="3" y="5" width="16" height="12" rx="2" stroke="#4a9eff" strokeWidth="1.5" />
@@ -78,8 +80,8 @@ export default function LandingPage() {
               },
               {
                 n: "02",
-                title: "AI analyzes your specific car",
-                body: "Claude AI cross-references your vehicle's known issues, your symptoms, and real repair data to rank what's most likely wrong.",
+                title: "Carlos analyzes your specific car",
+                body: "Cross-referencing known issues for your exact vehicle, your symptoms, and real repair data to rank what's most likely wrong.",
                 icon: (
                   <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
                     <circle cx="11" cy="11" r="8" stroke="#4a9eff" strokeWidth="1.5" />
@@ -90,8 +92,8 @@ export default function LandingPage() {
               },
               {
                 n: "03",
-                title: "Get your action plan",
-                body: "Ranked causes, step-by-step diagnostic tests, honest cost ranges, and parts you might need — everything to go to a mechanic informed.",
+                title: "You get a real action plan",
+                body: "Ranked causes, step-by-step diagnostic tests, honest cost ranges, and parts you might need. Everything to go in prepared.",
                 icon: (
                   <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
                     <path d="M5 11l4 4 8-8" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -121,7 +123,7 @@ export default function LandingPage() {
       <section id="example" style={{ padding: "56px 20px", maxWidth: "600px", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "32px" }}>
           <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#4a9eff", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase" as const }}>Real Output</span>
-          <h2 style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "32px", textTransform: "uppercase" as const, color: "#dce8f5", margin: "8px 0 0" }}>What You&apos;ll Get</h2>
+          <h2 style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "32px", textTransform: "uppercase" as const, color: "#dce8f5", margin: "8px 0 0" }}>This is what Carlos actually gives you.</h2>
         </div>
 
         {/* Safety verdict */}
@@ -182,13 +184,13 @@ export default function LandingPage() {
         <div style={{ maxWidth: "600px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "40px" }}>
             <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#4a9eff", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase" as const }}>Features</span>
-            <h2 style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "32px", textTransform: "uppercase" as const, color: "#dce8f5", margin: "8px 0 0" }}>Built for Real Car Owners</h2>
+            <h2 style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "32px", textTransform: "uppercase" as const, color: "#dce8f5", margin: "8px 0 0" }}>Everything Carlos can do.</h2>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             {[
               {
-                title: "OBD Code Lookup",
-                body: "Paste any P0xxx, C0xxx, or B1xxx code and get a plain-English explanation with ranked fixes.",
+                title: "Diagnose Any Code",
+                body: "Paste any P0xxx, C0xxx, or B1xxx code. Carlos explains it in plain English with ranked fixes.",
                 icon: (
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <rect x="2" y="4" width="16" height="12" rx="2" stroke="#4a9eff" strokeWidth="1.5" />
@@ -199,41 +201,8 @@ export default function LandingPage() {
                 ),
               },
               {
-                title: "Photo Analysis",
-                body: "Snap your dashboard warning lights or engine bay — AI will analyze what it sees visually.",
-                icon: (
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <rect x="2" y="5" width="16" height="12" rx="2" stroke="#4a9eff" strokeWidth="1.5" />
-                    <circle cx="10" cy="11" r="3" stroke="#4a9eff" strokeWidth="1.5" />
-                    <path d="M7 5l1.5-2h3L13 5" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                ),
-              },
-              {
-                title: "Real Cost Estimates",
-                body: "Parts cost, labor hours, and total range — based on your ZIP code and the actual repair involved.",
-                icon: (
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="10" r="8" stroke="#4a9eff" strokeWidth="1.5" />
-                    <path d="M10 5v2M10 13v2M7 10h6" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" />
-                    <path d="M8 8.5c0-.8.9-1.5 2-1.5s2 .7 2 1.5-2 1.5-2 1.5" stroke="#4a9eff" strokeWidth="1.2" strokeLinecap="round" />
-                  </svg>
-                ),
-              },
-              {
-                title: "Mod-Aware Diagnosis",
-                body: "List your mods and tune. Torque factors in aftermarket parts when ranking what's most likely wrong.",
-                icon: (
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M4 10a6 6 0 1 1 12 0A6 6 0 0 1 4 10z" stroke="#4a9eff" strokeWidth="1.5" />
-                    <path d="M10 7v3l2 2" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" />
-                    <path d="M16 4l2-2M4 16l-2 2" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
-                  </svg>
-                ),
-              },
-              {
-                title: "Quote Checker",
-                body: "Got a mechanic's estimate? Paste it and find out instantly if the price is fair, high, or a red flag.",
+                title: "Check Your Quote",
+                body: "Paste the estimate. Carlos tells you what's fair, what's high, and what's a red flag.",
                 icon: (
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <path d="M4 5h12v2H4zM4 9h8v2H4zM4 13h10" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" />
@@ -243,13 +212,44 @@ export default function LandingPage() {
                 ),
               },
               {
-                title: "Ask Follow-Ups",
-                body: "Once diagnosed, ask the AI anything about your repair — it remembers your exact situation.",
+                title: "Photo Analysis",
+                body: "Snap your dashboard lights or engine bay. Carlos analyzes what he sees.",
                 icon: (
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M3 4h14v10H3z" stroke="#4a9eff" strokeWidth="1.5" strokeLinejoin="round" />
-                    <path d="M7 14l-2 3h10l-2-3" stroke="#4a9eff" strokeWidth="1.5" strokeLinejoin="round" />
-                    <path d="M7 8h6M7 11h4" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" />
+                    <rect x="2" y="5" width="16" height="12" rx="2" stroke="#4a9eff" strokeWidth="1.5" />
+                    <circle cx="10" cy="11" r="3" stroke="#4a9eff" strokeWidth="1.5" />
+                    <path d="M7 5l1.5-2h3L13 5" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                ),
+              },
+              {
+                title: "Sound Recognition",
+                body: "Record a knock, squeal, or rattle. Carlos identifies what it likely means.",
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="8" r="3" stroke="#4a9eff" strokeWidth="1.5" />
+                    <path d="M10 11v5M7 18h6" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" />
+                    <path d="M5 7c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="#4a9eff" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
+                  </svg>
+                ),
+              },
+              {
+                title: "Your Garage",
+                body: "Save your cars, track repairs over time, and get maintenance reminders.",
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M3 8l7-5 7 5v9H3V8z" stroke="#4a9eff" strokeWidth="1.5" strokeLinejoin="round" />
+                    <rect x="7" y="12" width="6" height="5" rx="1" stroke="#4a9eff" strokeWidth="1.2" />
+                  </svg>
+                ),
+              },
+              {
+                title: "No Hardware Needed",
+                body: "Unlike FIXD or BlueDriver, Carlos works without any dongle or adapter.",
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2z" stroke="#4a9eff" strokeWidth="1.5" />
+                    <path d="M10 6v4l3 2" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 ),
               },
@@ -306,13 +306,13 @@ export default function LandingPage() {
       {/* ── FINAL CTA ── */}
       <section style={{ padding: "64px 20px", textAlign: "center", maxWidth: "480px", margin: "0 auto" }}>
         <h2 style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "clamp(32px, 8vw, 44px)", textTransform: "uppercase" as const, color: "#dce8f5", margin: "0 0 16px", lineHeight: 1.05 }}>
-          Don&apos;t guess.<br /><span style={{ color: "#4a9eff" }}>Know.</span>
+          Don&apos;t guess.<br /><span style={{ color: "#4a9eff" }}>Ask Carlos.</span>
         </h2>
         <p style={{ fontSize: "15px", color: "#7d8fa8", margin: "0 0 32px", lineHeight: 1.6 }}>
-          Stop paying for diagnoses you didn&apos;t need. Stop going in blind. Torque tells you what&apos;s wrong before you ever talk to a mechanic.
+          Stop paying for diagnoses you didn&apos;t need. Stop going in blind. Carlos tells you what&apos;s wrong before you ever talk to a mechanic.
         </p>
         <Link href="/diagnose" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "100%", maxWidth: "360px", height: "54px", background: "linear-gradient(135deg, #4a9eff 0%, #2d6fd6 100%)", color: "white", fontWeight: 700, fontSize: "16px", letterSpacing: "0.04em", borderRadius: "12px", textDecoration: "none", boxShadow: "0 6px 24px rgba(74,158,255,0.32)" }}>
-          Diagnose My Car — Free
+          Ask Carlos — It&apos;s Free
         </Link>
         <div style={{ marginTop: "16px", fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", color: "#2d3f55", letterSpacing: "0.08em" }}>
           No sign-up · Works on any car · Free forever
@@ -326,7 +326,7 @@ export default function LandingPage() {
             <circle cx="12" cy="12" r="10" stroke="#2d3f55" strokeWidth="1.5" />
             <circle cx="12" cy="12" r="4" fill="#2d3f55" />
           </svg>
-          <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "14px", letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "#2d3f55" }}>TORQUE</span>
+          <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "14px", letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "#2d3f55" }}>CARLOS</span>
         </div>
         <div style={{ display: "flex", gap: "20px" }}>
           <Link href="/diagnose" style={{ fontSize: "12px", color: "#2d3f55", textDecoration: "none" }}>App</Link>
@@ -334,7 +334,7 @@ export default function LandingPage() {
           <Link href="/privacy" style={{ fontSize: "12px", color: "#2d3f55", textDecoration: "none" }}>Privacy</Link>
         </div>
         <div style={{ fontSize: "11px", color: "#1c2a3e", textAlign: "center" }}>
-          © {new Date().getFullYear()} Torque. AI-powered diagnostics for real car owners.
+          © {new Date().getFullYear()} Mechanic Carlos · mchaniccarlos.com
         </div>
       </footer>
 

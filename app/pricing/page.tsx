@@ -32,7 +32,7 @@ export default function PricingPage() {
 
       {/* Nav */}
       <nav style={{ position: "sticky", top: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "52px", backgroundColor: "rgba(6,8,16,0.95)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid #172134" }}>
-        <Link href="/" style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "18px", letterSpacing: "0.06em", textTransform: "uppercase" as const, color: "#dce8f5", textDecoration: "none" }}>TORQUE</Link>
+        <Link href="/" style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "18px", letterSpacing: "0.06em", textTransform: "uppercase" as const, color: "#dce8f5", textDecoration: "none" }}>CARLOS</Link>
         <Link href="/diagnose" style={{ fontSize: "13px", color: "#4a5c72", textDecoration: "none" }}>← Back to app</Link>
       </nav>
 

@@ -13,7 +13,7 @@ import { buildTextMessage, buildEmailMessage, buildWalkInScript, type MechanicMe
 import FeedbackCard from "@/components/FeedbackCard";
 import TorqueLogo from "@/components/TorqueLogo";
 
-const APP_URL = typeof window !== "undefined" ? window.location.origin : "https://mechanic-ai-dun.vercel.app";
+const APP_URL = typeof window !== "undefined" ? window.location.origin : "https://mchaniccarlos.com";
 
 const cap = (s: string) => s.split(" ").map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
 
@@ -403,7 +403,7 @@ export default function DiagnosticReport({
     if (!token) return;
     const url = `${APP_URL}/r/${token}`;
     try {
-      await navigator.share({ title: `${year} ${cap(make)} ${cap(model)} Diagnosis`, text: `I diagnosed my ${year} ${cap(make)} ${cap(model)} with Torque`, url });
+      await navigator.share({ title: `${year} ${cap(make)} ${cap(model)} Diagnosis`, text: `I diagnosed my ${year} ${cap(make)} ${cap(model)} with Carlos`, url });
       setShowShareSheet(false);
     } catch { /* user cancelled */ }
   }
@@ -861,7 +861,7 @@ export default function DiagnosticReport({
               onClick={() => setChatExpanded(true)}
               style={{ display: "flex", alignItems: "center", gap: "10px", height: "44px", padding: "0 12px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", cursor: "text" }}
             >
-              <span style={{ fontSize: "14px", color: "#2d3f55", flex: 1 }}>Ask anything about this diagnosis…</span>
+              <span style={{ fontSize: "14px", color: "#2d3f55", flex: 1 }}>Ask Carlos anything about this diagnosis…</span>
               <ChevronDown size={14} color="#2d3f55" />
             </div>
           ) : (
@@ -899,7 +899,7 @@ export default function DiagnosticReport({
                   type="text"
                   value={chatInput}
                   onChange={(e) => { setChatInput(e.target.value); if (e.target.value) setShowQuickReplies(false); else if (chatMessages.length === 0) setShowQuickReplies(true); }}
-                  placeholder="Ask anything about this diagnosis..."
+                  placeholder="Ask Carlos anything about this diagnosis..."
                   style={{ flex: 1, minWidth: 0, height: "44px", padding: "0 12px", fontSize: "16px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", color: "#dce8f5" }}
                 />
                 <button
@@ -924,9 +924,9 @@ export default function DiagnosticReport({
         const shareUrl = shareToken ? `${APP_URL}/r/${shareToken}` : null;
         const carName = `${year} ${cap(make)} ${cap(model)}`;
         const shareText = `Check out this diagnosis for my ${carName}`;
-        const emailSubject = encodeURIComponent(`${carName} diagnosis — Torque`);
+        const emailSubject = encodeURIComponent(`${carName} diagnosis — Carlos`);
         const emailBody = encodeURIComponent(`${shareText}\n\n${shareUrl ?? ""}`);
-        const tweetText = encodeURIComponent(`Diagnosed my ${carName} with Torque`);
+        const tweetText = encodeURIComponent(`Diagnosed my ${carName} with Carlos`);
         const chipStyle: React.CSSProperties = {
           display: "flex", alignItems: "center", justifyContent: "center", height: "44px",
           backgroundColor: "#101822", border: "1px solid #1c2a3e", borderRadius: "10px",
@@ -1038,7 +1038,7 @@ export default function DiagnosticReport({
             <div ref={shareCardRef} style={{ backgroundColor: "#060810", borderRadius: "20px", padding: "28px 24px", overflow: "hidden", boxSizing: "border-box" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "20px" }}>
                 <Wrench size={14} color="#4a9eff" />
-                <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontSize: "14px", fontWeight: 700, color: "#4a9eff", letterSpacing: "0.12em" }}>TORQUE</span>
+                <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontSize: "14px", fontWeight: 700, color: "#4a9eff", letterSpacing: "0.12em" }}>CARLOS</span>
               </div>
               <div style={{ fontSize: "24px", fontWeight: 800, color: "#dce8f5", marginBottom: "4px", lineHeight: 1.1 }}>{year} {cap(make)} {cap(model)}</div>
               <div style={{ fontSize: "13px", color: "#4a5c72", marginBottom: "20px", lineHeight: 1.4, wordBreak: "break-word" }}>{issue.length > 72 ? issue.slice(0, 69) + "…" : issue}</div>
@@ -1067,7 +1067,7 @@ export default function DiagnosticReport({
               )}
               <div style={{ borderTop: "1px solid #172134", paddingTop: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: "11px", color: "#2d3f55" }}>AI diagnosis · verify with a mechanic</span>
-                <span style={{ fontSize: "12px", color: "#4a9eff", fontWeight: 700 }}>torqueapp.co</span>
+                <span style={{ fontSize: "12px", color: "#4a9eff", fontWeight: 700 }}>mchaniccarlos.com</span>
               </div>
             </div>
             <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>

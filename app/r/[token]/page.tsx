@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import GateSignupButton from "./GateSignupButton";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://mechanic-ai-dun.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://mchaniccarlos.com";
 
 const SAFETY_CONFIG = {
   STOP: { bg: "#1a0a0a", border: "#3a1515", accent: "#ef4444", badgeBg: "#ef4444", label: "⛔ STOP DRIVING", reasonColor: "#fca5a5" },
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
     .eq("token", token)
     .single();
 
-  if (!data) return { title: "Diagnosis | Torque" };
+  if (!data) return { title: "Diagnosis | Carlos" };
 
   const { car_year, car_make, car_model, code_or_symptom, diagnosis_json } = data;
   const verdict = diagnosis_json?.driveSafety?.verdict ?? "OKAY";
@@ -38,10 +38,10 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   const verdictText = verdict === "STOP" ? "Stop driving." : verdict === "CAUTION" ? "Drive with caution." : "Safe to drive.";
 
   return {
-    title: `${car_year} ${car_make} ${car_model} — ${code_or_symptom} | Torque`,
+    title: `${car_year} ${car_make} ${car_model} — ${code_or_symptom} | Carlos`,
     description: `${verdictText} Most likely: ${topCause}. Est. repair: ${topCost}. Full step-by-step guide inside.`,
     openGraph: {
-      title: `${car_year} ${car_make} ${car_model} Diagnosis | Torque`,
+      title: `${car_year} ${car_make} ${car_model} Diagnosis | Carlos`,
       description: `${verdictText} ${topCause}. Est: ${topCost}.`,
       images: [`${APP_URL}/api/og?token=${token}`],
       url: `${APP_URL}/r/${token}`,
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
     },
     twitter: {
       card: "summary_large_image",
-      title: `${car_year} ${car_make} ${car_model} Diagnosis | Torque`,
+      title: `${car_year} ${car_make} ${car_model} Diagnosis | Carlos`,
       description: `${verdictText} ${topCause}. Est: ${topCost}.`,
       images: [`${APP_URL}/api/og?token=${token}`],
     },
@@ -95,7 +95,7 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
       {/* Header */}
       <div style={{ position: "sticky", top: 0, zIndex: 10, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#0d0f12", borderBottom: "1px solid #1e2329" }}>
         <Link href="/" style={{ textDecoration: "none" }}>
-          <span style={{ fontWeight: 900, fontSize: "18px", color: "#3b82f6", letterSpacing: "0.15em" }}>TORQUE</span>
+          <span style={{ fontWeight: 900, fontSize: "18px", color: "#3b82f6", letterSpacing: "0.15em" }}>CARLOS</span>
         </Link>
         {isOwner && (
           <div style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "#1a1e25", border: "1px solid #252b34", borderRadius: "20px", padding: "4px 12px" }}>
@@ -106,7 +106,7 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
         )}
         {!isSignedIn && (
           <Link href="/" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(59,130,246,0.5)", color: "#3b82f6", backgroundColor: "rgba(59,130,246,0.08)", textDecoration: "none" }}>
-            Try Torque
+            Try Carlos
           </Link>
         )}
         {isSignedIn && !isOwner && (
@@ -120,7 +120,7 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
 
         {/* Provenance */}
         <div style={{ fontSize: "12px", color: "#4b5563", textAlign: "center", padding: "4px 0" }}>
-          A Torque user shared this diagnosis
+          A Carlos user shared this diagnosis
         </div>
 
         {/* Car + issue */}

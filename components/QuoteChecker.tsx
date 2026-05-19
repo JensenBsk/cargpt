@@ -156,7 +156,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
               </span>
             </div>
             <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid #1e2329" }}>
-              <span style={{ fontSize: "11px", color: "#4a5c72" }}>✓ Independent analysis — Torque has no relationship with any mechanic or repair shop</span>
+              <span style={{ fontSize: "11px", color: "#4a5c72" }}>✓ Independent analysis — Carlos has no relationship with any mechanic or repair shop</span>
             </div>
           </div>
 
@@ -378,7 +378,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
           className={loading ? "btn-shimmer" : "tap-target"}
           style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", height: "56px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: canSubmit ? "pointer" : "not-allowed", opacity: canSubmit ? 1 : 0.4 }}
         >
-          {loading ? (quoteImage ? "Analyzing photo…" : "Analyzing…") : "Check Quote"}
+          {loading ? (quoteImage ? "Carlos is reading your quote…" : "Carlos is reading your quote…") : "Ask Carlos"}
         </button>
       </div>
     </div>

@@ -76,7 +76,7 @@ export default function AuthModal({ onClose }: Props) {
       <div style={{ textAlign: "center", marginBottom: "24px" }}>
         <div style={{ fontSize: "24px", marginBottom: "6px" }}>🔧</div>
         <div style={{ fontSize: "20px", fontWeight: 700, color: "#f1f5f9", marginBottom: "4px" }}>
-          {mode === "signin" ? "Sign in to Torque" : "Create your account"}
+          {mode === "signin" ? "Sign in to Carlos" : "Create your account"}
         </div>
         <div style={{ fontSize: "13px", color: "#6b7280" }}>Save diagnoses, build your garage, track fixes</div>
       </div>
