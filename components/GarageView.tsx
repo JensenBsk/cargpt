@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import VinInput from "@/components/VinInput";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Bell } from "lucide-react";
 import type { Diagnostic } from "@/types/diagnostic";
 import type { RepairEntry } from "@/types/repairs";
+import { requestPushPermission } from "@/hooks/useOneSignal";
 
 const LS_KEY = "torque_diagnosis_history";
 
@@ -94,6 +95,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
   const [showRepairSection, setShowRepairSection] = useState<string | null>(null);
   const [showAddRepair, setShowAddRepair] = useState<string | null>(null);
   const [repairForm, setRepairForm] = useState({ name: "", cost: "", who: "diy" as "diy" | "shop", shop: "" });
+  const [reminderState, setReminderState] = useState<Record<string, "idle" | "loading" | "done" | "unavailable">>({});
 
   useEffect(() => {
     try {
@@ -440,6 +442,23 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                           <button onClick={() => setMaintResults((prev) => { const n = { ...prev }; delete n[car.id]; return n; })} style={{ marginTop: "2px", fontSize: "11px", color: "#4a5c72", backgroundColor: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
                             Update mileage →
                           </button>
+                          {process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID && services.some(s => s.status === "OVERDUE" || s.status === "DUE_SOON") && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const carId = car.id;
+                                const state = reminderState[carId] ?? "idle";
+                                if (state !== "idle") return;
+                                setReminderState(prev => ({ ...prev, [carId]: "loading" }));
+                                const granted = await requestPushPermission();
+                                setReminderState(prev => ({ ...prev, [carId]: granted ? "done" : "unavailable" }));
+                              }}
+                              style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "6px", width: "100%", height: "36px", backgroundColor: reminderState[car.id] === "done" ? "rgba(34,197,94,0.1)" : "rgba(74,158,255,0.08)", border: `1px solid ${reminderState[car.id] === "done" ? "rgba(34,197,94,0.3)" : "rgba(74,158,255,0.2)"}`, borderRadius: "8px", cursor: reminderState[car.id] && reminderState[car.id] !== "idle" ? "default" : "pointer", padding: "0 12px", color: reminderState[car.id] === "done" ? "#22c55e" : "#4a9eff", fontSize: "12px", fontWeight: 600 }}
+                            >
+                              <Bell size={12} />
+                              {reminderState[car.id] === "loading" ? "Enabling…" : reminderState[car.id] === "done" ? "Reminders on ✓" : reminderState[car.id] === "unavailable" ? "Notifications blocked" : "Get reminded when due"}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>

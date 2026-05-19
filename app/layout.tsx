@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Barlow_Condensed, IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import Providers from "@/components/Providers";
 import "./globals.css";
 
@@ -51,6 +52,13 @@ export default function RootLayout({
         style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}
         suppressHydrationWarning
       >
+        {process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID && (
+          <Script
+            src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+            defer
+            strategy="lazyOnload"
+          />
+        )}
         <Providers>{children}</Providers>
       </body>
     </html>

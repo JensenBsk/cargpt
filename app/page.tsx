@@ -330,6 +330,7 @@ export default function LandingPage() {
         </div>
         <div style={{ display: "flex", gap: "20px" }}>
           <Link href="/diagnose" style={{ fontSize: "12px", color: "#2d3f55", textDecoration: "none" }}>App</Link>
+          <Link href="/pricing" style={{ fontSize: "12px", color: "#2d3f55", textDecoration: "none" }}>Pricing</Link>
           <Link href="/privacy" style={{ fontSize: "12px", color: "#2d3f55", textDecoration: "none" }}>Privacy</Link>
         </div>
         <div style={{ fontSize: "11px", color: "#1c2a3e", textAlign: "center" }}>
