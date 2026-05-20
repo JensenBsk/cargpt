@@ -430,11 +430,17 @@ export default function Home() {
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 20px 20px", width: "100%", maxWidth: "100%", boxSizing: "border-box", overflowX: "hidden" }}>
 
               {/* Hero */}
-              <div style={{ textAlign: "center", padding: "36px 0 28px" }}>
-                <h1 style={{ fontFamily: "var(--font-ibm), sans-serif", fontSize: "26px", fontWeight: 700, color: "#dce8f5", margin: "0 0 8px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-                  What&apos;s wrong<br />with your car?
+              <div style={{ textAlign: "center", padding: "24px 20px 16px" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/carlos/carlos-hero.png"
+                  alt="Carlos"
+                  style={{ height: "100px", width: "auto", margin: "0 auto 12px", display: "block", filter: "drop-shadow(0 6px 16px rgba(59,130,246,0.3))" }}
+                />
+                <h1 style={{ color: "white", fontSize: "22px", fontWeight: 700, marginBottom: "4px" }}>
+                  What&apos;s going on?
                 </h1>
-                <p style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", letterSpacing: "0.15em", color: "#2d3f55", margin: 0, textTransform: "uppercase" }}>
+                <p style={{ color: "#8b95a8", fontSize: "14px", margin: 0 }}>
                   Tell Carlos — he&apos;ll figure it out.
                 </p>
               </div>
