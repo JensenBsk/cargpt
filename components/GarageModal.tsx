@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 
 interface Car {
   id: string;
@@ -35,7 +35,7 @@ const fieldStyle: React.CSSProperties = {
 };
 
 export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: Props) {
-  const { user } = useAuth();
+  const { user, isSignedIn } = useUser();
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -44,7 +44,7 @@ export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: P
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) { setLoading(false); return; }
+    if (!isSignedIn) { setLoading(false); return; }
     fetch("/api/garage")
       .then((r) => r.json())
       .then((d) => { setCars(d.cars || []); setLoading(false); })
@@ -96,7 +96,7 @@ export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: P
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
           <div style={{ fontSize: "16px", fontWeight: 700, color: "#f1f5f9" }}>🚗 My Garage</div>
-          {user && (
+          {isSignedIn && (
             <button
               onClick={() => setShowAddForm((v) => !v)}
               style={{ fontSize: "13px", fontWeight: 600, padding: "6px 12px", borderRadius: "8px", border: "1px solid #3b82f6", color: "#3b82f6", backgroundColor: "transparent", cursor: "pointer" }}
@@ -106,7 +106,7 @@ export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: P
           )}
         </div>
 
-        {!user ? (
+        {!isSignedIn ? (
           <div style={{ textAlign: "center", padding: "24px 0" }}>
             <div style={{ fontSize: "32px", marginBottom: "12px" }}>🔒</div>
             <div style={{ fontSize: "15px", fontWeight: 600, color: "#f1f5f9", marginBottom: "6px" }}>Sign in to use My Garage</div>

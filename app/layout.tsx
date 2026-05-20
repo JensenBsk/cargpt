@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Barlow_Condensed, IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
+import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import Providers from "@/components/Providers";
 import "./globals.css";
 
@@ -62,24 +64,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${barlow.variable} ${ibm.variable} ${jetbrains.variable} h-full antialiased`}
+    <ClerkProvider
+      appearance={{ baseTheme: dark, variables: { colorPrimary: "#4a9eff", colorBackground: "#060810", colorInputBackground: "#101822", colorText: "#dce8f5" } }}
     >
-      <body
-        className="min-h-full flex flex-col"
-        style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}
-        suppressHydrationWarning
+      <html
+        lang="en"
+        className={`${inter.variable} ${barlow.variable} ${ibm.variable} ${jetbrains.variable} h-full antialiased`}
       >
-        {process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID && (
-          <Script
-            src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
-            defer
-            strategy="lazyOnload"
-          />
-        )}
-        <Providers>{children}</Providers>
-      </body>
-    </html>
+        <body
+          className="min-h-full flex flex-col"
+          style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}
+          suppressHydrationWarning
+        >
+          {process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID && (
+            <Script
+              src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+              defer
+              strategy="lazyOnload"
+            />
+          )}
+          <Providers>{children}</Providers>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

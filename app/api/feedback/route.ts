@@ -1,13 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
+import { auth } from "@clerk/nextjs/server";
 
 export async function POST(request: Request) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return Response.json({ saved: false });
   }
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
+  const { userId } = await auth();
   const { diagnosisId, resolved, actualFix } = await request.json();
 
   if (!diagnosisId || resolved === undefined) {
@@ -19,11 +18,10 @@ export async function POST(request: Request) {
     resolved,
     actual_fix: actualFix || null,
   };
-  if (user) record.user_id = user.id;
+  if (userId) record.user_id = userId;
 
-  const { error } = await supabase
-    .from("diagnosis_feedback")
-    .upsert(record);
+  const supabase = createClient();
+  const { error } = await supabase.from("diagnosis_feedback").upsert(record);
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ saved: true });

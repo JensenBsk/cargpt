@@ -1,7 +1,7 @@
 "use client";
 
 import { Wrench, Receipt, Car, Lock } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 
 export type AppTab = "diagnose" | "quote" | "garage";
 
@@ -17,7 +17,7 @@ const TABS: { id: AppTab; label: string; Icon: React.ElementType }[] = [
 ];
 
 export default function BottomNav({ activeTab, onChange }: Props) {
-  const { user } = useAuth();
+  const { isSignedIn } = useUser();
 
   return (
     <nav
@@ -39,7 +39,7 @@ export default function BottomNav({ activeTab, onChange }: Props) {
       {TABS.map(({ id, label, Icon }) => {
         const isActive = activeTab === id;
         const isGarage = id === "garage";
-        const locked = isGarage && !user;
+        const locked = isGarage && !isSignedIn;
 
         return (
           <button

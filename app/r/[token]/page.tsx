@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -68,7 +69,7 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
 
   if (error || !share) notFound();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { userId } = await auth();
 
   // Increment view count async (don't await)
   supabase
@@ -77,8 +78,8 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
     .eq("token", token)
     .then(() => {});
 
-  const isSignedIn = !!user;
-  const isOwner = user?.id === share.created_by && !!share.created_by;
+  const isSignedIn = !!userId;
+  const isOwner = userId === share.created_by && !!share.created_by;
 
   const { car_year, car_make, car_model, code_or_symptom, diagnosis_json, view_count } = share;
   const diagnosis = diagnosis_json;

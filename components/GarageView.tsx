@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser, useClerk } from "@clerk/nextjs";
 import VinInput from "@/components/VinInput";
 import { AlertTriangle, Bell } from "lucide-react";
 import type { Diagnostic } from "@/types/diagnostic";
@@ -78,7 +78,8 @@ function formatDate(iso: string): string {
 }
 
 export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnosis }: Props) {
-  const { user } = useAuth();
+  const { user, isSignedIn } = useUser();
+  const { openSignIn } = useClerk();
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -112,7 +113,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
   }, []);
 
   useEffect(() => {
-    if (!user) { setLoading(false); return; }
+    if (!isSignedIn) { setLoading(false); return; }
     fetch("/api/garage")
       .then((r) => r.json())
       .then((d) => {
@@ -129,7 +130,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
         });
       })
       .catch(() => setLoading(false));
-  }, [user]);
+  }, [isSignedIn]);
 
   async function addCar(e: React.FormEvent) {
     e.preventDefault();
@@ -176,9 +177,9 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
     }
   }
 
-  const visibleHistory = historyItems.slice(0, user ? 10 : 5);
+  const visibleHistory = historyItems.slice(0, isSignedIn ? 10 : 5);
 
-  if (!user) {
+  if (!isSignedIn) {
     return (
       <div className="view-enter" style={{ padding: "60px 24px", textAlign: "center" }}>
         <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔒</div>
@@ -187,7 +188,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
           Save your cars and track repairs over time.<br />
           <span style={{ fontSize: "13px", color: "#4a5c72" }}>Your garage data is stored locally on your device until you sign in.</span>
         </div>
-        <button onClick={onRequestSignIn} className="tap-target" style={{ height: "48px", padding: "0 28px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: "pointer" }}>
+        <button onClick={() => openSignIn()} className="tap-target" style={{ height: "48px", padding: "0 28px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: "pointer" }}>
           Sign In
         </button>
 

@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { createClient } from "@/lib/supabase/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 export async function POST(request: Request) {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -7,15 +7,15 @@ export async function POST(request: Request) {
   }
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
+  const { userId } = await auth();
+  if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { priceId, mode = "subscription" } = await request.json();
+  const clerkUser = await currentUser();
+  const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
 
+  const { priceId, mode = "subscription" } = await request.json();
   if (!priceId) {
     return Response.json({ error: "Missing priceId" }, { status: 400 });
   }
@@ -24,14 +24,14 @@ export async function POST(request: Request) {
 
   try {
     const session = await stripe.checkout.sessions.create({
-      customer_email: user.email,
+      customer_email: email,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: mode === "payment" ? "payment" : "subscription",
       success_url: `${appUrl}/diagnose?upgrade=success`,
       cancel_url: `${appUrl}/pricing`,
-      metadata: { user_id: user.id },
+      metadata: { user_id: userId },
       allow_promotion_codes: true,
-      subscription_data: mode !== "payment" ? { metadata: { user_id: user.id } } : undefined,
+      subscription_data: mode !== "payment" ? { metadata: { user_id: userId } } : undefined,
     });
 
     return Response.json({ url: session.url });

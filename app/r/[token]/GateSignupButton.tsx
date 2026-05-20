@@ -1,22 +1,15 @@
 "use client";
 
 import { Lock } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useClerk } from "@clerk/nextjs";
 
 interface Props {
   token: string;
 }
 
 export default function GateSignupButton({ token }: Props) {
-  const { signInWithGoogle, available } = useAuth();
-
-  function handleSignUp() {
-    if (available) {
-      signInWithGoogle(`/r/${token}`);
-    } else {
-      window.location.href = "/";
-    }
-  }
+  const { openSignIn } = useClerk();
+  const returnUrl = `/r/${token}`;
 
   return (
     <div
@@ -41,14 +34,14 @@ export default function GateSignupButton({ token }: Props) {
           What to check first. What it&apos;ll cost. What NOT to do.
         </p>
         <button
-          onClick={handleSignUp}
+          onClick={() => openSignIn({ forceRedirectUrl: returnUrl })}
           className="tap-target"
           style={{ width: "100%", height: "52px", backgroundColor: "#3b82f6", color: "white", fontWeight: 700, fontSize: "16px", border: "none", borderRadius: "12px", cursor: "pointer" }}
         >
           Sign up free — 10 seconds
         </button>
         <button
-          onClick={handleSignUp}
+          onClick={() => openSignIn({ forceRedirectUrl: returnUrl })}
           style={{ display: "block", width: "100%", textAlign: "center", marginTop: "10px", fontSize: "13px", color: "#6b7280", backgroundColor: "transparent", border: "none", cursor: "pointer" }}
         >
           Already have an account? Sign in

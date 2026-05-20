@@ -4,14 +4,13 @@ import { useState, useRef, useEffect } from "react";
 import type { Diagnostic, ChatMessage } from "@/types/diagnostic";
 import DiagnosticReport from "@/components/DiagnosticReport";
 import QuoteChecker from "@/components/QuoteChecker";
-import AuthModal from "@/components/AuthModal";
 import GarageView from "@/components/GarageView";
 import BottomNav, { type AppTab } from "@/components/BottomNav";
 import TorqueLogo from "@/components/TorqueLogo";
 import VinInput from "@/components/VinInput";
 import ErrorCard, { type ErrorType } from "@/components/ErrorCard";
 import OnboardingCarousel from "@/components/OnboardingCarousel";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { useToast } from "@/contexts/ToastContext";
 import { resizeImage } from "@/utils/resizeImage";
 import { MapPin, Camera, Wrench, Lock, WifiOff } from "lucide-react";
@@ -41,7 +40,9 @@ function saveToLS(item: Omit<HistoryItem, "id" | "date">) {
 }
 
 export default function Home() {
-  const { user, available, signOut } = useAuth();
+  const { user, isSignedIn } = useUser();
+  const { signOut, openSignIn } = useClerk();
+  const available = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<AppTab>("diagnose");
@@ -59,7 +60,6 @@ export default function Home() {
   const [diagnosis, setDiagnosis] = useState<Diagnostic | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [diagnosisId, setDiagnosisId] = useState<string | null>(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [quoteResetKey, setQuoteResetKey] = useState(0);
   const [quoteHasResult, setQuoteHasResult] = useState(false);
   const [dashboardImage, setDashboardImage] = useState<string | null>(null);
@@ -104,7 +104,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!user || !available) return;
+    if (!isSignedIn || !available) return;
     try {
       const stored = localStorage.getItem(LS_KEY);
       if (!stored) return;
@@ -118,7 +118,7 @@ export default function Home() {
       });
     } catch { /* ignore */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, isSignedIn]);
 
   async function handleDiagnose(e: React.FormEvent) {
     e.preventDefault();
@@ -175,7 +175,7 @@ export default function Home() {
 
       saveToLS({ year, make, model, issue, diagnosis: diag, verdict: diag.driveSafety.verdict });
 
-      if (available) {
+      if (available && isSignedIn) {
         fetch("/api/diagnoses", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -386,17 +386,16 @@ export default function Home() {
         ) : (
           <TorqueLogo markSize={28} wordmarkSize={20} glow="soft" />
         )}
-        {available && (
-          user ? (
-            <button onClick={signOut} className="tap-target" style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid #1c2a3e", color: "#4a5c72", backgroundColor: "transparent", cursor: "pointer" }}>
-              {user.email?.split("@")[0]} · out
+        {isSignedIn ? (
+            <button onClick={() => signOut()} className="tap-target" style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid #1c2a3e", color: "#4a5c72", backgroundColor: "transparent", cursor: "pointer" }}>
+              {user?.primaryEmailAddress?.emailAddress?.split("@")[0] ?? "Account"} · out
             </button>
           ) : (
-            <button onClick={() => setShowAuthModal(true)} className="tap-target" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.35)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}>
+            <button onClick={() => openSignIn()} className="tap-target" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.35)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}>
               Sign In
             </button>
           )
-        )}
+        }
       </header>
 
       <main style={{
@@ -691,7 +690,7 @@ export default function Home() {
         <div style={{ display: activeTab === "garage" ? "block" : "none" }}>
           <GarageView
             onSelectCar={handleSelectCar}
-            onRequestSignIn={() => setShowAuthModal(true)}
+            onRequestSignIn={() => openSignIn()}
             onOpenDiagnosis={handleOpenHistoryDiagnosis}
           />
         </div>
@@ -724,7 +723,6 @@ export default function Home() {
       )}
 
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />
-      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
       {showOnboarding && <OnboardingCarousel onDone={finishOnboarding} />}
     </>
   );

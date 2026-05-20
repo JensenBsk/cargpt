@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/nextjs";
 import { createClient } from "@/lib/supabase/client";
 
 export type SubscriptionTier = "free" | "pro" | "enthusiast";
@@ -15,11 +15,12 @@ export interface SubscriptionState {
 }
 
 export function useSubscription(): SubscriptionState {
-  const { user } = useAuth();
+  const { user, isLoaded } = useUser();
   const [tier, setTier] = useState<SubscriptionTier>("free");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isLoaded) return;
     if (!user) { setTier("free"); setLoading(false); return; }
 
     const supabase = createClient();
@@ -38,7 +39,7 @@ export function useSubscription(): SubscriptionState {
         setLoading(false);
       }
     })();
-  }, [user?.id]);
+  }, [user?.id, isLoaded]);
 
   return {
     tier,
