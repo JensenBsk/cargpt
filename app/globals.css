@@ -197,9 +197,21 @@ img {
 }
 .nav-pill { animation: pill-in 200ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 
-/* Carlos hero float */
+/* Carlos animations */
 @keyframes carlos-float {
   0%, 100% { transform: translateY(0px); }
   50%       { transform: translateY(-10px); }
 }
-.carlos-float { animation: carlos-float 3s ease-in-out infinite; }
+.carlos-float { animation: carlos-float 4s ease-in-out infinite; }
+
+@keyframes carlos-think {
+  0%, 100% { transform: rotate(-2deg) translateY(0px); }
+  50%       { transform: rotate(2deg) translateY(-4px); }
+}
+.carlos-think { animation: carlos-think 2s ease-in-out infinite; }
+
+@keyframes carlos-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.8; transform: scale(0.97); }
+}
+.carlos-pulse { animation: carlos-pulse 2s ease-in-out infinite; }

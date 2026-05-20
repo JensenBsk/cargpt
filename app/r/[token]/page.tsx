@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
 import GateSignupButton from "./GateSignupButton";
 
@@ -120,15 +119,14 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
       <div style={{ padding: "16px 16px", maxWidth: "560px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "12px" }}>
 
         {/* Provenance */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", padding: "8px 0 4px" }}>
-          <Image
-            src="/carlos-icon.png"
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/carlos/carlos-icon.png"
             alt="Carlos"
-            width={52}
-            height={52}
-            style={{ borderRadius: "50%", objectFit: "cover", filter: "drop-shadow(0 4px 12px rgba(74,158,255,0.3))" }}
+            style={{ width: "40px", height: "40px", borderRadius: "10px", boxShadow: "0 0 12px rgba(59,130,246,0.3)", flexShrink: 0 }}
           />
-          <div style={{ fontSize: "13px", fontWeight: 600, color: "#6b7280" }}>Carlos diagnosed this car</div>
+          <span style={{ color: "#6b7280", fontSize: "14px" }}>Carlos diagnosed this car</span>
         </div>
 
         {/* Car + issue */}

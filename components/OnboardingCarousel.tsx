@@ -4,19 +4,22 @@ import { useState } from "react";
 
 const CARDS = [
   {
-    icon: "🔧",
-    title: "Your AI mechanic",
-    body: "Tell us your code or symptom. Get a real answer in seconds — not a list of possibilities.",
+    img: "/carlos/carlos-hero.png",
+    alt: "Meet Carlos",
+    title: "Meet Carlos",
+    body: "Your AI mechanic. Tell him what's wrong and he figures it out — ranked causes, step-by-step checks, real cost estimates. In seconds. Free.",
   },
   {
-    icon: "💰",
-    title: "Stop overpaying",
-    body: "Paste your mechanic's quote. We'll tell you what's fair and what isn't.",
+    img: "/carlos/carlos-reading.png",
+    alt: "Carlos checking your quote",
+    title: "Never overpay again",
+    body: "Paste your mechanic's quote. Carlos tells you what's fair, what's high, and what's a red flag — before you approve anything.",
   },
   {
-    icon: "🚗",
-    title: "Your garage, your history",
-    body: "Save your cars and track repairs over time. No subscription needed to get started.",
+    img: "/carlos/carlos-waving.png",
+    alt: "Carlos welcoming you",
+    title: "Your garage, remembered",
+    body: "Save your cars. Track repairs over time. Get maintenance reminders before things go wrong. Carlos has your back.",
   },
 ];
 
@@ -44,9 +47,20 @@ export default function OnboardingCarousel({ onDone }: Props) {
       </button>
 
       <div key={idx} className="view-enter" style={{ width: "100%", maxWidth: "340px", textAlign: "center" }}>
-        <div style={{ fontSize: "64px", marginBottom: "24px", lineHeight: 1 }}>{card.icon}</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={card.img}
+          alt={card.alt}
+          style={{
+            height: "180px",
+            width: "auto",
+            margin: "0 auto 24px",
+            display: "block",
+            filter: "drop-shadow(0 8px 24px rgba(59,130,246,0.3)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))",
+          }}
+        />
         <h2 style={{ fontSize: "26px", fontWeight: 700, color: "#dce8f5", margin: "0 0 12px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>{card.title}</h2>
-        <p style={{ fontSize: "16px", color: "#7d8fa8", lineHeight: 1.65, margin: "0 0 40px" }}>{card.body}</p>
+        <p style={{ fontSize: "15px", color: "#9ca3af", lineHeight: 1.7, margin: "0 0 40px" }}>{card.body}</p>
       </div>
 
       <div style={{ display: "flex", gap: "6px", marginBottom: "32px" }}>

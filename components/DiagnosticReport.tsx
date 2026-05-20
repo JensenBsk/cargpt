@@ -158,27 +158,31 @@ function AnswerCard({ topCause, firstStep, topEst, hasAudio, eli5Mode, eli5Text,
 function SafetyCard({ verdict, reason }: { verdict: "STOP" | "CAUTION" | "OKAY"; reason: string }) {
   if (verdict === "OKAY") {
     return (
-      <div style={{ backgroundColor: "transparent", border: "1px solid #172134", borderLeft: "3px solid #22c55e", borderRadius: "10px", padding: "10px 14px", display: "flex", alignItems: "center", gap: "10px" }}>
+      <div style={{ position: "relative", backgroundColor: "transparent", border: "1px solid #172134", borderLeft: "3px solid #22c55e", borderRadius: "10px", padding: "10px 84px 10px 14px", display: "flex", alignItems: "center", gap: "10px", overflow: "hidden", minHeight: "56px" }}>
         <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#22c55e", flexShrink: 0 }} />
         <div style={{ minWidth: 0 }}>
           <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, color: "#22c55e", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>OKAY TO DRIVE</span>
           <span style={{ fontSize: "13px", color: "#4a5c72", marginLeft: "8px" }}>{reason}</span>
         </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/carlos/carlos-thumbsup.png" alt="" aria-hidden="true" style={{ position: "absolute", right: "8px", bottom: "0", height: "72px", width: "auto", filter: "drop-shadow(0 4px 12px rgba(34,197,94,0.3))" }} />
       </div>
     );
   }
   const cfg = verdict === "STOP"
-    ? { bg: "#120608", border: "#2d0f0f", accent: "#ef4444", label: "STOP DRIVING", reasonColor: "#fca5a5", pulseClass: "badge-pulse-stop" }
-    : { bg: "#120d02", border: "#2d2200", accent: "#f59e0b", label: "DRIVE WITH CAUTION", reasonColor: "#fcd34d", pulseClass: "badge-pulse-caution" };
+    ? { bg: "#120608", border: "#2d0f0f", accent: "#ef4444", label: "STOP DRIVING", reasonColor: "#fca5a5", pulseClass: "badge-pulse-stop", img: "/carlos/carlos-warning.png", glow: "rgba(239,68,68,0.3)" }
+    : { bg: "#120d02", border: "#2d2200", accent: "#f59e0b", label: "DRIVE WITH CAUTION", reasonColor: "#fcd34d", pulseClass: "badge-pulse-caution", img: "/carlos/carlos-thinking.png", glow: "rgba(245,158,11,0.3)" };
   return (
-    <div style={{ backgroundColor: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: "12px", overflow: "hidden" }}>
+    <div style={{ position: "relative", backgroundColor: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: "12px", overflow: "hidden" }}>
       <div style={{ borderBottom: `1px solid ${cfg.border}`, padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px" }}>
         <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: cfg.accent, boxShadow: `0 0 8px ${cfg.accent}`, flexShrink: 0 }} className={cfg.pulseClass} />
         <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, fontSize: "12px", letterSpacing: "0.12em", color: cfg.accent, textTransform: "uppercase" as const }}>{cfg.label}</span>
       </div>
-      <div style={{ padding: "12px 16px" }}>
+      <div style={{ padding: "12px 84px 12px 16px", minHeight: "56px" }}>
         <p style={{ margin: 0, fontSize: "13px", color: cfg.reasonColor, lineHeight: 1.6 }}>{reason}</p>
       </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={cfg.img} alt="" aria-hidden="true" style={{ position: "absolute", right: "8px", bottom: "0", height: "72px", width: "auto", filter: `drop-shadow(0 4px 12px ${cfg.glow})` }} />
     </div>
   );
 }

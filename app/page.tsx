@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 
 export default function LandingPage() {
   return (
@@ -7,16 +6,9 @@ export default function LandingPage() {
 
       {/* ── NAV ── */}
       <nav style={{ position: "sticky", top: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "52px", backgroundColor: "rgba(6,8,16,0.95)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid #172134" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
-          <Image
-            src="/carlos-icon.png"
-            alt="Carlos"
-            width={44}
-            height={44}
-            style={{ borderRadius: "8px", objectFit: "cover", filter: "drop-shadow(0 0 6px rgba(59,130,246,0.5))" }}
-            priority
-          />
-          <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "18px", letterSpacing: "0.06em", textTransform: "uppercase" as const, color: "#dce8f5" }}>CARLOS</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "18px" }}>🔧</span>
+          <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 700, fontSize: "22px", letterSpacing: "0.12em", color: "white", textTransform: "uppercase" as const }}>Carlos</span>
         </div>
         <Link href="/diagnose" style={{ fontSize: "13px", fontWeight: 600, padding: "6px 14px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.4)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.08)", textDecoration: "none" }}>
           Ask Carlos — Free
@@ -24,24 +16,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section style={{ padding: "64px 20px 56px", textAlign: "center", maxWidth: "600px", margin: "0 auto" }}>
-        {/* Carlos mascot */}
-        <div style={{ marginBottom: "28px" }}>
-          <Image
-            src="/carlos-icon.png"
-            alt="Carlos, your AI mechanic"
-            width={180}
-            height={180}
-            className="carlos-float"
-            style={{
-              width: "clamp(140px, 30vw, 180px)",
-              height: "auto",
-              filter: "drop-shadow(0 8px 24px rgba(59,130,246,0.3))",
-            }}
-            priority
-          />
-        </div>
-
+      <section style={{ padding: "56px 20px 0", textAlign: "center", maxWidth: "600px", margin: "0 auto" }}>
         {/* Pill badge */}
         <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "rgba(74,158,255,0.08)", border: "1px solid rgba(74,158,255,0.22)", borderRadius: "20px", padding: "5px 12px", marginBottom: "24px" }}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -64,7 +39,7 @@ export default function LandingPage() {
           In seconds. Free.
         </p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "center", marginBottom: "28px" }}>
           <Link href="/diagnose" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", maxWidth: "360px", height: "54px", background: "linear-gradient(135deg, #4a9eff 0%, #2d6fd6 100%)", color: "white", fontWeight: 700, fontSize: "16px", letterSpacing: "0.04em", borderRadius: "12px", textDecoration: "none", boxShadow: "0 6px 24px rgba(74,158,255,0.32)" }}>
             Ask Carlos — It&apos;s Free
           </Link>
@@ -74,9 +49,24 @@ export default function LandingPage() {
         </div>
 
         {/* Trust line */}
-        <div style={{ marginTop: "28px", fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#2d3f55", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>
+        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#2d3f55", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: "0" }}>
           No account required · No credit card · No hardware to buy
         </div>
+
+        {/* Carlos standing at the bottom */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/carlos/carlos-hero.png"
+          alt="Carlos your AI mechanic"
+          className="carlos-float"
+          style={{
+            display: "block",
+            margin: "32px auto 0",
+            height: "clamp(240px, 45vw, 320px)",
+            width: "auto",
+            filter: "drop-shadow(0 12px 32px rgba(59,130,246,0.35)) drop-shadow(0 4px 12px rgba(0,0,0,0.5))",
+          }}
+        />
       </section>
 
       {/* ── HOW IT WORKS ── */}

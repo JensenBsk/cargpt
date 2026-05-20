@@ -15,7 +15,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { resizeImage } from "@/utils/resizeImage";
 import { MapPin, Camera, Wrench, Lock, WifiOff } from "lucide-react";
-import Image from "next/image";
 
 const LS_KEY = "torque_diagnosis_history";
 
@@ -433,14 +432,28 @@ export default function Home() {
 
               {/* Hero */}
               <div style={{ textAlign: "center", padding: "36px 0 28px" }}>
-                <h1 style={{ fontFamily: "var(--font-ibm), sans-serif", fontSize: "26px", fontWeight: 700, color: "#dce8f5", margin: "0 0 8px", letterSpacing: "-0.02em", lineHeight: 1.2, display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
-                  <Image src="/carlos-icon.png" alt="Carlos" width={28} height={28} style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-                  <span>What&apos;s wrong<br />with your car?</span>
+                <h1 style={{ fontFamily: "var(--font-ibm), sans-serif", fontSize: "26px", fontWeight: 700, color: "#dce8f5", margin: "0 0 8px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+                  What&apos;s wrong<br />with your car?
                 </h1>
                 <p style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", letterSpacing: "0.15em", color: "#2d3f55", margin: 0, textTransform: "uppercase" }}>
                   Tell Carlos — he&apos;ll figure it out.
                 </p>
               </div>
+
+              {/* Carlos thinking — loading state */}
+              {loading && (
+                <div style={{ textAlign: "center", padding: "32px 24px", borderRadius: "16px", background: "#13161b", border: "1px solid #1e2329", margin: "0 0 16px", width: "100%", maxWidth: "480px", boxSizing: "border-box" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/carlos/carlos-thinking.png"
+                    alt="Carlos thinking"
+                    className="carlos-think"
+                    style={{ height: "100px", width: "auto", margin: "0 auto 16px", display: "block", filter: "drop-shadow(0 4px 16px rgba(59,130,246,0.3)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }}
+                  />
+                  <p style={{ color: "white", fontSize: "15px", fontWeight: 600, margin: "0 0 4px" }}>Carlos is on it...</p>
+                  <p style={{ color: "#6b7280", fontSize: "13px", margin: 0 }}>Analyzing your {make || "car"} — usually takes 10 seconds</p>
+                </div>
+              )}
 
               <form
                 id="diagnose-form"

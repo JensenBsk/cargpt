@@ -17,6 +17,7 @@ export default function FeedbackCard({ diagnosisId, year, make, model, repairLab
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
   const [resolvedFix, setResolvedFix] = useState("");
+  const [wasResolved, setWasResolved] = useState<boolean | null>(null);
   // Repair form state
   const [repairCost, setRepairCost] = useState("");
   const [repairWho, setRepairWho] = useState<"diy" | "shop">("diy");
@@ -24,6 +25,7 @@ export default function FeedbackCard({ diagnosisId, year, make, model, repairLab
 
   async function submit(resolved: boolean, detail?: string) {
     if (!diagnosisId) {
+      setWasResolved(resolved);
       if (resolved) {
         setResolvedFix(detail || repairLabel || "");
         setPhase("asking-repair");
@@ -41,6 +43,7 @@ export default function FeedbackCard({ diagnosisId, year, make, model, repairLab
       });
     } finally {
       setSaving(false);
+      setWasResolved(resolved);
       if (resolved) {
         setResolvedFix(detail || repairLabel || "");
         setPhase("asking-repair");
@@ -67,10 +70,22 @@ export default function FeedbackCard({ diagnosisId, year, make, model, repairLab
   }
 
   if (phase === "done") {
+    const resolved = wasResolved !== false;
     return (
-      <div style={{ backgroundColor: "#0a1a0f", border: "1px solid #1a3a25", borderRadius: "10px", padding: "14px 16px", textAlign: "center" }}>
-        <div style={{ fontSize: "13px", color: "#22c55e", fontWeight: 600 }}>Thanks for the feedback</div>
-        <div style={{ fontSize: "12px", color: "#4a5c72", marginTop: "2px" }}>It helps us improve future diagnoses.</div>
+      <div style={{ backgroundColor: resolved ? "#0a1a0f" : "#0b1019", border: `1px solid ${resolved ? "#1a3a25" : "#172134"}`, borderRadius: "10px", padding: "20px 16px", textAlign: "center" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={resolved ? "/carlos/carlos-thumbsup.png" : "/carlos/carlos-thinking.png"}
+          alt=""
+          aria-hidden="true"
+          style={{ height: "80px", width: "auto", margin: "0 auto 12px", display: "block", filter: `drop-shadow(0 4px 16px ${resolved ? "rgba(34,197,94,0.3)" : "rgba(59,130,246,0.25)"})` }}
+        />
+        <div style={{ fontSize: "14px", color: resolved ? "#4ade80" : "#dce8f5", fontWeight: 600, marginBottom: "4px" }}>
+          {resolved ? "Nice work! Glad Carlos could help." : "Let’s figure this out."}
+        </div>
+        <div style={{ fontSize: "12px", color: "#4a5c72" }}>
+          {resolved ? "It helps us improve future diagnoses." : "Try the follow-up chat below."}
+        </div>
       </div>
     );
   }
