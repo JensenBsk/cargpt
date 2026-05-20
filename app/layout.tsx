@@ -36,6 +36,12 @@ export const metadata: Metadata = {
   description:
     "Describe your car problem. Carlos gives you a real diagnosis — ranked causes, step-by-step checks, and fair cost estimates. Free. No hardware needed.",
   metadataBase: new URL("https://mchaniccarlos.com"),
+  icons: {
+    icon: [
+      { url: "/carlos-icon.png", type: "image/png" },
+    ],
+    apple: "/carlos-icon.png",
+  },
   openGraph: {
     title: "Carlos — Your AI Mechanic",
     description: "Get a real car diagnosis in seconds. Free.",

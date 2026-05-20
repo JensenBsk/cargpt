@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import GateSignupButton from "./GateSignupButton";
 
@@ -119,8 +120,15 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
       <div style={{ padding: "16px 16px", maxWidth: "560px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "12px" }}>
 
         {/* Provenance */}
-        <div style={{ fontSize: "12px", color: "#4b5563", textAlign: "center", padding: "4px 0" }}>
-          A Carlos user shared this diagnosis
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", padding: "8px 0 4px" }}>
+          <Image
+            src="/carlos-icon.png"
+            alt="Carlos"
+            width={52}
+            height={52}
+            style={{ borderRadius: "50%", objectFit: "cover", filter: "drop-shadow(0 4px 12px rgba(74,158,255,0.3))" }}
+          />
+          <div style={{ fontSize: "13px", fontWeight: 600, color: "#6b7280" }}>Carlos diagnosed this car</div>
         </div>
 
         {/* Car + issue */}

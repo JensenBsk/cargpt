@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import VinInput from "@/components/VinInput";
 import { AlertTriangle, Bell } from "lucide-react";
+import Image from "next/image";
 import type { Diagnostic } from "@/types/diagnostic";
 import type { RepairEntry } from "@/types/repairs";
 import { requestPushPermission } from "@/hooks/useOneSignal";
@@ -273,10 +274,19 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
       {loading ? (
         <div style={{ textAlign: "center", padding: "40px", color: "#7d8fa8" }}>Loading…</div>
       ) : cars.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "48px 0" }}>
-          <div style={{ fontSize: "36px", marginBottom: "12px" }}>🚗</div>
-          <div style={{ fontSize: "15px", color: "#7d8fa8" }}>No cars saved yet.</div>
-          <div style={{ fontSize: "13px", color: "#4a5c72", marginTop: "4px" }}>Add one above to get started.</div>
+        <div style={{ textAlign: "center", padding: "48px 20px" }}>
+          <Image
+            src="/carlos-icon.png"
+            alt="Carlos"
+            width={72}
+            height={72}
+            style={{ borderRadius: "50%", objectFit: "cover", marginBottom: "16px", filter: "drop-shadow(0 4px 16px rgba(74,158,255,0.25))" }}
+          />
+          <div style={{ position: "relative", display: "inline-block", backgroundColor: "#0f1623", border: "1px solid #1e2d42", borderRadius: "12px", padding: "12px 18px", maxWidth: "240px" }}>
+            <div style={{ position: "absolute", top: "-7px", left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", borderBottom: "7px solid #1e2d42" }} />
+            <div style={{ position: "absolute", top: "-6px", left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "6px solid transparent", borderRight: "6px solid transparent", borderBottom: "6px solid #0f1623" }} />
+            <div style={{ fontSize: "13px", color: "#7d8fa8", lineHeight: 1.5 }}>Add your first car and I&apos;ll remember it for next time</div>
+          </div>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>

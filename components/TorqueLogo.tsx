@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import Image from "next/image";
 
 interface Props {
   markSize?: number;
@@ -15,13 +15,6 @@ export default function TorqueLogo({
   wordmarkSize = 22,
   glow = "soft",
 }: Props) {
-  const rawId = useId();
-  const gradId = `tg${rawId.replace(/[^a-z0-9]/gi, "")}`;
-
-  const aspectW = 30;
-  const aspectH = 38;
-  const markW = Math.round((markSize * aspectW) / aspectH);
-
   const glowFilter =
     glow === "strong"
       ? "drop-shadow(0 0 16px rgba(74,158,255,0.65)) drop-shadow(0 0 7px rgba(74,158,255,0.35))"
@@ -30,27 +23,20 @@ export default function TorqueLogo({
       : "none";
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-      <svg
-        width={markW}
+    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <Image
+        src="/carlos-icon.png"
+        alt="Carlos"
+        width={markSize}
         height={markSize}
-        viewBox="0 0 30 38"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ filter: glowFilter, flexShrink: 0 }}
-        aria-hidden="true"
-      >
-        <defs>
-          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#4a9eff" />
-            <stop offset="100%" stopColor="#2d6fd6" />
-          </linearGradient>
-        </defs>
-        {/* Top horizontal bar */}
-        <rect x="0" y="0" width="30" height="7" rx="2.5" fill={`url(#${gradId})`} />
-        {/* Vertical stem — bottom terminates in right-pointing chevron */}
-        <path d="M12 6 L18 6 L18 22 L25 30 L18 38 L12 38 Z" fill={`url(#${gradId})`} />
-      </svg>
+        style={{
+          borderRadius: "50%",
+          flexShrink: 0,
+          filter: glowFilter,
+          objectFit: "cover",
+        }}
+        priority
+      />
 
       {showWordmark && (
         <span

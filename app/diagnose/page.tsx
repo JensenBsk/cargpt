@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { resizeImage } from "@/utils/resizeImage";
 import { MapPin, Camera, Wrench, Lock, WifiOff } from "lucide-react";
+import Image from "next/image";
 
 const LS_KEY = "torque_diagnosis_history";
 
@@ -432,8 +433,9 @@ export default function Home() {
 
               {/* Hero */}
               <div style={{ textAlign: "center", padding: "36px 0 28px" }}>
-                <h1 style={{ fontFamily: "var(--font-ibm), sans-serif", fontSize: "26px", fontWeight: 700, color: "#dce8f5", margin: "0 0 8px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-                  What&apos;s wrong<br />with your car?
+                <h1 style={{ fontFamily: "var(--font-ibm), sans-serif", fontSize: "26px", fontWeight: 700, color: "#dce8f5", margin: "0 0 8px", letterSpacing: "-0.02em", lineHeight: 1.2, display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+                  <Image src="/carlos-icon.png" alt="Carlos" width={28} height={28} style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                  <span>What&apos;s wrong<br />with your car?</span>
                 </h1>
                 <p style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", letterSpacing: "0.15em", color: "#2d3f55", margin: 0, textTransform: "uppercase" }}>
                   Tell Carlos — he&apos;ll figure it out.
