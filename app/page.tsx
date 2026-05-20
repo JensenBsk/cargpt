@@ -7,8 +7,15 @@ export default function LandingPage() {
 
       {/* ── NAV ── */}
       <nav style={{ position: "sticky", top: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "52px", backgroundColor: "rgba(6,8,16,0.95)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid #172134" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <Image src="/carlos-icon.png" alt="Carlos" width={28} height={28} style={{ borderRadius: "50%", objectFit: "cover" }} priority />
+        <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+          <Image
+            src="/carlos-icon.png"
+            alt="Carlos"
+            width={44}
+            height={44}
+            style={{ borderRadius: "8px", objectFit: "cover", filter: "drop-shadow(0 0 6px rgba(59,130,246,0.5))" }}
+            priority
+          />
           <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "18px", letterSpacing: "0.06em", textTransform: "uppercase" as const, color: "#dce8f5" }}>CARLOS</span>
         </div>
         <Link href="/diagnose" style={{ fontSize: "13px", fontWeight: 600, padding: "6px 14px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.4)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.08)", textDecoration: "none" }}>
@@ -23,12 +30,13 @@ export default function LandingPage() {
           <Image
             src="/carlos-icon.png"
             alt="Carlos, your AI mechanic"
-            width={120}
-            height={120}
+            width={180}
+            height={180}
+            className="carlos-float"
             style={{
-              borderRadius: "50%",
-              objectFit: "cover",
-              filter: "drop-shadow(0 8px 32px rgba(74,158,255,0.35)) drop-shadow(0 2px 8px rgba(0,0,0,0.6))",
+              width: "clamp(140px, 30vw, 180px)",
+              height: "auto",
+              filter: "drop-shadow(0 8px 24px rgba(59,130,246,0.3))",
             }}
             priority
           />

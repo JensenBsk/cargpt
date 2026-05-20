@@ -52,6 +52,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+
+      // Strip OAuth params so users never see ?code= or ?error= in the URL
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has("code") || url.searchParams.has("error")) {
+          url.searchParams.delete("code");
+          url.searchParams.delete("error");
+          url.searchParams.delete("error_description");
+          window.history.replaceState({}, document.title, url.pathname + (url.search || ""));
+        }
+      }
     });
 
     return () => subscription.unsubscribe();

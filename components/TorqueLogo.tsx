@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-
 interface Props {
   markSize?: number;
   showWordmark?: boolean;
@@ -10,33 +8,28 @@ interface Props {
 }
 
 export default function TorqueLogo({
-  markSize = 32,
   showWordmark = true,
-  wordmarkSize = 22,
-  glow = "soft",
+  wordmarkSize = 20,
 }: Props) {
-  const glowFilter =
-    glow === "strong"
-      ? "drop-shadow(0 0 16px rgba(74,158,255,0.65)) drop-shadow(0 0 7px rgba(74,158,255,0.35))"
-      : glow === "soft"
-      ? "drop-shadow(0 0 8px rgba(74,158,255,0.4))"
-      : "none";
-
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-      <Image
-        src="/carlos-icon.png"
-        alt="Carlos"
-        width={markSize}
-        height={markSize}
-        style={{
-          borderRadius: "50%",
-          flexShrink: 0,
-          filter: glowFilter,
-          objectFit: "cover",
-        }}
-        priority
-      />
+    <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+        style={{ flexShrink: 0 }}
+      >
+        <path
+          d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l2.83-2.83a7 7 0 0 1-9.82 9.82L5.24 21.27a2.12 2.12 0 0 1-3-3l5.03-5.03A7 7 0 0 1 17.54 3.46z"
+          stroke="#4a9eff"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
 
       {showWordmark && (
         <span
@@ -44,7 +37,7 @@ export default function TorqueLogo({
             fontFamily: "var(--font-barlow), sans-serif",
             fontSize: `${wordmarkSize}px`,
             fontWeight: 700,
-            letterSpacing: "0.15em",
+            letterSpacing: "0.12em",
             color: "#ffffff",
             lineHeight: 1,
             userSelect: "none",

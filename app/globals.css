@@ -196,3 +196,10 @@ img {
   to   { transform: scaleX(1) translateX(-50%); opacity: 1; }
 }
 .nav-pill { animation: pill-in 200ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+/* Carlos hero float */
+@keyframes carlos-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+.carlos-float { animation: carlos-float 3s ease-in-out infinite; }
