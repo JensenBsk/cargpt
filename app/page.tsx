@@ -18,14 +18,9 @@ export default function LandingPage() {
         top: 0,
         zIndex: 100,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/carlos/carlos-icon.png"
-            alt=""
-            style={{ width: "36px", height: "36px", borderRadius: "10px", boxShadow: "0 0 12px rgba(59,130,246,0.4)" }}
-          />
-          <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 700, fontSize: "20px", letterSpacing: "0.1em", color: "white" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "20px" }}>🔧</span>
+          <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 700, fontSize: "22px", letterSpacing: "0.1em", color: "white" }}>
             CARLOS
           </span>
         </div>
@@ -50,7 +45,7 @@ export default function LandingPage() {
         textAlign: "center",
         maxWidth: "560px",
         margin: "0 auto",
-        background: "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59,130,246,0.15), transparent)",
+        background: "radial-gradient(ellipse 70% 40% at 50% 0%, rgba(59,130,246,0.08), transparent 60%), radial-gradient(ellipse 50% 30% at 20% 100%, rgba(37,99,235,0.05), transparent 50%), #0a0d14",
       }}>
         {/* Carlos — first thing visible */}
         {/* eslint-disable-next-line @next/next/no-img-element */}

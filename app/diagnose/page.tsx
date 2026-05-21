@@ -331,25 +331,24 @@ export default function Home() {
     height: "48px",
     padding: "0 14px",
     fontSize: "16px",
-    backgroundColor: "#101822",
-    border: "1px solid #172134",
+    backgroundColor: "#0a0d14",
+    border: "1px solid #1e2433",
     borderRadius: "10px",
-    color: "#dce8f5",
+    color: "#f8fafc",
   };
 
   const labelStyle: React.CSSProperties = {
     display: "block",
-    fontFamily: "var(--font-jetbrains), monospace",
-    fontSize: "10px",
-    fontWeight: 600,
-    color: "#2d3f55",
-    textTransform: "uppercase",
-    letterSpacing: "0.15em",
+    fontSize: "13px",
+    fontWeight: 500,
+    color: "#8b95a8",
+    letterSpacing: 0,
+    textTransform: "none" as const,
     marginBottom: "8px",
   };
 
   const allFilled = !!year && !!make && !!model && !!issue.trim();
-  const buttonBg = errorType ? "#f59e0b" : "linear-gradient(135deg, #4a9eff 0%, #2d6fd6 100%)";
+  const buttonBg = errorType ? "#f59e0b" : "#2563eb";
   const capMake = make ? make.charAt(0).toUpperCase() + make.slice(1) : "";
   const buttonText = loading ? `Carlos is analyzing your ${capMake || "car"}…` : errorType ? "Try Again" : "Ask Carlos";
 
@@ -465,21 +464,25 @@ export default function Home() {
                 onSubmit={handleDiagnose}
                 style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: "20px" }}
               >
-                {/* Vehicle row */}
-                <div>
-                  <label style={labelStyle}>Your Vehicle</label>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <div ref={yearRef} style={{ flex: "0 0 88px", minWidth: 0 }}>
+                {/* Vehicle card */}
+                <div style={{ background: "#13161f", border: "1px solid #1e2433", borderRadius: "16px", padding: "20px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/carlos/carlos-icon.png" alt="" style={{ width: "28px", height: "28px", borderRadius: "7px" }} />
+                    <span style={{ color: "#f8fafc", fontSize: "15px", fontWeight: 600 }}>What car are we working on?</span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 1fr", gap: "10px" }}>
+                    <div ref={yearRef}>
                       <select
                         value={year}
                         onChange={(e) => { setYear(e.target.value); if (showErrors) setShowErrors(false); }}
-                        style={{ ...fieldStyle, padding: "0 8px", color: year ? "#dce8f5" : "#2d3f55", borderColor: showErrors && !year ? "#ef4444" : "#172134" }}
+                        style={{ ...fieldStyle, padding: "0 8px", color: year ? "#f8fafc" : "#4b5563", borderColor: showErrors && !year ? "#ef4444" : "#1e2433" }}
                       >
                         <option value="">Year</option>
                         {years.map((y) => <option key={y} value={y}>{y}</option>)}
                       </select>
                     </div>
-                    <div ref={makeRef} style={{ flex: 1, minWidth: 0 }}>
+                    <div ref={makeRef}>
                       <input
                         type="text"
                         value={make}
@@ -487,38 +490,43 @@ export default function Home() {
                         placeholder="Make"
                         autoComplete="off"
                         autoCapitalize="words"
-                        style={{ ...fieldStyle, borderColor: showErrors && !make ? "#ef4444" : "#172134" }}
+                        style={{ ...fieldStyle, borderColor: showErrors && !make ? "#ef4444" : "#1e2433" }}
                       />
                     </div>
-                    <div ref={modelRef} style={{ flex: 1, minWidth: 0 }}>
+                    <div ref={modelRef}>
                       <input
                         type="text"
                         value={model}
                         onChange={(e) => { setModel(e.target.value); if (showErrors) setShowErrors(false); }}
                         placeholder="Model"
                         autoComplete="off"
-                        style={{ ...fieldStyle, borderColor: showErrors && !model ? "#ef4444" : "#172134" }}
+                        style={{ ...fieldStyle, borderColor: showErrors && !model ? "#ef4444" : "#1e2433" }}
                       />
                     </div>
                   </div>
                   {showErrors && (!year || !make || !model) && (
-                    <p style={{ margin: "6px 0 0", fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", color: "#ef4444", letterSpacing: "0.02em" }}>
+                    <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#ef4444" }}>
                       Enter your vehicle year, make, and model
                     </p>
                   )}
+                  <div style={{ marginTop: "12px" }}>
+                    <VinInput onDecode={handleVinDecode} />
+                  </div>
                 </div>
 
-                <VinInput onDecode={handleVinDecode} />
-
-                {/* Issue */}
-                <div>
-                  <label style={labelStyle}>What&apos;s the issue?</label>
+                {/* Issue card */}
+                <div style={{ background: "#13161f", border: "1px solid #1e2433", borderRadius: "16px", padding: "20px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/carlos/carlos-thinking.png" alt="" style={{ width: "28px", height: "28px", objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(59,130,246,0.2))" }} />
+                    <span style={{ color: "#f8fafc", fontSize: "15px", fontWeight: 600 }}>What&apos;s going on with it?</span>
+                  </div>
                   <textarea
                     value={issue}
                     onChange={(e) => setIssue(e.target.value)}
                     placeholder="P0301 misfire on cyl 1, rough idle at startup, knocking under load — describe what you see or hear"
                     rows={4}
-                    style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", minHeight: "130px", padding: "14px 16px", fontSize: "16px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "12px", color: "#dce8f5", resize: "none", lineHeight: 1.6, fontFamily: "var(--font-ibm), sans-serif" }}
+                    style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", minHeight: "130px", padding: "14px 16px", fontSize: "16px", backgroundColor: "#0a0d14", border: "1px solid #1e2433", borderRadius: "12px", color: "#f8fafc", resize: "none", lineHeight: 1.6, fontFamily: "var(--font-ibm), sans-serif" }}
                   />
                 </div>
 
@@ -719,7 +727,7 @@ export default function Home() {
               border: "none", borderRadius: "12px",
               cursor: loading ? "default" : "pointer",
               opacity: allFilled || loading || errorType ? 1 : 0.4,
-              boxShadow: allFilled && !loading && !errorType ? "0 4px 20px rgba(74,158,255,0.3)" : "none",
+              boxShadow: allFilled && !loading && !errorType ? "0 4px 20px rgba(37,99,235,0.3)" : "none",
               transition: "box-shadow 200ms ease, opacity 200ms ease, background 200ms ease",
             }}
           >

@@ -42,9 +42,9 @@ const LIKELIHOOD_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 const ACCENT_BORDERS: Record<string, string> = {
-  "Most Likely": "#4a9eff",
-  "Likely": "#6366f1",
-  "Possible": "#1c2a3e",
+  "Most Likely": "#3b82f6",
+  "Likely": "#1e2433",
+  "Possible": "#1e2433",
   "Unlikely but serious": "#f59e0b",
 };
 

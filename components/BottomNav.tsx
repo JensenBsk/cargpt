@@ -56,13 +56,13 @@ export default function BottomNav({ activeTab, onChange }: Props) {
               backgroundColor: "transparent",
               border: "none",
               cursor: "pointer",
-              color: isActive ? "#4a9eff" : "#4a5c72",
+              color: isActive ? "white" : "#4b5563",
               paddingTop: "8px",
               position: "relative",
             }}
             aria-label={label}
           >
-            {/* Active glow background */}
+            {/* Active indicator background — subtle, not blue */}
             {isActive && (
               <div style={{
                 position: "absolute",
@@ -72,7 +72,7 @@ export default function BottomNav({ activeTab, onChange }: Props) {
                 width: "44px",
                 height: "36px",
                 borderRadius: "10px",
-                backgroundColor: "rgba(74,158,255,0.08)",
+                backgroundColor: "rgba(255,255,255,0.05)",
                 pointerEvents: "none",
               }} />
             )}
@@ -92,8 +92,7 @@ export default function BottomNav({ activeTab, onChange }: Props) {
                   width: "20px",
                   height: "3px",
                   borderRadius: "2px",
-                  backgroundColor: "#4a9eff",
-                  boxShadow: "0 0 8px rgba(74,158,255,0.6)",
+                  backgroundColor: "#3b82f6",
                 }}
               />
             )}
