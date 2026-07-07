@@ -134,9 +134,19 @@ test.describe("Repair Mode", () => {
     await page.locator("#issue-description").fill("P0301 misfire on cold start");
     await page.getByRole("button", { name: /ask carlos/i }).click();
 
+    await page.route("**/api/chat", (route) =>
+      route.fulfill({ contentType: "text/plain; charset=utf-8", body: "Pop the hood and find the coil pack on top of the engine — it looks like a small black brick with thick wires." })
+    );
+
     await page.getByRole("button", { name: /guided steps/i }).click();
     await expect(page.getByRole("dialog", { name: /guided repair/i })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Listen for rough idle when cold" })).toBeVisible();
+
+    // In-place walkthrough streams Carlos's explanation and toggles closed
+    await page.getByRole("button", { name: /walk me through it/i }).click();
+    await expect(page.getByText(/find the coil pack/i)).toBeVisible();
+    await page.getByRole("button", { name: /hide the walkthrough/i }).click();
+    await expect(page.getByText(/find the coil pack/i)).not.toBeVisible();
 
     // Rule out step 1 -> step 2 appears
     await page.getByRole("button", { name: /constant misfire changes/i }).click();

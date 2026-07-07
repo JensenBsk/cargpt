@@ -112,7 +112,7 @@ export default function HistorySheet({ onClose, onOpenLocal }: Props) {
           <button
             onClick={onClose}
             aria-label="Close history"
-            style={{ background: "none", border: "none", color: "#5d7290", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}
           >
             <X size={20} aria-hidden="true" />
           </button>
@@ -143,7 +143,7 @@ export default function HistorySheet({ onClose, onOpenLocal }: Props) {
                     <span style={{ display: "block", fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>{row.car}</span>
                     <span style={{ display: "block", fontSize: "12px", color: "var(--text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.issue}</span>
                   </span>
-                  <span style={{ fontSize: "11px", color: "#5d7290", flexShrink: 0 }}>
+                  <span style={{ fontSize: "11px", color: "var(--text-3)", flexShrink: 0 }}>
                     {new Date(row.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                   </span>
                 </>

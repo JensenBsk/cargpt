@@ -271,50 +271,70 @@ export function formatCode(code: string): string {
   return name ? `${upper} — ${name}` : upper;
 }
 
+/** Lowercase the first letter unless it starts with a fault code or acronym. */
+function lcFirst(s: string): string {
+  const t = s.trim();
+  if (!t) return t;
+  if (/^[A-Z]{2,}/.test(t) || isOBDCode(t)) return t; // "EGR...", "P0301..."
+  return t.charAt(0).toLowerCase() + t.slice(1);
+}
+
+/**
+ * Turn whatever lives in the issue field — a typed sentence, a 4000-char
+ * saga, or the OBD scanner's multi-line code dump — into one short clause
+ * that fits mid-sentence: "showing a P0301 (misfire on cylinder 1)" or
+ * "making a grinding noise when braking".
+ */
+export function summarizeIssue(raw: string): string {
+  const flat = raw.replace(/\s+/g, " ").trim();
+  const codes = [...new Set((flat.match(/\b[PCBU][0-9]{4}\b/gi) ?? []).map((c) => c.toUpperCase()))];
+
+  if (codes.length > 0) {
+    const first = codes[0];
+    const name = CODE_NAMES[first]?.replace(/\s*\(bank \d\)$/, "");
+    const label = name ? `${first} (${name})` : first;
+    return codes.length > 1
+      ? `showing ${label} plus ${codes.length - 1} more fault code${codes.length > 2 ? "s" : ""}`
+      : `showing a ${label} fault code`;
+  }
+
+  // First clause of the description, trimmed to something sayable.
+  let clause = flat.split(/[.;\n]/)[0].trim();
+  const parts = clause.split(",");
+  if (clause.length > 90 && parts[0].length >= 15) clause = parts[0].trim();
+  if (clause.length > 90) clause = clause.slice(0, 87).replace(/\s+\S*$/, "") + "…";
+  return `having an issue — ${lcFirst(clause).replace(/[.!?]+$/, "")}`;
+}
+
 export function buildTextMessage(ctx: MechanicMessageContext): string {
   const { issue, year, make, model, topCause, costRange } = ctx;
-  if (isOBDCode(issue)) {
-    const formatted = formatCode(issue);
-    return `Hey, looking to bring my ${year} ${make} ${model} in — it's showing a ${formatted} fault code. I looked into it and ${topCause} seems to be the most likely cause. Could you take a look and let me know what you'd charge if that's the issue? I've seen estimates around ${costRange}. Thanks`;
-  }
-  return `Hey, looking to bring my ${year} ${make} ${model} in — it's been ${issue}. I looked into it and it might be ${topCause}. Could you take a look and give me a rough quote? I've seen estimates around ${costRange}. Thanks`;
+  return `Hey, looking to bring my ${year} ${make} ${model} in — it's ${summarizeIssue(issue)}. From what I've read it might be ${lcFirst(topCause)}. Could you take a look and let me know what you'd charge if that's it? I've seen fair estimates around ${costRange}. Thanks`;
 }
 
 export function buildEmailMessage(ctx: MechanicMessageContext): { subject: string; body: string } {
   const { issue, year, make, model, topCause, firstStep, costRange } = ctx;
   const subject = `Service inquiry — ${year} ${make} ${model}`;
-  const issueDesc = isOBDCode(issue)
-    ? `It's currently showing a ${formatCode(issue)} fault code.`
-    : `I've been noticing ${issue}.`;
   const body = `Hi,
 
-I'm hoping to bring my ${year} ${make} ${model} in for a look.
+I'm hoping to bring my ${year} ${make} ${model} in for a look. It's ${summarizeIssue(issue)}.
 
-${issueDesc}
+From some research, ${lcFirst(topCause)} looks like the most likely cause — I'd appreciate your take once you've had a chance to check it properly. I've also read it's worth ${lcFirst(firstStep).replace(/[.!?]+$/, "")} first, though I'm happy to follow your lead.
 
-After some research, ${topCause} seems to be the most likely cause — I'd appreciate your take once you've had a chance to diagnose it properly.
+Could you give me a rough sense of pricing if that's the issue? I've seen estimates around ${costRange}, but I know it varies.
 
-I've read it's worth ${firstStep.toLowerCase()} first to confirm before replacing anything — though I'm happy to follow your lead on that.
-
-Could you give me a rough sense of pricing if it is ${topCause}? I've seen estimates around ${costRange}, but I know it varies.
-
-Thanks — looking forward to hearing from you.`;
+Thanks`;
   return { subject, body };
 }
 
 export function buildWalkInScript(ctx: MechanicMessageContext): string {
   const { issue, year, make, model, topCause, firstStep, costRange } = ctx;
-  const issueLine = isOBDCode(issue)
-    ? `"It's showing a ${formatCode(issue)} fault code"`
-    : `"I've been noticing ${issue}"`;
   return `When you get there, say:
-• "I have a ${year} ${make} ${model}"
-• ${issueLine}
-• "I think it might be ${topCause} — does that sound right to you?"
+• "I have a ${year} ${make} ${model} — it's ${summarizeIssue(issue)}."
+• "From what I've read it might be ${lcFirst(topCause)} — does that sound right to you?"
 
 Ask:
 • "What would you charge if that's the issue?"
-• "Is it worth ${firstStep.toLowerCase()} first to confirm before replacing anything?"
+• "Is it worth ${lcFirst(firstStep).replace(/[.!?]+$/, "")} first, before replacing anything?"
 
 Fair price to keep in mind: ${costRange}`;
 }

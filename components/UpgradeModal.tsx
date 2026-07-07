@@ -68,7 +68,7 @@ export default function UpgradeModal({ reason, onClose }: Props) {
 
         <Link
           href="/pricing"
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "50px", background: "linear-gradient(135deg, #4a9eff 0%, #2d6fd6 100%)", color: "white", fontWeight: 700, fontSize: "15px", borderRadius: "12px", textDecoration: "none", boxShadow: "0 4px 16px rgba(74,158,255,0.28)", marginBottom: "10px" }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "50px", background: "var(--accent)", color: "white", fontWeight: 700, fontSize: "15px", borderRadius: "12px", textDecoration: "none", boxShadow: "0 4px 16px rgba(74,158,255,0.28)", marginBottom: "10px" }}
         >
           {copy.cta}
         </Link>

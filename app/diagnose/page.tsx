@@ -677,7 +677,7 @@ export default function Home() {
           display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
         }}>
           <WifiOff size={13} color="#ef4444" />
-          <span style={{ fontSize: "13px", color: "#fca5a5", fontWeight: 500 }}>
+          <span style={{ fontSize: "13px", color: "var(--red)", fontWeight: 500 }}>
             No internet connection — reconnect to use Carlos
           </span>
         </div>
@@ -1244,7 +1244,7 @@ export default function Home() {
                   <div style={{ borderTop: "1px solid var(--border-muted)", paddingTop: "14px" }}>
                     <label htmlFor="area-zip" style={labelStyle}>
                       <MapPin size={9} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} aria-hidden="true" />
-                      Area ZIP <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#5d7290" }}>— for local pricing</span>
+                      Area ZIP <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "var(--text-3)" }}>— for local pricing</span>
                     </label>
                     <input
                       id="area-zip"

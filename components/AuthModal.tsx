@@ -157,7 +157,7 @@ export default function AuthModal({ onClose }: Props) {
         />
 
         {error && (
-          <div id="auth-error" role="alert" style={{ fontSize: "13px", color: "#fca5a5", padding: "8px 12px", backgroundColor: "#1a0a0a", border: "1px solid #3a1515", borderRadius: "6px" }}>
+          <div id="auth-error" role="alert" style={{ fontSize: "13px", color: "var(--red)", padding: "8px 12px", backgroundColor: "#1a0a0a", border: "1px solid #3a1515", borderRadius: "6px" }}>
             {error}
           </div>
         )}

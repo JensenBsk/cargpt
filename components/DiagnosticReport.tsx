@@ -192,8 +192,8 @@ function SafetyCard({ verdict, reason }: { verdict: "STOP" | "CAUTION" | "OKAY";
     );
   }
   const cfg = verdict === "STOP"
-    ? { bg: "var(--red-bg)", border: "#2d0f0f", accent: "var(--red)", label: "STOP DRIVING", reasonColor: "#fca5a5", pulseClass: "badge-pulse-stop", img: "/carlos/carlos-warning.webp", glow: "rgba(239,68,68,0.3)" }
-    : { bg: "var(--amber-bg)", border: "#2d2200", accent: "var(--amber)", label: "DRIVE WITH CAUTION", reasonColor: "#fcd34d", pulseClass: "badge-pulse-caution", img: "/carlos/carlos-thinking.webp", glow: "rgba(245,158,11,0.3)" };
+    ? { bg: "var(--red-bg)", border: "#2d0f0f", accent: "var(--red)", label: "STOP DRIVING", reasonColor: "var(--red)", pulseClass: "badge-pulse-stop", img: "/carlos/carlos-warning.webp", glow: "rgba(239,68,68,0.3)" }
+    : { bg: "var(--amber-bg)", border: "#2d2200", accent: "var(--amber)", label: "DRIVE WITH CAUTION", reasonColor: "var(--amber)", pulseClass: "badge-pulse-caution", img: "/carlos/carlos-thinking.webp", glow: "rgba(245,158,11,0.3)" };
   return (
     <div style={{ position: "relative", backgroundColor: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: "12px", overflow: "hidden" }}>
       <div style={{ borderBottom: `1px solid ${cfg.border}`, padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px" }}>
@@ -268,6 +268,10 @@ export default function DiagnosticReport({
   const [showMechanicModal, setShowMechanicModal] = useState(false);
   const [mechanicCopied, setMechanicCopied] = useState(false);
   const [mechanicFormat, setMechanicFormat] = useState<"text" | "email" | "walkin">("text");
+  // Carlos-written version — fetched when the modal first opens; the template
+  // renders instantly and gets replaced when this lands.
+  const [aiMechanicMsg, setAiMechanicMsg] = useState<{ sms: string; emailSubject?: string; emailBody: string; walkIn: string } | null>(null);
+  const aiMechanicRequested = useRef(false);
 
   // Share
   const [showShareSheet, setShowShareSheet] = useState(false);
@@ -470,9 +474,28 @@ export default function DiagnosticReport({
 
   // ── Mechanic ──
   function currentMechanicMessage(): string {
+    if (aiMechanicMsg) {
+      if (mechanicFormat === "email") return aiMechanicMsg.emailBody;
+      if (mechanicFormat === "walkin") return aiMechanicMsg.walkIn;
+      return aiMechanicMsg.sms;
+    }
     if (mechanicFormat === "email") return buildEmailMessage(mechanicCtx).body;
     if (mechanicFormat === "walkin") return buildWalkInScript(mechanicCtx);
     return buildTextMessage(mechanicCtx);
+  }
+
+  function openMechanicModal() {
+    setShowMechanicModal(true);
+    if (aiMechanicRequested.current) return;
+    aiMechanicRequested.current = true;
+    fetch("/api/mechanic-message", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ year, make: cap(make), model: cap(model), issue, topCause: mechanicCtx.topCause, firstStep: mechanicCtx.firstStep, costRange: mechanicCtx.costRange }),
+    })
+      .then((r) => r.json())
+      .then((d) => { if (d.message?.sms) setAiMechanicMsg(d.message); })
+      .catch(() => { /* template fallback already on screen */ });
   }
 
   async function copyMechanicMessage() {
@@ -554,7 +577,7 @@ export default function DiagnosticReport({
         {/* 2. Mod note */}
         {currentDiagnosis.modNote && (
           <div style={{ backgroundColor: "rgba(251,191,36,0.07)", border: "1px solid rgba(251,191,36,0.2)", borderRadius: "10px", padding: "10px 14px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
-            <Zap size={14} color="#fbbf24" style={{ flexShrink: 0, marginTop: "1px" }} />
+            <Zap size={14} color="var(--amber)" style={{ flexShrink: 0, marginTop: "1px" }} />
             <div>
               <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--amber)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "3px" }}>Mod Note</div>
               <div style={{ fontSize: "13px", color: "#fde68a", lineHeight: 1.6 }}>{currentDiagnosis.modNote}</div>
@@ -583,7 +606,7 @@ export default function DiagnosticReport({
         {currentDiagnosis.dontDoThis[0] && (
           <div style={{ backgroundColor: "var(--amber-bg)", border: "1px solid #2d2200", borderLeft: "3px solid var(--amber)", borderRadius: "10px", padding: "10px 14px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
             <AlertTriangle size={14} color="#f59e0b" style={{ flexShrink: 0, marginTop: "1px" }} />
-            <span style={{ fontSize: "13px", color: "#fcd34d", lineHeight: 1.4 }}>{currentDiagnosis.dontDoThis[0]}</span>
+            <span style={{ fontSize: "13px", color: "var(--amber)", lineHeight: 1.4 }}>{currentDiagnosis.dontDoThis[0]}</span>
           </div>
         )}
 
@@ -690,7 +713,7 @@ export default function DiagnosticReport({
                           }}
                           aria-pressed={isDone}
                           aria-label={`Mark step ${step.step} ${isDone ? "not done" : "done"}: ${step.action}`}
-                          style={{ width: "26px", height: "26px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, flexShrink: 0, cursor: "pointer", padding: 0, backgroundColor: isDone ? "var(--green)" : isOpen ? "var(--accent)" : "var(--surface-2)", border: `1px solid ${isDone ? "var(--green)" : isOpen ? "var(--accent)" : "var(--border)"}`, color: isDone || isOpen ? "white" : "#5d7290", transition: "background-color 160ms ease, border-color 160ms ease" }}
+                          style={{ width: "26px", height: "26px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, flexShrink: 0, cursor: "pointer", padding: 0, backgroundColor: isDone ? "var(--green)" : isOpen ? "var(--accent)" : "var(--surface-2)", border: `1px solid ${isDone ? "var(--green)" : isOpen ? "var(--accent)" : "var(--border)"}`, color: isDone || isOpen ? "white" : "var(--text-3)", transition: "background-color 160ms ease, border-color 160ms ease" }}
                         >
                           {isDone ? <Check size={14} className="check-pop" aria-hidden="true" /> : step.step}
                         </button>
@@ -698,7 +721,7 @@ export default function DiagnosticReport({
                       </div>
                       <div style={{ flex: 1, minWidth: 0, paddingBottom: isLast ? "0" : "16px" }}>
                         <button onClick={() => setExpandedStep(isOpen ? null : step.step - 1)} aria-expanded={isOpen} style={{ width: "100%", minHeight: "48px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "0", textAlign: "left" }}>
-                          <span style={{ fontSize: "15px", fontWeight: 600, color: isDone ? "#5d7290" : "var(--text)", textDecoration: isDone ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{step.action}</span>
+                          <span style={{ fontSize: "15px", fontWeight: 600, color: isDone ? "var(--text-3)" : "var(--text)", textDecoration: isDone ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{step.action}</span>
                           <span style={{ color: "var(--text-3)", fontSize: "10px", flexShrink: 0 }} aria-hidden="true">{isOpen ? "▲" : "▼"}</span>
                         </button>
                         <Expandable open={isOpen}>
@@ -910,7 +933,7 @@ export default function DiagnosticReport({
                 Walk in prepared. Copy this before your appointment.
               </p>
               <button
-                onClick={() => setShowMechanicModal(true)}
+                onClick={openMechanicModal}
                 className="tap-target"
                 style={{ width: "100%", height: "44px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border-muted)", borderRadius: "8px", color: "var(--text)", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}
               >
@@ -931,7 +954,7 @@ export default function DiagnosticReport({
               style={{ display: "flex", alignItems: "center", gap: "10px", height: "44px", padding: "0 12px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "8px", cursor: "text" }}
             >
               <span style={{ fontSize: "14px", color: "var(--text-4)", flex: 1 }}>Ask Carlos anything about this diagnosis…</span>
-              <ChevronDown size={14} color="#2d3f55" />
+              <ChevronDown size={14} color="var(--text-4)" />
             </div>
           ) : (
             <>
@@ -1077,7 +1100,7 @@ export default function DiagnosticReport({
             {mechanicFormat === "email" && (
               <div style={{ backgroundColor: "var(--bg)", border: "1px solid var(--border)", borderRadius: "8px", padding: "8px 12px", marginBottom: "8px" }}>
                 <span style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Subject: </span>
-                <span style={{ fontSize: "13px", color: "var(--text-2)" }}>Service inquiry — {year} {cap(make)} {cap(model)}</span>
+                <span style={{ fontSize: "13px", color: "var(--text-2)" }}>{aiMechanicMsg?.emailSubject ?? `Service inquiry — ${year} ${cap(make)} ${cap(model)}`}</span>
               </div>
             )}
             <div style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-muted)", borderRadius: "10px", padding: "14px", marginBottom: "14px", maxHeight: "220px", overflowY: "auto", boxSizing: "border-box" }}>
@@ -1087,7 +1110,7 @@ export default function DiagnosticReport({
               {mechanicCopied ? "✓ Copied!" : "Copy Message"}
             </button>
             {mechanicFormat === "email" && (
-              <a href={`mailto:?subject=${encodeURIComponent(buildEmailMessage(mechanicCtx).subject)}&body=${encodeURIComponent(currentMechanicMessage())}`} style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "44px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border-muted)", borderRadius: "8px", color: "var(--text-2)", fontWeight: 500, fontSize: "14px", textDecoration: "none" }}>
+              <a href={`mailto:?subject=${encodeURIComponent(aiMechanicMsg?.emailSubject ?? buildEmailMessage(mechanicCtx).subject)}&body=${encodeURIComponent(currentMechanicMessage())}`} style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "44px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border-muted)", borderRadius: "8px", color: "var(--text-2)", fontWeight: 500, fontSize: "14px", textDecoration: "none" }}>
                 Open in Mail ↗
               </a>
             )}
@@ -1224,6 +1247,7 @@ export default function DiagnosticReport({
           causeName={topCause?.cause ?? "diagnosis"}
           onClose={() => setRepairMode(false)}
           onAskCarlos={(q) => { setChatExpanded(true); handleChatSubmit(q); }}
+          chatContext={{ year, make: cap(make), model: cap(model), diagnosis: currentDiagnosis }}
         />
       )}
     </div>

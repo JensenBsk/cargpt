@@ -34,7 +34,7 @@ const S = {
   border: "var(--border)",
   text: "var(--text)",
   textSec: "var(--text-2)",
-  textMuted: "#5d7290",
+  textMuted: "var(--text-3)",
   accent: "var(--accent)",
   red: "var(--red)",
   amber: "var(--amber)",
@@ -336,7 +336,7 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
               disabled={phase === "connecting" || phase === "reading"}
               style={{
                 width: "100%", height: "52px", borderRadius: "12px", border: "none", cursor: phase === "connecting" || phase === "reading" ? "wait" : "pointer",
-                background: "linear-gradient(135deg, #4a9eff 0%, #2d6fd6 100%)", color: "white", fontWeight: 700, fontSize: "15px",
+                background: "var(--accent)", color: "white", fontWeight: 700, fontSize: "15px",
                 opacity: phase === "connecting" || phase === "reading" ? 0.7 : 1,
               }}
             >
@@ -350,7 +350,7 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
 
         {errorMsg && (
           <div role="alert" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: "12px", padding: "12px 14px", marginBottom: "16px" }}>
-            <p style={{ margin: 0, fontSize: "13px", color: "#fca5a5", lineHeight: 1.5 }}>{errorMsg}</p>
+            <p style={{ margin: 0, fontSize: "13px", color: "var(--red)", lineHeight: 1.5 }}>{errorMsg}</p>
           </div>
         )}
 
@@ -363,7 +363,7 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
               </h3>
               {codes.length === 0 ? (
                 <div style={{ backgroundColor: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: "12px", padding: "14px" }}>
-                  <p style={{ margin: 0, fontSize: "14px", color: "#86efac" }}>No stored trouble codes. The computer isn&apos;t reporting any faults.</p>
+                  <p style={{ margin: 0, fontSize: "14px", color: "var(--green)" }}>No stored trouble codes. The computer isn&apos;t reporting any faults.</p>
                 </div>
               ) : (
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -411,7 +411,7 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
             <section aria-label="Live capture" style={{ marginBottom: "16px" }}>
               {datalog ? (
                 <div style={{ backgroundColor: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: "12px", padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
-                  <span style={{ fontSize: "13px", color: "#86efac", fontWeight: 600 }}>✓ 30s capture attached — Carlos will read it</span>
+                  <span style={{ fontSize: "13px", color: "var(--green)", fontWeight: 600 }}>✓ 30s capture attached — Carlos will read it</span>
                   <button onClick={() => void captureDatalog()} style={{ background: "none", border: "none", color: S.textSec, fontSize: "12px", fontWeight: 600, cursor: "pointer", flexShrink: 0, padding: "6px" }}>
                     Redo
                   </button>
@@ -445,7 +445,7 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <button
                 onClick={() => { void saveSession(); onUseInDiagnosis({ codes, vin, liveData: live, freezeFrame, datalog }); }}
-                style={{ width: "100%", height: "50px", borderRadius: "12px", border: "none", cursor: "pointer", background: "linear-gradient(135deg, #4a9eff 0%, #2d6fd6 100%)", color: "white", fontWeight: 700, fontSize: "15px" }}
+                style={{ width: "100%", height: "50px", borderRadius: "12px", border: "none", cursor: "pointer", background: "var(--accent)", color: "white", fontWeight: 700, fontSize: "15px" }}
               >
                 {codes.length > 0 ? `Diagnose these ${codes.length} code${codes.length > 1 ? "s" : ""} →` : "Use live data in diagnosis →"}
               </button>
@@ -463,7 +463,7 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
                 {codes.length > 0 && (
                   <button
                     onClick={() => setConfirmClear(true)}
-                    style={{ flex: 1, height: "44px", borderRadius: "10px", border: "1px solid rgba(239,68,68,0.3)", backgroundColor: "transparent", color: "#fca5a5", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+                    style={{ flex: 1, height: "44px", borderRadius: "10px", border: "1px solid rgba(239,68,68,0.3)", backgroundColor: "transparent", color: "var(--red)", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
                   >
                     <Trash2 size={14} aria-hidden="true" /> Clear codes
                   </button>
@@ -482,7 +482,7 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
               <div role="alertdialog" aria-label="Confirm clearing codes" style={{ marginTop: "12px", backgroundColor: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.35)", borderRadius: "12px", padding: "14px" }}>
                 <div style={{ display: "flex", gap: "10px", marginBottom: "12px" }}>
                   <AlertTriangle size={18} color={S.amber} style={{ flexShrink: 0, marginTop: "1px" }} aria-hidden="true" />
-                  <p style={{ margin: 0, fontSize: "13px", color: "#fcd34d", lineHeight: 1.5 }}>
+                  <p style={{ margin: 0, fontSize: "13px", color: "var(--amber)", lineHeight: 1.5 }}>
                     Clearing codes erases the evidence Carlos uses to diagnose the problem — and the light will just come back if the fault is still there. Diagnose first, clear after the fix.
                   </p>
                 </div>
@@ -490,7 +490,7 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
                   <button onClick={() => setConfirmClear(false)} style={{ flex: 1, height: "44px", borderRadius: "10px", border: "none", backgroundColor: S.surface2, color: S.text, fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
                     Keep codes
                   </button>
-                  <button onClick={() => void clearCodes()} style={{ flex: 1, height: "44px", borderRadius: "10px", border: "1px solid rgba(239,68,68,0.4)", backgroundColor: "rgba(239,68,68,0.12)", color: "#fca5a5", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+                  <button onClick={() => void clearCodes()} style={{ flex: 1, height: "44px", borderRadius: "10px", border: "1px solid rgba(239,68,68,0.4)", backgroundColor: "rgba(239,68,68,0.12)", color: "var(--red)", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
                     Clear anyway
                   </button>
                 </div>

@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { X, Clock, DollarSign, Wrench, Check, ArrowRight, RotateCcw, MessageCircle } from "lucide-react";
+import { X, Clock, DollarSign, Wrench, Check, ArrowRight, RotateCcw, MessageCircle, BookOpen } from "lucide-react";
 import type { DiagnosticStep } from "@/types/diagnostic";
 import { hapticImpact, hapticSuccess } from "@/lib/native";
 import { track } from "@/lib/track";
@@ -223,15 +223,62 @@ interface Props {
   causeName: string; // top-ranked cause
   onClose: () => void;
   onAskCarlos?: (question: string) => void;
+  /** Context for the in-overlay walkthrough chat call. */
+  chatContext?: { year: string; make: string; model: string; diagnosis: unknown };
 }
 
 type Outcome = "confirmed" | "ruled-out";
 
-export default function RepairMode({ steps, vehicleLabel, causeName, onClose, onAskCarlos }: Props) {
+export default function RepairMode({ steps, vehicleLabel, causeName, onClose, onAskCarlos, chatContext }: Props) {
   const [idx, setIdx] = useState(0);
   const [outcomes, setOutcomes] = useState<Record<number, Outcome>>({});
   const [finished, setFinished] = useState<"confirmed" | "exhausted" | null>(null);
+  // "Walk me through it" — streamed, cached per step, rendered in place so
+  // nobody has to leave the repair to get unstuck.
+  const [walkOpen, setWalkOpen] = useState(false);
+  const [walkText, setWalkText] = useState("");
+  const [walkLoading, setWalkLoading] = useState(false);
+  const walkCacheRef = useRef<Record<number, string>>({});
   useWakeLock(true);
+
+  async function toggleWalkthrough() {
+    if (walkOpen) { setWalkOpen(false); return; }
+    setWalkOpen(true);
+    const cached = walkCacheRef.current[idx];
+    if (cached) { setWalkText(cached); return; }
+    if (!chatContext) return;
+    setWalkText("");
+    setWalkLoading(true);
+    try {
+      const s = steps[idx];
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...chatContext,
+          conversationHistory: [],
+          message: `Walk me through this diagnostic step on my ${vehicleLabel} like I've never touched a car: "${s.action}". The point of the step: ${s.why} Tell me exactly where to look, what I should see/hear/feel if it's fine vs. not, and one mistake beginners make here. Keep it under 120 words, no headings.`,
+        }),
+      });
+      if (!res.ok || !res.body) throw new Error("chat failed");
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        setWalkText(acc);
+      }
+      acc += decoder.decode();
+      walkCacheRef.current[idx] = acc;
+      setWalkText(acc);
+    } catch {
+      setWalkText("Couldn't reach Carlos — check your connection and try again.");
+    } finally {
+      setWalkLoading(false);
+    }
+  }
 
   useEffect(() => {
     track("repair_mode_started", { steps: steps.length });
@@ -249,6 +296,7 @@ export default function RepairMode({ steps, vehicleLabel, causeName, onClose, on
   const total = steps.length;
 
   function choose(outcome: Outcome) {
+    setWalkOpen(false);
     setOutcomes((o) => ({ ...o, [idx]: outcome }));
     if (outcome === "confirmed") {
       hapticSuccess();
@@ -360,16 +408,41 @@ export default function RepairMode({ steps, vehicleLabel, causeName, onClose, on
               </span>
             </button>
 
-            {/* Escape hatch + reassurance */}
+            {/* In-place walkthrough — Carlos explains the step without leaving */}
+            {chatContext && (
+              <button
+                onClick={() => void toggleWalkthrough()}
+                className="tap-target"
+                aria-expanded={walkOpen}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", minHeight: "44px", borderRadius: "12px", border: `1px dashed ${walkOpen ? S.accent : "rgba(74,158,255,0.4)"}`, backgroundColor: "rgba(74,158,255,0.05)", color: S.accent, fontSize: "14px", fontWeight: 600, cursor: "pointer", transition: "border-color 200ms" }}
+              >
+                <BookOpen size={15} aria-hidden="true" />
+                {walkOpen ? "Hide the walkthrough" : "Walk me through it"}
+              </button>
+            )}
+            {walkOpen && (
+              <div className="preview-row-in" style={{ backgroundColor: S.card, border: `1px solid ${S.border}`, borderRadius: "14px", padding: "14px 16px" }}>
+                <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: S.muted, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: "8px" }}>Carlos explains</div>
+                {walkText ? (
+                  <p style={{ fontSize: "14px", color: S.text, lineHeight: 1.65, margin: 0, whiteSpace: "pre-wrap" }}>
+                    {walkText}
+                    {walkLoading && <span className="stream-cursor" aria-hidden="true" />}
+                  </p>
+                ) : (
+                  <div className="skeleton" style={{ height: "48px", borderRadius: "8px" }} aria-hidden="true" />
+                )}
+              </div>
+            )}
+            {/* Reassurance + fallback to full chat */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", marginTop: "2px" }}>
               {onAskCarlos ? (
                 <button
-                  onClick={() => { onClose(); onAskCarlos(`I'm on step ${idx + 1} of the guided repair ("${step.action}") and I'm not sure what I'm looking at. Can you walk me through it in more detail?`); }}
+                  onClick={() => { onClose(); onAskCarlos(`I'm on step ${idx + 1} of the guided repair ("${step.action}") and I have a question about my specific situation.`); }}
                   className="tap-target"
-                  style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", padding: "8px 0", color: S.accent, fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
+                  style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", padding: "8px 0", color: S.sec, fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
                 >
-                  <MessageCircle size={14} aria-hidden="true" />
-                  Stuck? Ask Carlos
+                  <MessageCircle size={13} aria-hidden="true" />
+                  Open full chat
                 </button>
               ) : <span />}
               <span style={{ fontSize: "12px", color: S.muted }}>Screen stays on while you work</span>

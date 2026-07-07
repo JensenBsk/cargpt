@@ -6,9 +6,9 @@ import type { Metadata } from "next";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://mchaniccarlos.com";
 
 const SAFETY_CONFIG = {
-  STOP: { bg: "#1a0a0a", border: "#3a1515", accent: "var(--red)", badgeBg: "var(--red)", label: "⛔ STOP DRIVING", reasonColor: "#fca5a5" },
-  CAUTION: { bg: "#1a1500", border: "#3a2e00", accent: "var(--amber)", badgeBg: "var(--amber)", label: "⚠️ DRIVE WITH CAUTION", reasonColor: "#fcd34d" },
-  OKAY: { bg: "#0a1a0f", border: "#1a3a1f", accent: "var(--green)", badgeBg: "var(--green)", label: "✅ OKAY TO DRIVE", reasonColor: "#86efac" },
+  STOP: { bg: "#1a0a0a", border: "#3a1515", accent: "var(--red)", badgeBg: "var(--red)", label: "⛔ STOP DRIVING", reasonColor: "var(--red)" },
+  CAUTION: { bg: "#1a1500", border: "#3a2e00", accent: "var(--amber)", badgeBg: "var(--amber)", label: "⚠️ DRIVE WITH CAUTION", reasonColor: "var(--amber)" },
+  OKAY: { bg: "#0a1a0f", border: "#1a3a1f", accent: "var(--green)", badgeBg: "var(--green)", label: "✅ OKAY TO DRIVE", reasonColor: "var(--green)" },
 };
 
 const LIKELIHOOD_COLORS: Record<string, { bg: string; text: string }> = {

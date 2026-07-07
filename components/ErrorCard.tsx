@@ -92,7 +92,7 @@ export default function ErrorCard({ type, onRetry, onSecondary }: ErrorCardProps
       <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
         <AlertTriangle size={16} color="#f59e0b" style={{ flexShrink: 0, marginTop: "1px" }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: "14px", fontWeight: 600, color: "#fcd34d", marginBottom: "4px" }}>
+          <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--amber)", marginBottom: "4px" }}>
             {config.title}
           </div>
           <div style={{ fontSize: "13px", color: "#9ca3af", lineHeight: 1.5 }}>
