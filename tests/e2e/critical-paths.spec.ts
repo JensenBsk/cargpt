@@ -46,19 +46,43 @@ async function dismissOnboarding(page: Page) {
 test.describe("Diagnosis flow", () => {
   test("user completes a diagnosis and sees the report", async ({ page }) => {
     await dismissOnboarding(page);
+    // Production contract: the diagnosis streams as raw model text
+    // (text/plain), which the client parses progressively. Other tests use
+    // JSON fulfillment to keep the legacy/error branch covered.
     await page.route("**/api/diagnose", (route) =>
-      route.fulfill({ json: DIAGNOSIS })
+      route.fulfill({
+        contentType: "text/plain; charset=utf-8",
+        body: "```json\n" + JSON.stringify(DIAGNOSIS.diagnosis) + "\n```",
+      })
     );
     await page.route("**/api/diagnoses", (route) =>
       route.fulfill({ json: { saved: false } })
     );
     await page.route("**/api/questions", (route) => route.fulfill({ json: { questions: [] } }));
+    await page.route("**/api/recalls**", (route) => route.fulfill({ json: { count: 0, recalls: [] } }));
+    await page.route("**/api/tsbs**", (route) =>
+      route.fulfill({
+        json: {
+          count: 2,
+          tsbs: [
+            { number: "A19-014", nhtsaId: 111, summary: "Cold start misfire on cylinder 1 — updated ignition coil part.", date: "2019-05-01T00:00:00Z", component: "ENGINE" },
+            { number: "A18-090", nhtsaId: 112, summary: "Software update for idle quality.", date: "2018-11-01T00:00:00Z", component: "ENGINE" },
+          ],
+        },
+      })
+    );
 
     await page.goto("/diagnose");
     await page.locator("#vehicle-year").selectOption("2018");
     await page.locator("#vehicle-make").fill("Honda");
     await page.locator("#vehicle-model").fill("Civic");
     await page.locator("#issue-description").fill("P0301 misfire on cold start");
+
+    // TSB banner appears once the vehicle is identified (debounced lookup)
+    await expect(page.getByText(/2 service bulletins/i)).toBeVisible({ timeout: 10_000 });
+    await page.getByRole("button", { name: /service bulletins/i }).click();
+    await expect(page.getByText("A19-014")).toBeVisible();
+
     await page.getByRole("button", { name: /ask carlos/i }).click();
 
     await expect(page.getByText("Ignition coil failing").first()).toBeVisible({ timeout: 15_000 });
@@ -89,6 +113,7 @@ test.describe("Repair Mode", () => {
     await page.route("**/api/diagnoses", (route) => route.fulfill({ json: { saved: false } }));
     await page.route("**/api/questions", (route) => route.fulfill({ json: { questions: [] } }));
     await page.route("**/api/recalls**", (route) => route.fulfill({ json: { count: 0, recalls: [] } }));
+    await page.route("**/api/tsbs**", (route) => route.fulfill({ json: { count: 0, tsbs: [] } }));
 
     await page.goto("/diagnose");
     await page.locator("#vehicle-year").selectOption("2018");

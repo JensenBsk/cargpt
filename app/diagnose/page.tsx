@@ -18,6 +18,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { resizeImage } from "@/utils/resizeImage";
 import { hapticSuccess } from "@/lib/native";
 import { track } from "@/lib/track";
+import { parsePartialJson } from "@/lib/partialJson";
 import { MapPin, Camera, Wrench, Lock, WifiOff, Bluetooth, Car, AlertTriangle } from "lucide-react";
 
 const LS_KEY = "torque_diagnosis_history";
@@ -51,6 +52,41 @@ export interface HistoryItem {
   verdict: "STOP" | "CAUTION" | "OKAY";
   outcome?: "fixed" | "not_fixed";
   outcomeAskedAt?: string;
+}
+
+interface TsbItem {
+  number: string;
+  nhtsaId: number;
+  summary: string;
+  date: string | null;
+  component: string;
+}
+
+// Pull the bulletins most relevant to what the user typed, so the diagnosis
+// prompt can lean on known factory fixes ("what the dealer already knows").
+function relevantTsbs(items: TsbItem[], issue: string, max = 5): TsbItem[] {
+  const words = issue.toLowerCase().match(/[a-z]{4,}/g) ?? [];
+  if (words.length === 0) return [];
+  const unique = [...new Set(words)];
+  return items
+    .map((t) => {
+      const hay = `${t.summary} ${t.component}`.toLowerCase();
+      return { t, score: unique.filter((w) => hay.includes(w)).length };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, max)
+    .map((x) => x.t);
+}
+
+// What the streaming diagnosis has produced so far. Every field — including
+// fields inside array elements — may still be missing while tokens arrive.
+interface StreamPreview {
+  whatsWrong?: string;
+  driveSafety?: { verdict?: "STOP" | "CAUTION" | "OKAY"; reason?: string };
+  rankedCauses?: { rank?: number; cause?: string; likelihood?: string }[];
+  diagnosticSteps?: unknown[];
+  costEstimates?: unknown[];
 }
 
 function saveToLS(item: Omit<HistoryItem, "id" | "date">) {
@@ -105,6 +141,9 @@ export default function Home() {
   const [recallData, setRecallData] = useState<{ key: string; count: number; items: { campaignNumber: string; subject: string; component: string }[] } | null>(null);
   const [recallsOpen, setRecallsOpen] = useState(false);
   const recallCacheRef = useRef<Record<string, { count: number; items: { campaignNumber: string; subject: string; component: string }[] }>>({});
+  const [tsbData, setTsbData] = useState<{ key: string; count: number; items: TsbItem[] } | null>(null);
+  const [tsbsOpen, setTsbsOpen] = useState(false);
+  const tsbCacheRef = useRef<Record<string, { count: number; items: TsbItem[] }>>({});
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showObdScanner, setShowObdScanner] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -115,6 +154,7 @@ export default function Home() {
 
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const loadingMsgsRef = useRef<string[]>([]);
+  const [streamPreview, setStreamPreview] = useState<StreamPreview | null>(null);
 
   const yearRef = useRef<HTMLDivElement>(null);
   const makeRef = useRef<HTMLDivElement>(null);
@@ -197,20 +237,36 @@ export default function Home() {
     ? `${year}|${make.trim().toLowerCase()}|${model.trim().toLowerCase()}`
     : null;
   const recalls = recallData && recallData.key === recallKey ? recallData : null;
+  const tsbs = tsbData && tsbData.key === recallKey ? tsbData : null;
 
   useEffect(() => {
     if (!recallKey || !year) return;
+    const vehicleQs = `year=${encodeURIComponent(year)}&make=${encodeURIComponent(make.trim())}&model=${encodeURIComponent(model.trim())}`;
     const t = setTimeout(() => {
       const cached = recallCacheRef.current[recallKey];
-      if (cached) { setRecallData({ key: recallKey, ...cached }); return; }
-      fetch(`/api/recalls?year=${encodeURIComponent(year)}&make=${encodeURIComponent(make.trim())}&model=${encodeURIComponent(model.trim())}`)
-        .then((r) => r.json())
-        .then((d) => {
-          const val = { count: d.count ?? 0, items: (d.recalls ?? []).slice(0, 3) };
-          recallCacheRef.current[recallKey] = val;
-          setRecallData({ key: recallKey, ...val });
-        })
-        .catch(() => {});
+      if (cached) { setRecallData({ key: recallKey, ...cached }); }
+      else {
+        fetch(`/api/recalls?${vehicleQs}`)
+          .then((r) => r.json())
+          .then((d) => {
+            const val = { count: d.count ?? 0, items: (d.recalls ?? []).slice(0, 3) };
+            recallCacheRef.current[recallKey] = val;
+            setRecallData({ key: recallKey, ...val });
+          })
+          .catch(() => {});
+      }
+      const cachedTsbs = tsbCacheRef.current[recallKey];
+      if (cachedTsbs) { setTsbData({ key: recallKey, ...cachedTsbs }); }
+      else {
+        fetch(`/api/tsbs?${vehicleQs}`)
+          .then((r) => r.json())
+          .then((d) => {
+            const val = { count: d.count ?? 0, items: (d.tsbs ?? []) as TsbItem[] };
+            tsbCacheRef.current[recallKey] = val;
+            setTsbData({ key: recallKey, ...val });
+          })
+          .catch(() => {});
+      }
     }, 700);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -253,6 +309,7 @@ export default function Home() {
     setDiagnosis(null);
     setDiagnosisId(null);
     setChatHistory([]);
+    setStreamPreview(null);
 
     try {
       const diagBody = JSON.stringify({
@@ -264,6 +321,12 @@ export default function Home() {
         engineBayImage: engineBayImage ?? undefined,
         audioTranscript: audioTranscript || undefined,
         vinData: vinData ?? undefined,
+        tsbContext: (() => {
+          const matched = tsbs ? relevantTsbs(tsbs.items, issue) : [];
+          return matched.length > 0
+            ? matched.map((t) => `TSB ${t.number}${t.date ? ` (${t.date.slice(0, 7)})` : ""}: ${t.summary.slice(0, 400)}`).join("\n").slice(0, 2900)
+            : undefined;
+        })(),
       });
 
       const doFetch = () => fetch("/api/diagnose", { method: "POST", headers: { "Content-Type": "application/json" }, body: diagBody });
@@ -284,14 +347,48 @@ export default function Home() {
         return;
       }
 
-      const data = await res.json();
-      if (data.error) {
-        console.error("Diagnosis API returned error:", data.error, { year, make, model, issue });
-        setErrorType("diagnosis");
-        return;
+      let diag: Diagnostic;
+      const contentType = res.headers.get("content-type") ?? "";
+      if (contentType.includes("application/json")) {
+        // Non-streaming contract (errors, e2e mocks)
+        const data = await res.json();
+        if (data.error || !data.diagnosis) {
+          console.error("Diagnosis API returned error:", data.error, { year, make, model, issue });
+          setErrorType("diagnosis");
+          return;
+        }
+        diag = data.diagnosis;
+      } else {
+        // Streaming contract: raw model text (JSON arriving token by token).
+        // Render whatever has arrived every ~120ms; parse strictly at the end.
+        if (!res.body) throw new Error("No response body");
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let lastRender = 0;
+        let firstToken = true;
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          if (firstToken) { firstToken = false; track("diagnosis_first_token", { make }); }
+          const now = Date.now();
+          if (now - lastRender > 120) {
+            lastRender = now;
+            const partial = parsePartialJson(buffer);
+            if (partial) setStreamPreview(partial as StreamPreview);
+          }
+        }
+        buffer += decoder.decode();
+        const jsonStart = buffer.indexOf("{");
+        const jsonEnd = buffer.lastIndexOf("}");
+        if (jsonStart === -1 || jsonEnd === -1) {
+          console.error("Diagnosis stream had no JSON object", { year, make, model, issue, raw: buffer.slice(0, 300) });
+          setErrorType("diagnosis");
+          return;
+        }
+        diag = JSON.parse(buffer.slice(jsonStart, jsonEnd + 1));
       }
-
-      const diag: Diagnostic = data.diagnosis;
       setDiagnosis(diag);
       hapticSuccess();
       track("diagnosis_completed", { make, verdict: diag.driveSafety.verdict });
@@ -319,6 +416,7 @@ export default function Home() {
       setErrorType(!navigator.onLine ? "network" : "diagnosis");
     } finally {
       setLoading(false);
+      setStreamPreview(null);
     }
   }
 
@@ -628,8 +726,8 @@ export default function Home() {
 
               {/* Carlos thinking — loading state with result skeleton */}
               {loading && (
-                <div aria-live="polite" style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", margin: "0 0 16px" }}>
-                  <div style={{ textAlign: "center", padding: "28px 24px", borderRadius: "16px", background: "#13161b", border: "1px solid #1e2329", marginBottom: "12px" }}>
+                <div style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", margin: "0 0 16px" }}>
+                  <div aria-live="polite" style={{ textAlign: "center", padding: "28px 24px", borderRadius: "16px", background: "#13161b", border: "1px solid #1e2329", marginBottom: "12px" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src="/carlos/carlos-thinking.webp"
@@ -638,20 +736,68 @@ export default function Home() {
                       style={{ height: "100px", width: "auto", margin: "0 auto 16px", display: "block", filter: "drop-shadow(0 4px 16px rgba(59,130,246,0.3)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }}
                     />
                     <p style={{ color: "white", fontSize: "15px", fontWeight: 600, margin: "0 0 4px", minHeight: "22px" }}>
-                      {loadingMsgsRef.current[loadingMsgIdx] || `Carlos is on it…`}
+                      {streamPreview ? "Here's what Carlos is finding…" : loadingMsgsRef.current[loadingMsgIdx] || `Carlos is on it…`}
                     </p>
-                    <p style={{ color: "#7d8fa8", fontSize: "13px", margin: 0 }}>Carlos checks real repair data — usually 20–40 seconds</p>
+                    <p style={{ color: "#7d8fa8", fontSize: "13px", margin: 0 }}>
+                      {streamPreview ? "Report coming in live — full details in a moment" : "Carlos checks real repair data — usually 20–40 seconds"}
+                    </p>
                   </div>
-                  {/* Skeleton of the incoming report so users see the shape of what's coming */}
-                  <div aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    <div className="skeleton" style={{ height: "64px" }} />
-                    <div className="skeleton" style={{ height: "96px" }} />
-                    <div style={{ display: "flex", gap: "10px" }}>
-                      <div className="skeleton" style={{ height: "56px", flex: 1 }} />
-                      <div className="skeleton" style={{ height: "56px", flex: 1 }} />
-                      <div className="skeleton" style={{ height: "56px", flex: 1 }} />
-                    </div>
-                    <div className="skeleton" style={{ height: "80px" }} />
+
+                  {/* Live report preview — sections replace their skeletons as the diagnosis streams in */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    {streamPreview?.whatsWrong ? (
+                      <div className="preview-row-in" style={{ padding: "14px 16px", borderRadius: "12px", background: "#0b1019", border: "1px solid #172134" }}>
+                        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "#4a5c72", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: "6px" }}>What&apos;s going on</div>
+                        <p style={{ color: "#dce8f5", fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
+                          {streamPreview.whatsWrong}
+                          {!streamPreview.driveSafety && <span className="stream-cursor" aria-hidden="true" />}
+                        </p>
+                      </div>
+                    ) : (
+                      <div aria-hidden="true" className="skeleton" style={{ height: "64px" }} />
+                    )}
+
+                    {streamPreview?.driveSafety?.verdict ? (
+                      (() => {
+                        const v = streamPreview.driveSafety.verdict;
+                        const cfg = v === "STOP"
+                          ? { color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.3)", label: "STOP DRIVING" }
+                          : v === "CAUTION"
+                            ? { color: "#f59e0b", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.3)", label: "DRIVE WITH CAUTION" }
+                            : { color: "#22c55e", bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.3)", label: "OKAY TO DRIVE" };
+                        return (
+                          <div className="preview-row-in" style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px 16px", borderRadius: "12px", background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+                            <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", color: cfg.color, textTransform: "uppercase" as const }}>{cfg.label}</span>
+                            {streamPreview.driveSafety.reason && (
+                              <span style={{ color: "#7d8fa8", fontSize: "12px", lineHeight: 1.4 }}>{streamPreview.driveSafety.reason}</span>
+                            )}
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <div aria-hidden="true" className="skeleton" style={{ height: "48px" }} />
+                    )}
+
+                    {streamPreview?.rankedCauses?.some((c) => c.cause) ? (
+                      <div className="preview-row-in" style={{ padding: "14px 16px", borderRadius: "12px", background: "#0b1019", border: "1px solid #172134", display: "flex", flexDirection: "column", gap: "10px" }}>
+                        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "#4a5c72", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Likely causes</div>
+                        {streamPreview.rankedCauses.filter((c) => c.cause).map((c, i) => (
+                          <div key={i} className="preview-row-in" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <span style={{ width: "22px", height: "22px", borderRadius: "6px", backgroundColor: "rgba(74,158,255,0.15)", border: "1px solid rgba(74,158,255,0.3)", color: "#4a9eff", fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{c.rank ?? i + 1}</span>
+                            <span style={{ color: "#dce8f5", fontSize: "14px", fontWeight: 600, lineHeight: 1.35 }}>{c.cause}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div aria-hidden="true" style={{ display: "flex", gap: "10px" }}>
+                        <div className="skeleton" style={{ height: "56px", flex: 1 }} />
+                        <div className="skeleton" style={{ height: "56px", flex: 1 }} />
+                        <div className="skeleton" style={{ height: "56px", flex: 1 }} />
+                      </div>
+                    )}
+
+                    {/* Steps + costs are still being written */}
+                    <div aria-hidden="true" className="skeleton" style={{ height: "80px" }} />
                   </div>
                 </div>
               )}
@@ -794,6 +940,39 @@ export default function Home() {
                           ))}
                           <div style={{ fontSize: "11px", color: "#4a5c72" }}>
                             Recall repairs are free at any dealer. Source: NHTSA{recalls.count > 3 ? ` — ${recalls.count - 3} more on nhtsa.gov` : ""}.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Technical Service Bulletins (NHTSA) — what the dealer already knows */}
+                  {tsbs && tsbs.count > 0 && (
+                    <div style={{ marginTop: recalls && recalls.count > 0 ? "8px" : "12px", backgroundColor: "rgba(74,158,255,0.05)", border: "1px solid rgba(74,158,255,0.25)", borderRadius: "10px", overflow: "hidden" }}>
+                      <button
+                        type="button"
+                        onClick={() => { setTsbsOpen((v) => !v); if (!tsbsOpen) track("tsb_viewed", { make }); }}
+                        className="tap-target"
+                        aria-expanded={tsbsOpen}
+                        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "11px 14px", backgroundColor: "transparent", border: "none", cursor: "pointer" }}
+                      >
+                        <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, color: "#4a9eff", textAlign: "left" as const }}>
+                          <Wrench size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
+                          {tsbs.count} service bulletin{tsbs.count > 1 ? "s" : ""} — known fixes the dealer has
+                        </span>
+                        <span style={{ fontSize: "12px", color: "#3d5a80", flexShrink: 0 }}>{tsbsOpen ? "Hide" : "View"}</span>
+                      </button>
+                      {tsbsOpen && (
+                        <div style={{ padding: "0 14px 12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                          {tsbs.items.slice(0, 4).map((t) => (
+                            <div key={t.nhtsaId} style={{ fontSize: "12px", color: "#8b95a8", lineHeight: 1.5 }}>
+                              <span style={{ color: "#dce8f5", fontWeight: 600, fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px" }}>{t.number}</span>
+                              {t.date ? <span style={{ color: "#4a5c72" }}> · {t.date.slice(0, 7)}</span> : null}
+                              <br />{t.summary}
+                            </div>
+                          ))}
+                          <div style={{ fontSize: "11px", color: "#4a5c72" }}>
+                            Factory-issued fix procedures. Carlos folds the relevant ones into your diagnosis automatically. Source: NHTSA{tsbs.count > 4 ? ` — ${tsbs.count - 4} more` : ""}.
                           </div>
                         </div>
                       )}

@@ -14,6 +14,7 @@ import { track as vercelTrack } from "@vercel/analytics";
 
 type EventName =
   | "diagnosis_started"
+  | "diagnosis_first_token"
   | "diagnosis_completed"
   | "diagnosis_failed"
   | "quote_checked"
@@ -23,6 +24,7 @@ type EventName =
   | "obd_connected"
   | "outcome_reported"
   | "recall_viewed"
+  | "tsb_viewed"
   | "auth_opened"
   | "paywall_hit"
   | "checkout_clicked"

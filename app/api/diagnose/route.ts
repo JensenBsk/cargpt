@@ -191,7 +191,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     ({ year, make, model, issue } = body);
-    const { conversationHistory, mods, hasTune, zip, dashboardImage, engineBayImage, vinData, refinementAnswers, audioTranscript } = body;
+    const { conversationHistory, mods, hasTune, zip, dashboardImage, engineBayImage, vinData, refinementAnswers, audioTranscript, tsbContext } = body;
 
     const vehicleError = validateVehicle(year, make, model);
     if (vehicleError) return vehicleError;
@@ -208,6 +208,7 @@ export async function POST(request: Request) {
     if (!isOptionalString(refinementAnswers, LIMITS.refinement) || !isOptionalString(audioTranscript, LIMITS.audioTranscript)) {
       return badRequest("Input is too long.");
     }
+    if (!isOptionalString(tsbContext, LIMITS.tsbContext)) return badRequest("Input is too long.");
 
     const history = sanitizeHistory(conversationHistory);
     if (history === null) return badRequest("Invalid conversation history.");
@@ -240,6 +241,7 @@ export async function POST(request: Request) {
           engineBayImage ? `\n[Engine bay photo provided — analyze for leaks, cracked hoses, damaged wires, corrosion, or anything visually abnormal. Mention what you see in whatsWrong: "Looking at the engine bay, I can see..."]` : null,
           `Issue: ${issue}`,
           audioTranscript ? `Audio recording transcription: "${audioTranscript}" — factor the sound described into your diagnosis.` : null,
+          tsbContext ? `\nOFFICIAL TECHNICAL SERVICE BULLETINS filed with NHTSA for this exact vehicle that may match this issue:\n${tsbContext}\n\nIf one of these matches the symptoms, weight it heavily — it is a known factory-documented fault with an approved fix. Mention the TSB number in the relevant cause's reasoning so the user can bring it to a shop.` : null,
           refinementAnswers ? `\nUSER CLARIFICATION ANSWERS:\n${refinementAnswers}\n\nFactor these into a refined diagnosis. If they confirm the top cause, say so confidently. If they shift the rankings, update and explain why briefly.` : null,
         ]
           .filter(Boolean)
@@ -269,28 +271,52 @@ export async function POST(request: Request) {
       ? `You are an expert automotive diagnostic assistant. The user has already received a diagnosis for their ${year} ${make} ${model}. Answer their follow-up question conversationally, as a knowledgeable mechanic friend would. Be direct, specific, and honest. Reference the previous diagnosis context where relevant.`
       : SYSTEM_PROMPT;
 
-    const response = await client.messages.create({
+    if (isFollowUp) {
+      const response = await client.messages.create({
+        model: modelId,
+        max_tokens: 4096,
+        system: [{ type: "text", text: systemContent, cache_control: { type: "ephemeral" } }],
+        messages,
+      });
+      const block = response.content[0];
+      if (block.type !== "text") throw new Error("Unexpected response type from model");
+      return Response.json({ reply: block.text });
+    }
+
+    // Primary diagnosis streams as raw model text (JSON being written token by
+    // token). The client renders it progressively with a partial-JSON parser
+    // and extracts the final object itself. JSON responses remain the error
+    // (and e2e mock) contract — the client branches on Content-Type.
+    const stream = client.messages.stream({
       model: modelId,
       max_tokens: 4096,
       system: [{ type: "text", text: systemContent, cache_control: { type: "ephemeral" } }],
       messages,
     });
 
-    const block = response.content[0];
-    if (block.type !== "text") throw new Error("Unexpected response type from model");
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of stream) {
+            if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+              controller.enqueue(encoder.encode(chunk.delta.text));
+            }
+          }
+          controller.close();
+        } catch (err) {
+          console.error("Diagnose stream error:", err, "Input:", JSON.stringify({ year, make, model, issue }));
+          controller.error(err);
+        }
+      },
+    });
 
-    if (isFollowUp) return Response.json({ reply: block.text });
-
-    // Extract the outermost JSON object — robust against any leading/trailing text or fences
-    const raw = block.text;
-    const start = raw.indexOf("{");
-    const end = raw.lastIndexOf("}");
-    if (start === -1 || end === -1) {
-      console.error("Diagnose: no JSON object in response", { year, make, model, issue, raw: raw.slice(0, 300) });
-      return Response.json({ error: "Failed to parse diagnostic response. Please try again." }, { status: 500 });
-    }
-    const parsed = JSON.parse(raw.slice(start, end + 1));
-    return Response.json({ diagnosis: parsed });
+    return new Response(readable, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+      },
+    });
   } catch (err) {
     console.error("Diagnose error:", err, "Input:", JSON.stringify({ year, make, model, issue }));
     if (err instanceof SyntaxError) {

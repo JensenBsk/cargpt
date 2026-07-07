@@ -20,14 +20,26 @@ const VALID_DIAGNOSIS = {
 };
 
 const mockCreate = vi.fn();
+const mockStream = vi.fn();
 
 vi.mock("@anthropic-ai/sdk", () => {
   return {
     default: class MockAnthropic {
-      messages = { create: mockCreate, stream: vi.fn() };
+      messages = { create: mockCreate, stream: mockStream };
     },
   };
 });
+
+/** Async-iterable of SDK-shaped text deltas, split into small chunks like a real stream. */
+function streamOf(text: string, chunkSize = 24) {
+  return {
+    async *[Symbol.asyncIterator]() {
+      for (let i = 0; i < text.length; i += chunkSize) {
+        yield { type: "content_block_delta", delta: { type: "text_delta", text: text.slice(i, i + chunkSize) } };
+      }
+    },
+  };
+}
 
 function makeRequest(body: unknown, ip = "1.2.3.4"): Request {
   return new Request("http://localhost/api/diagnose", {
@@ -54,30 +66,32 @@ function uniqueIp() {
 
 beforeEach(() => {
   mockCreate.mockReset();
+  mockStream.mockReset();
 });
 
 describe("POST /api/diagnose", () => {
-  it("returns a structured diagnosis for valid input", async () => {
-    mockCreate.mockResolvedValue({ content: [{ type: "text", text: JSON.stringify(VALID_DIAGNOSIS) }] });
+  it("streams the diagnosis as raw text for valid input", async () => {
+    mockStream.mockReturnValue(streamOf(JSON.stringify(VALID_DIAGNOSIS)));
     const { POST } = await freshRoute();
 
     const res = await POST(makeRequest(VALID_BODY, uniqueIp()));
     expect(res.status).toBe(200);
-    const data = await res.json();
-    expect(data.diagnosis.driveSafety.verdict).toBe("CAUTION");
-    expect(data.diagnosis.rankedCauses).toHaveLength(2);
-    expect(mockCreate).toHaveBeenCalledOnce();
+    expect(res.headers.get("content-type")).toContain("text/plain");
+    const raw = await res.text();
+    const diagnosis = JSON.parse(raw);
+    expect(diagnosis.driveSafety.verdict).toBe("CAUTION");
+    expect(diagnosis.rankedCauses).toHaveLength(2);
+    expect(mockStream).toHaveBeenCalledOnce();
+    expect(mockCreate).not.toHaveBeenCalled();
   });
 
-  it("extracts JSON even when the model wraps it in prose/fences", async () => {
-    mockCreate.mockResolvedValue({
-      content: [{ type: "text", text: "Here you go:\n```json\n" + JSON.stringify(VALID_DIAGNOSIS) + "\n```" }],
-    });
+  it("passes model text through verbatim (client extracts the JSON)", async () => {
+    const wrapped = "Here you go:\n```json\n" + JSON.stringify(VALID_DIAGNOSIS) + "\n```";
+    mockStream.mockReturnValue(streamOf(wrapped));
     const { POST } = await freshRoute();
     const res = await POST(makeRequest(VALID_BODY, uniqueIp()));
     expect(res.status).toBe(200);
-    const data = await res.json();
-    expect(data.diagnosis.rankedCauses[0].cause).toBe("Ignition coil failing");
+    expect(await res.text()).toBe(wrapped);
   });
 
   it.each([
@@ -116,10 +130,10 @@ describe("POST /api/diagnose", () => {
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
-  it("returns a graceful 500 when the Anthropic call fails (SDK retries exhausted)", async () => {
-    // maxRetries is handled inside the SDK; from the route's perspective the
-    // call ultimately rejects and the user gets a clean, generic error.
-    mockCreate.mockRejectedValue(new Error("529 overloaded"));
+  it("returns a graceful 500 when starting the stream fails, with no detail leak", async () => {
+    mockStream.mockImplementation(() => {
+      throw new Error("529 overloaded");
+    });
     const { POST } = await freshRoute();
 
     const res = await POST(makeRequest(VALID_BODY, uniqueIp()));
@@ -129,17 +143,21 @@ describe("POST /api/diagnose", () => {
     expect(data.error).not.toMatch(/529|overloaded|stack/i);
   });
 
-  it("returns a parse error message when the model returns non-JSON", async () => {
-    mockCreate.mockResolvedValue({ content: [{ type: "text", text: "Sorry, I cannot help with that." }] });
+  it("errors the body stream when the model fails mid-stream", async () => {
+    mockStream.mockReturnValue({
+      // eslint-disable-next-line require-yield
+      async *[Symbol.asyncIterator](): AsyncGenerator<never> {
+        throw new Error("connection reset");
+      },
+    });
     const { POST } = await freshRoute();
     const res = await POST(makeRequest(VALID_BODY, uniqueIp()));
-    expect(res.status).toBe(500);
-    const data = await res.json();
-    expect(data.error).toMatch(/try again/i);
+    expect(res.status).toBe(200); // headers already sent — the body carries the failure
+    await expect(res.text()).rejects.toThrow();
   });
 
   it("returns 429 with Retry-After once the per-IP rate limit is exceeded", async () => {
-    mockCreate.mockResolvedValue({ content: [{ type: "text", text: JSON.stringify(VALID_DIAGNOSIS) }] });
+    mockStream.mockImplementation(() => streamOf(JSON.stringify(VALID_DIAGNOSIS)));
     const { POST } = await freshRoute();
     const ip = uniqueIp();
 
@@ -150,7 +168,7 @@ describe("POST /api/diagnose", () => {
     const limited = await POST(makeRequest(VALID_BODY, ip));
     expect(limited.status).toBe(429);
     expect(limited.headers.get("Retry-After")).toBeTruthy();
-    expect(mockCreate).toHaveBeenCalledTimes(10);
+    expect(mockStream).toHaveBeenCalledTimes(10);
   });
 
   it("returns 503 when the API key is not configured", async () => {

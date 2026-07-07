@@ -17,6 +17,7 @@ export const LIMITS = {
   imageBase64Chars: 6_500_000,
   refinement: 2000,
   audioTranscript: 2000,
+  tsbContext: 3000,
 } as const;
 
 export function isValidYear(year: unknown): boolean {
