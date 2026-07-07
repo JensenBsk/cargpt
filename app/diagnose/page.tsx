@@ -17,7 +17,7 @@ import HistorySheet from "@/components/HistorySheet";
 import { useToast } from "@/contexts/ToastContext";
 import { resizeImage } from "@/utils/resizeImage";
 import { hapticSuccess } from "@/lib/native";
-import { MapPin, Camera, Wrench, Lock, WifiOff, Bluetooth, Car } from "lucide-react";
+import { MapPin, Camera, Wrench, Lock, WifiOff, Bluetooth, Car, AlertTriangle } from "lucide-react";
 
 const LS_KEY = "torque_diagnosis_history";
 
@@ -97,6 +97,10 @@ export default function Home() {
   const [engineBayImage, setEngineBayImage] = useState<string | null>(null);
   const [vinData, setVinData] = useState<{ year: string; make: string; model: string; engine?: string; fuelType?: string; drivetrain?: string } | null>(null);
   const isOnline = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
+  const [savedCars, setSavedCars] = useState<{ year: string; make: string; model: string }[]>([]);
+  const [recallData, setRecallData] = useState<{ key: string; count: number; items: { campaignNumber: string; subject: string; component: string }[] } | null>(null);
+  const [recallsOpen, setRecallsOpen] = useState(false);
+  const recallCacheRef = useRef<Record<string, { count: number; items: { campaignNumber: string; subject: string; component: string }[] }>>({});
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showObdScanner, setShowObdScanner] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -130,8 +134,47 @@ export default function Home() {
       // One-time client-only read; localStorage emits no events to subscribe to.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (!localStorage.getItem("torque_onboarded")) setShowOnboarding(true);
+      const items: HistoryItem[] = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+      const seen = new Set<string>();
+      const cars: { year: string; make: string; model: string }[] = [];
+      for (const it of items) {
+        const key = `${it.year}|${it.make.toLowerCase()}|${it.model.toLowerCase()}`;
+        if (it.year && it.make && it.model && !seen.has(key)) {
+          seen.add(key);
+          cars.push({ year: it.year, make: it.make, model: it.model });
+        }
+        if (cars.length >= 3) break;
+      }
+       
+      setSavedCars(cars);
     } catch { /* ignore */ }
   }, []);
+
+  // Recall lookup (free NHTSA data) once the vehicle is fully identified.
+  // State carries the car key it belongs to, so stale results simply don't
+  // render while the user is switching cars — no synchronous clearing needed.
+  const recallKey = year && make.trim() && model.trim()
+    ? `${year}|${make.trim().toLowerCase()}|${model.trim().toLowerCase()}`
+    : null;
+  const recalls = recallData && recallData.key === recallKey ? recallData : null;
+
+  useEffect(() => {
+    if (!recallKey || !year) return;
+    const t = setTimeout(() => {
+      const cached = recallCacheRef.current[recallKey];
+      if (cached) { setRecallData({ key: recallKey, ...cached }); return; }
+      fetch(`/api/recalls?year=${encodeURIComponent(year)}&make=${encodeURIComponent(make.trim())}&model=${encodeURIComponent(model.trim())}`)
+        .then((r) => r.json())
+        .then((d) => {
+          const val = { count: d.count ?? 0, items: (d.recalls ?? []).slice(0, 3) };
+          recallCacheRef.current[recallKey] = val;
+          setRecallData({ key: recallKey, ...val });
+        })
+        .catch(() => {});
+    }, 700);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recallKey]);
 
   useEffect(() => {
     if (!isSignedIn || !available) return;
@@ -576,6 +619,24 @@ export default function Home() {
                 onSubmit={handleDiagnose}
                 style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", display: loading ? "none" : "flex", flexDirection: "column", gap: "20px" }}
               >
+                {/* Your cars — one-tap refill from history */}
+                {savedCars.length > 0 && !(year && make && model) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" as const, margin: "-6px 0 -8px" }}>
+                    <span style={{ fontSize: "12px", color: "#4a5c72" }}>Your cars:</span>
+                    {savedCars.map((c) => (
+                      <button
+                        key={`${c.year}${c.make}${c.model}`}
+                        type="button"
+                        onClick={() => { setYear(c.year); setMake(c.make); setModel(c.model); setShowErrors(false); }}
+                        className="tap-target"
+                        style={{ fontSize: "12px", fontWeight: 600, padding: "6px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.3)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.07)", cursor: "pointer" }}
+                      >
+                        {c.year} {c.make} {c.model}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {/* Vehicle card */}
                 <div style={{ background: "#13161f", border: "1px solid #1e2433", borderRadius: "16px", padding: "20px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
@@ -644,6 +705,37 @@ export default function Home() {
                     <Bluetooth size={15} aria-hidden="true" />
                     Connect OBD2 Scanner
                   </button>
+
+                  {/* Open recalls (NHTSA) for the identified vehicle */}
+                  {recalls && recalls.count > 0 && (
+                    <div style={{ marginTop: "12px", backgroundColor: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: "10px", overflow: "hidden" }}>
+                      <button
+                        type="button"
+                        onClick={() => setRecallsOpen((v) => !v)}
+                        className="tap-target"
+                        aria-expanded={recallsOpen}
+                        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "11px 14px", backgroundColor: "transparent", border: "none", cursor: "pointer" }}
+                      >
+                        <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, color: "#f59e0b" }}>
+                          <AlertTriangle size={14} aria-hidden="true" />
+                          {recalls.count} open recall{recalls.count > 1 ? "s" : ""} on this car
+                        </span>
+                        <span style={{ fontSize: "12px", color: "#8a6d1f" }}>{recallsOpen ? "Hide" : "View"}</span>
+                      </button>
+                      {recallsOpen && (
+                        <div style={{ padding: "0 14px 12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                          {recalls.items.map((r) => (
+                            <div key={r.campaignNumber} style={{ fontSize: "12px", color: "#8b95a8", lineHeight: 1.5 }}>
+                              <span style={{ color: "#dce8f5", fontWeight: 600 }}>{r.component ? r.component.split(":").pop() : "Recall"}:</span> {r.subject}
+                            </div>
+                          ))}
+                          <div style={{ fontSize: "11px", color: "#4a5c72" }}>
+                            Recall repairs are free at any dealer. Source: NHTSA{recalls.count > 3 ? ` — ${recalls.count - 3} more on nhtsa.gov` : ""}.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Issue card */}

@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Wrench, DollarSign, AlertTriangle, Send, MessageCircle,
+  Wrench, DollarSign, AlertTriangle, MessageCircle,
   Image as ImageIcon, MapPin, Star, AlertOctagon, Zap, ChevronDown,
-  Clock, CheckCircle2, Loader2, X, Check,
+  Clock, CheckCircle2, Loader2, X, Check, RefreshCw,
 } from "lucide-react";
 import { hapticImpact } from "@/lib/native";
 import type { Diagnostic, ChatMessage, ClarifyQuestion } from "@/types/diagnostic";
@@ -12,6 +12,7 @@ import type { RankedCause, DiagnosticStep, CostEstimate, PartNeeded } from "@/ty
 import { buildPartLinks } from "@/lib/partsMapping";
 import { buildTextMessage, buildEmailMessage, buildWalkInScript, type MechanicMessageContext } from "@/lib/mechanicMessage";
 import FeedbackCard from "@/components/FeedbackCard";
+import RepairMode from "@/components/RepairMode";
 import TorqueLogo from "@/components/TorqueLogo";
 
 const APP_URL = typeof window !== "undefined" ? window.location.origin : "https://mchaniccarlos.com";
@@ -78,7 +79,7 @@ function StepPills({ cost, time, tools }: { cost?: string; time?: string; tools?
 }
 
 // ── Answer Card ──
-function AnswerCard({ topCause, firstStep, topEst, hasAudio, eli5Mode, eli5Text, eli5Loading, onEli5 }: {
+function AnswerCard({ topCause, firstStep, topEst, hasAudio, eli5Mode, eli5Text, eli5Loading, onEli5, onStartRepair }: {
   topCause: RankedCause;
   firstStep: DiagnosticStep;
   topEst?: CostEstimate;
@@ -87,6 +88,7 @@ function AnswerCard({ topCause, firstStep, topEst, hasAudio, eli5Mode, eli5Text,
   eli5Text: string | null;
   eli5Loading: boolean;
   onEli5: () => void;
+  onStartRepair: () => void;
 }) {
   const lhColor = LIKELIHOOD_COLORS[topCause.likelihood] ?? { bg: "rgba(107,114,128,0.18)", text: "#7d8fa8" };
   return (
@@ -140,6 +142,16 @@ function AnswerCard({ topCause, firstStep, topEst, hasAudio, eli5Mode, eli5Text,
         </div>
       </div>
 
+      {/* Guided repair launcher */}
+      <button
+        onClick={onStartRepair}
+        className="tap-target"
+        style={{ width: "100%", height: "48px", backgroundColor: "rgba(74,158,255,0.1)", border: "1px solid rgba(74,158,255,0.35)", borderRadius: "10px", color: "#4a9eff", fontSize: "14px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+      >
+        <Wrench size={15} aria-hidden="true" />
+        Fix it with Carlos — guided steps
+      </button>
+
       {/* Cost estimate */}
       {topEst && (
         <div style={{ display: "flex", alignItems: "center", gap: "8px", borderTop: "1px solid #172134", paddingTop: "12px" }}>
@@ -155,7 +167,8 @@ function AnswerCard({ topCause, firstStep, topEst, hasAudio, eli5Mode, eli5Text,
         className="tap-target"
         style={{ width: "100%", height: "34px", backgroundColor: "transparent", border: "1px solid #172134", borderRadius: "8px", color: "#4a5c72", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
       >
-        {eli5Loading ? "Simplifying…" : eli5Mode ? "🔄 Regular explanation" : "🔄 Simpler explanation"}
+        <RefreshCw size={12} aria-hidden="true" />
+        {eli5Loading ? "Simplifying…" : eli5Mode ? "Regular explanation" : "Simpler explanation"}
       </button>
     </div>
   );
@@ -241,6 +254,7 @@ export default function DiagnosticReport({
 
   // Chat
   const [chatExpanded, setChatExpanded] = useState(false);
+  const [repairMode, setRepairMode] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
@@ -289,6 +303,8 @@ export default function DiagnosticReport({
 
   useEffect(() => {
     if (zip && !shopsLoaded) {
+      // One-shot fetch guard for an external API; nothing to subscribe to.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShopsLoaded(true);
       fetch(`/api/mechanics?zip=${zip}&make=${encodeURIComponent(make)}`)
         .then((r) => r.json())
@@ -557,7 +573,7 @@ export default function DiagnosticReport({
 
         {/* 3. Answer Card */}
         {topCause && firstStep && (
-          <AnswerCard topCause={topCause} firstStep={firstStep} topEst={topEst} hasAudio={hasAudio} eli5Mode={eli5Mode} eli5Text={eli5Text} eli5Loading={eli5Loading} onEli5={handleEli5} />
+          <AnswerCard topCause={topCause} firstStep={firstStep} topEst={topEst} hasAudio={hasAudio} eli5Mode={eli5Mode} eli5Text={eli5Text} eli5Loading={eli5Loading} onEli5={handleEli5} onStartRepair={() => setRepairMode(true)} />
         )}
 
         {/* 4. First warning (if any) */}
@@ -1193,6 +1209,17 @@ export default function DiagnosticReport({
             )}
           </div>
         </div>
+      )}
+
+      {/* Guided Repair Mode overlay */}
+      {repairMode && (
+        <RepairMode
+          steps={currentDiagnosis.diagnosticSteps}
+          vehicleLabel={`${year} ${cap(make)} ${cap(model)}`}
+          causeName={topCause?.cause ?? "diagnosis"}
+          onClose={() => setRepairMode(false)}
+          onAskCarlos={(q) => { setChatExpanded(true); handleChatSubmit(q); }}
+        />
       )}
     </div>
   );
