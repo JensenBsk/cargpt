@@ -14,6 +14,7 @@ const DIAGNOSIS = {
     ],
     diagnosticSteps: [
       { step: 1, action: "Listen for rough idle when cold", why: "Confirms the cold-only pattern.", ifResultA: "Cold-only points to the coil.", ifResultB: "Constant misfire changes the ranking.", cost: "Free", time: "5 min", tools: "None" },
+      { step: 2, action: "Swap coils between cylinders", why: "If the misfire follows the coil, it is confirmed.", ifResultA: "Misfire moves with the coil — replace it.", ifResultB: "Misfire stays put — the coil is fine.", cost: "Free", time: "20 min", tools: "10mm socket" },
     ],
     costEstimates: [{ fix: "Replace ignition coil", parts: "$40–$80", labor: "$50–$100", total: "$90–$180" }],
     dontDoThis: ["Keep driving with heavy misfire"],
@@ -78,6 +79,37 @@ test.describe("Diagnosis flow", () => {
     await page.getByRole("button", { name: /ask carlos/i }).click();
     await expect(page.getByText(/enter your vehicle year, make, and model/i)).toBeVisible();
     expect(apiCalled).toBe(false);
+  });
+});
+
+test.describe("Repair Mode", () => {
+  test("guided repair advances on rule-out and completes on confirm", async ({ page }) => {
+    await dismissOnboarding(page);
+    await page.route("**/api/diagnose", (route) => route.fulfill({ json: DIAGNOSIS }));
+    await page.route("**/api/diagnoses", (route) => route.fulfill({ json: { saved: false } }));
+    await page.route("**/api/questions", (route) => route.fulfill({ json: { questions: [] } }));
+    await page.route("**/api/recalls**", (route) => route.fulfill({ json: { count: 0, recalls: [] } }));
+
+    await page.goto("/diagnose");
+    await page.locator("#vehicle-year").selectOption("2018");
+    await page.locator("#vehicle-make").fill("Honda");
+    await page.locator("#vehicle-model").fill("Civic");
+    await page.locator("#issue-description").fill("P0301 misfire on cold start");
+    await page.getByRole("button", { name: /ask carlos/i }).click();
+
+    await page.getByRole("button", { name: /guided steps/i }).click();
+    await expect(page.getByRole("dialog", { name: /guided repair/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Listen for rough idle when cold" })).toBeVisible();
+
+    // Rule out step 1 -> step 2 appears
+    await page.getByRole("button", { name: /constant misfire changes/i }).click();
+    await expect(page.getByRole("heading", { name: "Swap coils between cylinders" })).toBeVisible();
+
+    // Confirm step 2 -> completion screen
+    await page.getByRole("button", { name: /misfire moves with the coil/i }).click();
+    await expect(page.getByText("Found it.")).toBeVisible();
+    await page.getByRole("button", { name: /see costs & parts/i }).click();
+    await expect(page.getByRole("dialog", { name: /guided repair/i })).not.toBeVisible();
   });
 });
 
