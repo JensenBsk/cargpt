@@ -67,3 +67,43 @@ export async function hapticWarning(): Promise<void> {
 export function canShowWebCheckout(): boolean {
   return !isNativeApp();
 }
+
+/**
+ * Open a URL in the system browser sheet (SFSafariViewController / Custom
+ * Tabs). Required for OAuth: Google rejects logins from WebViews
+ * ("disallowed_useragent"), and the system sheet shares the real browser's
+ * user agent. Falls back to window.open on plain web.
+ */
+export async function openInSystemBrowser(url: string): Promise<void> {
+  const browser = cap()?.Plugins?.Browser;
+  if (browser) {
+    await browser.open({ url });
+  } else if (typeof window !== "undefined") {
+    window.open(url, "_blank", "noopener");
+  }
+}
+
+/** Close the system browser sheet if one is open (after OAuth completes). */
+export async function closeSystemBrowser(): Promise<void> {
+  try {
+    await cap()?.Plugins?.Browser?.close?.();
+  } catch {
+    // iOS throws if the sheet is already dismissed — irrelevant.
+  }
+}
+
+/**
+ * Subscribe to deep links (custom scheme / universal links) opening the app.
+ * Used to catch the OAuth callback bounced back from the system browser.
+ * Returns an unsubscribe function; no-ops on plain web.
+ */
+export function onAppUrlOpen(handler: (url: string) => void): () => void {
+  const appPlugin = cap()?.Plugins?.App;
+  if (!appPlugin?.addListener) return () => {};
+  const sub = appPlugin.addListener("appUrlOpen", (event: { url?: string }) => {
+    if (event?.url) handler(event.url);
+  });
+  return () => {
+    Promise.resolve(sub).then((s: { remove?: () => void }) => s?.remove?.()).catch(() => {});
+  };
+}

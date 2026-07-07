@@ -1,10 +1,17 @@
-// ELM327-over-BLE client (Web Bluetooth).
+// ELM327-over-BLE client.
 //
-// Reality check on adapters: Web Bluetooth is BLE-only. Classic-Bluetooth
-// ELM327 dongles (most $10 Amazon ones) are invisible to the browser — only
-// BLE variants work (Vgate iCar Pro BLE 4.0, Veepeak OBDCheck BLE+, OBDLink
-// CX, Carista BLE). BLE clones expose a UART-style GATT service; the UUIDs
-// vary by vendor, so we probe the known ones.
+// Transport is @capacitor-community/bluetooth-le's BleClient: inside the
+// Capacitor shell it talks to CoreBluetooth/Android BLE natively; on plain
+// web it falls back to Web Bluetooth. One code path for both.
+//
+// Reality check on adapters: this is BLE-only. Classic-Bluetooth ELM327
+// dongles (most $10 Amazon ones) are invisible to BLE — only BLE variants
+// work (Vgate iCar Pro BLE 4.0, Veepeak OBDCheck BLE+, OBDLink CX, Carista
+// BLE). BLE clones expose a UART-style GATT service; the UUIDs vary by
+// vendor, so we probe the known ones and fall back to a generic UART scan.
+
+import type { BleClientInterface, BleDevice } from "@capacitor-community/bluetooth-le";
+import { isNativeApp } from "@/lib/native";
 
 export interface DtcEntry {
   code: string; // e.g. "P0301"
@@ -32,11 +39,16 @@ export interface FreezeFrame {
   engineLoadPct?: number;
 }
 
-// Known BLE UART service/characteristic layouts for ELM327 clones.
+// Known BLE UART service/characteristic layouts for ELM327 clones,
+// as 128-bit UUIDs (BleClient requires the full form).
+function u16(short: number): string {
+  return `0000${short.toString(16).padStart(4, "0")}-0000-1000-8000-00805f9b34fb`;
+}
+
 const BLE_PROFILES = [
   // Most common clone profile (Vgate, Veepeak, generic "IOS-Vlink")
-  { service: 0xfff0, write: 0xfff2, notify: 0xfff1 },
-  { service: 0xfff0, write: 0xfff1, notify: 0xfff1 },
+  { service: u16(0xfff0), write: u16(0xfff2), notify: u16(0xfff1) },
+  { service: u16(0xfff0), write: u16(0xfff1), notify: u16(0xfff1) },
   // OBDLink CX and some newer adapters
   {
     service: "e7810a71-73ae-499d-8c15-faa9aef0c3f2",
@@ -55,35 +67,26 @@ export function isWebBluetoothAvailable(): boolean {
   return typeof navigator !== "undefined" && "bluetooth" in navigator;
 }
 
-type Bt = {
-  requestDevice(options: unknown): Promise<BluetoothDeviceLike>;
-};
-type BluetoothDeviceLike = {
-  name?: string;
-  gatt?: {
-    connect(): Promise<GattServerLike>;
-    connected: boolean;
-    disconnect(): void;
-  };
-  addEventListener(type: string, listener: () => void): void;
-};
-type GattServerLike = {
-  getPrimaryService(uuid: number | string): Promise<GattServiceLike>;
-};
-type GattServiceLike = {
-  getCharacteristic(uuid: number | string): Promise<GattCharacteristicLike>;
-};
-type GattCharacteristicLike = {
-  properties: { write: boolean; writeWithoutResponse: boolean; notify: boolean };
-  startNotifications(): Promise<void>;
-  writeValue(data: BufferSource): Promise<void>;
-  writeValueWithoutResponse?(data: BufferSource): Promise<void>;
-  addEventListener(type: string, listener: (ev: { target: { value: DataView } }) => void): void;
-};
+/**
+ * Whether an OBD2 connection is possible here: native shell (CoreBluetooth /
+ * Android BLE via the Capacitor plugin) or a browser with Web Bluetooth.
+ */
+export function isObdSupported(): boolean {
+  return isNativeApp() || isWebBluetoothAvailable();
+}
+
+async function ble(): Promise<BleClientInterface> {
+  // Dynamic import keeps the plugin (and @capacitor/core) out of every
+  // page bundle — it loads only when the scanner is actually opened.
+  const { BleClient } = await import("@capacitor-community/bluetooth-le");
+  return BleClient;
+}
 
 export class Elm327 {
-  private device: BluetoothDeviceLike | null = null;
-  private writeChar: GattCharacteristicLike | null = null;
+  private client: BleClientInterface | null = null;
+  private device: BleDevice | null = null;
+  private isConnected = false;
+  private writeTarget: { service: string; characteristic: string; withoutResponse: boolean } | null = null;
   private rxBuffer = "";
   private pending: { resolve: (s: string) => void; timer: ReturnType<typeof setTimeout> } | null = null;
   onDisconnect?: () => void;
@@ -93,59 +96,108 @@ export class Elm327 {
   }
 
   get connected(): boolean {
-    return !!this.device?.gatt?.connected;
+    return this.isConnected && !!this.writeTarget;
   }
 
   /** Prompt the user to pick a nearby BLE OBD2 adapter and connect. */
   async connect(): Promise<void> {
-    if (!isWebBluetoothAvailable()) {
+    if (!isObdSupported()) {
       throw new Error("BLUETOOTH_UNAVAILABLE");
     }
-    const bluetooth = (navigator as unknown as { bluetooth: Bt }).bluetooth;
-    this.device = await bluetooth.requestDevice({
-      acceptAllDevices: true,
+    this.client = await ble();
+    await this.client.initialize({ androidNeverForLocation: true });
+
+    this.device = await this.client.requestDevice({
       optionalServices: BLE_PROFILES.map((p) => p.service),
     });
-    this.device.addEventListener("gattserverdisconnected", () => {
-      this.writeChar = null;
+
+    await this.client.connect(this.device.deviceId, () => {
+      this.isConnected = false;
+      this.writeTarget = null;
       this.onDisconnect?.();
     });
+    this.isConnected = true;
 
-    const server = await this.device.gatt!.connect();
+    try {
+      await this.attachUart();
+      await this.initElm();
+    } catch (err) {
+      this.disconnect();
+      throw err;
+    }
+  }
+
+  /** Find a usable notify+write characteristic pair and start notifications. */
+  private async attachUart(): Promise<void> {
+    if (!this.client || !this.device) throw new Error("NOT_CONNECTED");
+    const services = await this.client.getServices(this.device.deviceId);
+    const norm = (uuid: string) => uuid.toLowerCase();
+
+    type Candidate = { service: string; notify: string; write: string; withoutResponse: boolean };
+    const candidates: Candidate[] = [];
+
+    // Known profiles first, in order.
+    for (const profile of BLE_PROFILES) {
+      const svc = services.find((s) => norm(s.uuid) === profile.service);
+      if (!svc) continue;
+      const notifyChar = svc.characteristics.find((c) => norm(c.uuid) === profile.notify && c.properties.notify);
+      const writeChar = svc.characteristics.find(
+        (c) => norm(c.uuid) === profile.write && (c.properties.write || c.properties.writeWithoutResponse)
+      );
+      if (notifyChar && writeChar) {
+        candidates.push({
+          service: svc.uuid,
+          notify: notifyChar.uuid,
+          write: writeChar.uuid,
+          withoutResponse: !!writeChar.properties.writeWithoutResponse,
+        });
+      }
+    }
+
+    // Generic fallback: any service exposing a notify char + a write char
+    // (catches unknown clone UUID layouts).
+    if (!candidates.length) {
+      for (const svc of services) {
+        const notifyChar = svc.characteristics.find((c) => c.properties.notify);
+        const writeChar = svc.characteristics.find((c) => c.properties.write || c.properties.writeWithoutResponse);
+        if (notifyChar && writeChar) {
+          candidates.push({
+            service: svc.uuid,
+            notify: notifyChar.uuid,
+            write: writeChar.uuid,
+            withoutResponse: !!writeChar.properties.writeWithoutResponse,
+          });
+        }
+      }
+    }
 
     let lastErr: unknown = null;
-    for (const profile of BLE_PROFILES) {
+    for (const cand of candidates) {
       try {
-        const service = await server.getPrimaryService(profile.service);
-        const notifyChar = await service.getCharacteristic(profile.notify);
-        await notifyChar.startNotifications();
-        notifyChar.addEventListener("characteristicvaluechanged", (ev) => {
-          this.handleChunk(new TextDecoder().decode(ev.target.value));
+        await this.client.startNotifications(this.device.deviceId, cand.service, cand.notify, (value) => {
+          this.handleChunk(new TextDecoder().decode(value));
         });
-        this.writeChar =
-          profile.write === profile.notify ? notifyChar : await service.getCharacteristic(profile.write);
-        break;
+        this.writeTarget = { service: cand.service, characteristic: cand.write, withoutResponse: cand.withoutResponse };
+        return;
       } catch (err) {
         lastErr = err;
       }
     }
-    if (!this.writeChar) {
-      this.disconnect();
-      console.error("No known OBD2 BLE profile found", lastErr);
-      throw new Error("UNSUPPORTED_ADAPTER");
-    }
-
-    await this.initElm();
+    console.error("No known OBD2 BLE profile found", lastErr);
+    throw new Error("UNSUPPORTED_ADAPTER");
   }
 
   disconnect(): void {
-    try {
-      this.device?.gatt?.disconnect();
-    } catch {
-      /* already gone */
+    const client = this.client;
+    const device = this.device;
+    if (client && device) {
+      client.disconnect(device.deviceId).catch(() => {
+        /* already gone */
+      });
     }
+    this.isConnected = false;
     this.device = null;
-    this.writeChar = null;
+    this.writeTarget = null;
   }
 
   private handleChunk(chunk: string) {
@@ -165,10 +217,11 @@ export class Elm327 {
 
   /** Send a raw command, resolve with the full text response. */
   async send(cmd: string, timeoutMs = 5000): Promise<string> {
-    if (!this.writeChar) throw new Error("NOT_CONNECTED");
+    if (!this.client || !this.device || !this.writeTarget) throw new Error("NOT_CONNECTED");
     if (this.pending) throw new Error("BUSY");
 
-    const data = new TextEncoder().encode(cmd + "\r");
+    const bytes = new TextEncoder().encode(cmd + "\r");
+    const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     const result = new Promise<string>((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending = null;
@@ -177,10 +230,11 @@ export class Elm327 {
       this.pending = { resolve, timer };
     });
 
-    if (this.writeChar.properties.writeWithoutResponse && this.writeChar.writeValueWithoutResponse) {
-      await this.writeChar.writeValueWithoutResponse(data);
+    const { service, characteristic, withoutResponse } = this.writeTarget;
+    if (withoutResponse) {
+      await this.client.writeWithoutResponse(this.device.deviceId, service, characteristic, data);
     } else {
-      await this.writeChar.writeValue(data);
+      await this.client.write(this.device.deviceId, service, characteristic, data);
     }
     return result;
   }

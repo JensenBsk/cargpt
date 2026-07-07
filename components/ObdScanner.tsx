@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bluetooth, BluetoothOff, X, AlertTriangle, Trash2, Save } from "lucide-react";
-import { Elm327, isWebBluetoothAvailable, type LiveData, type FreezeFrame } from "@/lib/obd/elm327";
+import { Elm327, isObdSupported, type LiveData, type FreezeFrame } from "@/lib/obd/elm327";
 import { describeDtc } from "@/lib/obd/dtcDescriptions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -63,7 +63,7 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
   const [confirmClear, setConfirmClear] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const bluetoothSupported = isWebBluetoothAvailable();
+  const bluetoothSupported = isObdSupported();
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -260,7 +260,7 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
               <BluetoothOff size={18} color={S.amber} style={{ flexShrink: 0, marginTop: "2px" }} aria-hidden="true" />
               <div>
                 <p style={{ margin: "0 0 6px", fontSize: "14px", fontWeight: 600, color: S.text }}>
-                  This browser can&apos;t use Bluetooth
+                  Bluetooth isn&apos;t available here
                 </p>
                 <p style={{ margin: 0, fontSize: "13px", color: S.textSec, lineHeight: 1.5 }}>
                   Web Bluetooth works in Chrome and Edge on desktop/Android. On iPhone, use the Mechanic Carlos app from the App Store.

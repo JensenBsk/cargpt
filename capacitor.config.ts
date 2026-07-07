@@ -15,6 +15,7 @@ const config: CapacitorConfig = {
   server: {
     url: "https://mchaniccarlos.com",
     cleartext: false,
+    errorPath: "error.html", // offline fallback (public/native-shell/error.html)
   },
   ios: {
     contentInset: "automatic",
