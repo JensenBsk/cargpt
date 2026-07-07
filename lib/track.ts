@@ -22,6 +22,7 @@ type EventName =
   | "repair_mode_confirmed"
   | "repair_mode_exhausted"
   | "obd_connected"
+  | "datalog_captured"
   | "outcome_reported"
   | "recall_viewed"
   | "tsb_viewed"

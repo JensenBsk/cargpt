@@ -18,6 +18,7 @@ export const LIMITS = {
   refinement: 2000,
   audioTranscript: 2000,
   tsbContext: 3000,
+  obdDatalog: 2500,
 } as const;
 
 export function isValidYear(year: unknown): boolean {

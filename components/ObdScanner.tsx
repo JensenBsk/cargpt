@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bluetooth, BluetoothOff, X, AlertTriangle, Trash2, Save } from "lucide-react";
 import { Elm327, isObdSupported, type LiveData, type FreezeFrame } from "@/lib/obd/elm327";
+import { summarizeDatalog, type DatalogSample } from "@/lib/obd/datalog";
 import { describeDtc } from "@/lib/obd/dtcDescriptions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -14,6 +15,8 @@ export interface ObdResult {
   vin: string | null;
   liveData: LiveData;
   freezeFrame: FreezeFrame | null;
+  /** Digest of a 30s live capture, when the user recorded one. */
+  datalog: string | null;
 }
 
 interface Props {
@@ -63,6 +66,10 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
   const [freezeFrame, setFreezeFrame] = useState<FreezeFrame | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const [captureProgress, setCaptureProgress] = useState(0); // 0–1
+  const [datalog, setDatalog] = useState<string | null>(null);
+  const capturingRef = useRef(false);
 
   const bluetoothSupported = isObdSupported();
 
@@ -148,9 +155,58 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
   }
 
   function disconnect() {
+    capturingRef.current = false;
     stopPolling();
     elmRef.current?.disconnect();
     setPhase("idle");
+  }
+
+  // 30-second live capture: pause the dashboard poll and sample as fast as
+  // the adapter answers (~1–2s a round). Carlos reads the digest like a
+  // mechanic watching a scan tool while the engine runs.
+  async function captureDatalog() {
+    const elm = elmRef.current;
+    if (!elm?.connected || capturingRef.current) return;
+    const DURATION_MS = 30_000;
+    capturingRef.current = true;
+    setCapturing(true);
+    setCaptureProgress(0);
+    setDatalog(null);
+    stopPolling();
+    const samples: DatalogSample[] = [];
+    const start = Date.now();
+    try {
+      while (capturingRef.current && Date.now() - start < DURATION_MS) {
+        try {
+          const data = await elm.readLiveData();
+          samples.push({ ...data, t: Date.now() - start });
+          setLive(data);
+        } catch {
+          /* adapter busy — keep going */
+        }
+        setCaptureProgress(Math.min(1, (Date.now() - start) / DURATION_MS));
+      }
+      const summary = summarizeDatalog(samples, "engine running");
+      if (summary) {
+        setDatalog(summary);
+        track("datalog_captured", { samples: samples.length });
+        hapticSuccess();
+      } else {
+        toast("The adapter didn't return usable data — try again with the engine running.");
+      }
+    } finally {
+      capturingRef.current = false;
+      setCapturing(false);
+      setCaptureProgress(0);
+      // resume the dashboard poll
+      if (elmRef.current?.connected && !pollRef.current) {
+        pollRef.current = setInterval(async () => {
+          const e = elmRef.current;
+          if (!e?.connected) return stopPolling();
+          try { setLive(await e.readLiveData()); } catch { /* skip a beat */ }
+        }, 2500);
+      }
+    }
   }
 
   async function clearCodes() {
@@ -351,10 +407,44 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
               </div>
             </section>
 
+            {/* 30s live capture — the datalog Carlos reads like a scan tool */}
+            <section aria-label="Live capture" style={{ marginBottom: "16px" }}>
+              {datalog ? (
+                <div style={{ backgroundColor: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: "12px", padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+                  <span style={{ fontSize: "13px", color: "#86efac", fontWeight: 600 }}>✓ 30s capture attached — Carlos will read it</span>
+                  <button onClick={() => void captureDatalog()} style={{ background: "none", border: "none", color: S.textSec, fontSize: "12px", fontWeight: 600, cursor: "pointer", flexShrink: 0, padding: "6px" }}>
+                    Redo
+                  </button>
+                </div>
+              ) : capturing ? (
+                <div style={{ backgroundColor: S.surface2, border: `1px solid ${S.border}`, borderRadius: "12px", padding: "12px 14px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                    <span style={{ fontSize: "13px", color: S.text, fontWeight: 600 }}>Recording… keep the engine running</span>
+                    <span style={{ fontFamily: S.mono, fontSize: "12px", color: S.accent }}>{Math.round(captureProgress * 30)}s / 30s</span>
+                  </div>
+                  <div style={{ height: "5px", borderRadius: "3px", backgroundColor: "var(--surface-3)", overflow: "hidden" }} role="progressbar" aria-valuenow={Math.round(captureProgress * 100)} aria-valuemin={0} aria-valuemax={100}>
+                    <div style={{ width: `${captureProgress * 100}%`, height: "100%", backgroundColor: S.accent, transition: "width 400ms linear" }} />
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => void captureDatalog()}
+                  style={{ width: "100%", minHeight: "48px", borderRadius: "12px", border: "1px dashed rgba(74,158,255,0.4)", backgroundColor: "rgba(74,158,255,0.05)", color: S.accent, fontSize: "14px", fontWeight: 600, cursor: "pointer", padding: "10px" }}
+                >
+                  ⏺ Record 30s of live data for Carlos to read
+                </button>
+              )}
+              {!datalog && !capturing && (
+                <p style={{ margin: "6px 0 0", fontSize: "11px", color: S.textMuted, lineHeight: 1.5 }}>
+                  Fuel trims, idle stability, airflow — the same readout a shop charges to interpret.
+                </p>
+              )}
+            </section>
+
             {/* Actions */}
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <button
-                onClick={() => { void saveSession(); onUseInDiagnosis({ codes, vin, liveData: live, freezeFrame }); }}
+                onClick={() => { void saveSession(); onUseInDiagnosis({ codes, vin, liveData: live, freezeFrame, datalog }); }}
                 style={{ width: "100%", height: "50px", borderRadius: "12px", border: "none", cursor: "pointer", background: "linear-gradient(135deg, #4a9eff 0%, #2d6fd6 100%)", color: "white", fontWeight: 700, fontSize: "15px" }}
               >
                 {codes.length > 0 ? `Diagnose these ${codes.length} code${codes.length > 1 ? "s" : ""} →` : "Use live data in diagnosis →"}

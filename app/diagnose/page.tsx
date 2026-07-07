@@ -169,6 +169,7 @@ export default function Home() {
   // Audio recording
   const [isRecording, setIsRecording] = useState(false);
   const [audioTranscript, setAudioTranscript] = useState("");
+  const [obdDatalog, setObdDatalog] = useState<string | null>(null);
   const recognitionRef = useRef<{ stop(): void; abort(): void } | null>(null);
 
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
@@ -352,6 +353,7 @@ export default function Home() {
         dashboardImage: dashboardImage ?? undefined,
         engineBayImage: engineBayImage ?? undefined,
         audioTranscript: audioTranscript || undefined,
+        obdDatalog: obdDatalog ?? undefined,
         vinData: vinData ?? undefined,
         tsbContext: (() => {
           const matched = tsbs ? relevantTsbs(tsbs.items, issue) : [];
@@ -473,6 +475,7 @@ export default function Home() {
     setDashboardImage(null);
     setEngineBayImage(null);
     setAudioTranscript("");
+    setObdDatalog(null);
   }
 
   function handleVinDecode(data: { year: string; make: string; model: string; engine?: string; fuelType?: string; drivetrain?: string }) {
@@ -485,6 +488,7 @@ export default function Home() {
 
   async function handleObdResult(result: ObdResult) {
     setShowObdScanner(false);
+    setObdDatalog(result.datalog ?? null);
 
     // Build an issue description from everything the scanner read
     const parts: string[] = [];
@@ -961,6 +965,15 @@ export default function Home() {
                     <Bluetooth size={15} aria-hidden="true" />
                     Connect OBD2 Scanner
                   </button>
+
+                  {obdDatalog && (
+                    <div style={{ marginTop: "10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 14px", backgroundColor: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: "10px" }}>
+                      <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--green)" }}>⏺ 30s live capture attached — Carlos will read it</span>
+                      <button type="button" onClick={() => setObdDatalog(null)} className="tap-target" aria-label="Remove live data capture" style={{ background: "none", border: "none", color: "var(--text-3)", fontSize: "12px", fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
+                        Remove
+                      </button>
+                    </div>
+                  )}
 
                   {/* "What the dealer knows" — recalls, TSBs, and owner complaints
                       from NHTSA in one module. One panel expands at a time. */}

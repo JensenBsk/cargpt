@@ -386,7 +386,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
           </form>
 
           <p style={{ textAlign: "center", marginTop: "12px", fontSize: "12px", color: "var(--text-2)", opacity: 0.45 }}>
-            🔒 Your data is never stored
+            🔒 Quotes aren&apos;t saved after analysis — and your data is never sold
           </p>
         </div>
       </div>

@@ -191,7 +191,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     ({ year, make, model, issue } = body);
-    const { conversationHistory, mods, hasTune, zip, dashboardImage, engineBayImage, vinData, refinementAnswers, audioTranscript, tsbContext } = body;
+    const { conversationHistory, mods, hasTune, zip, dashboardImage, engineBayImage, vinData, refinementAnswers, audioTranscript, tsbContext, obdDatalog } = body;
 
     const vehicleError = validateVehicle(year, make, model);
     if (vehicleError) return vehicleError;
@@ -209,6 +209,7 @@ export async function POST(request: Request) {
       return badRequest("Input is too long.");
     }
     if (!isOptionalString(tsbContext, LIMITS.tsbContext)) return badRequest("Input is too long.");
+    if (!isOptionalString(obdDatalog, LIMITS.obdDatalog)) return badRequest("Input is too long.");
 
     const history = sanitizeHistory(conversationHistory);
     if (history === null) return badRequest("Invalid conversation history.");
@@ -241,6 +242,7 @@ export async function POST(request: Request) {
           engineBayImage ? `\n[Engine bay photo provided — analyze for leaks, cracked hoses, damaged wires, corrosion, or anything visually abnormal. Mention what you see in whatsWrong: "Looking at the engine bay, I can see..."]` : null,
           `Issue: ${issue}`,
           audioTranscript ? `Audio recording transcription: "${audioTranscript}" — factor the sound described into your diagnosis.` : null,
+          obdDatalog ? `\nLIVE OBD2 DATA CAPTURE — read this like a mechanic watching a scan tool. Judge fuel trims against ±10% (combined short+long beyond that means a real lean/rich condition), idle RPM spread beyond ~100 RPM means unstable idle, MAF vs engine size for airflow sanity. Cite specific numbers from this capture in your evidence fields — measured data outranks symptom guesses:\n${obdDatalog}` : null,
           tsbContext ? `\nOFFICIAL TECHNICAL SERVICE BULLETINS filed with NHTSA for this exact vehicle that may match this issue:\n${tsbContext}\n\nIf one of these matches the symptoms, weight it heavily — it is a known factory-documented fault with an approved fix. Mention the TSB number in the relevant cause's reasoning so the user can bring it to a shop.` : null,
           refinementAnswers ? `\nUSER CLARIFICATION ANSWERS:\n${refinementAnswers}\n\nFactor these into a refined diagnosis. If they confirm the top cause, say so confidently. If they shift the rankings, update and explain why briefly.` : null,
         ]
