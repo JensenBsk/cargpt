@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useSyncExternalStore } from "react";
 import type { Diagnostic, ChatMessage } from "@/types/diagnostic";
 import DiagnosticReport from "@/components/DiagnosticReport";
 import QuoteChecker from "@/components/QuoteChecker";
@@ -17,7 +17,7 @@ import HistorySheet from "@/components/HistorySheet";
 import { useToast } from "@/contexts/ToastContext";
 import { resizeImage } from "@/utils/resizeImage";
 import { hapticSuccess } from "@/lib/native";
-import { MapPin, Camera, Wrench, Lock, WifiOff, Bluetooth } from "lucide-react";
+import { MapPin, Camera, Wrench, Lock, WifiOff, Bluetooth, Car } from "lucide-react";
 
 const LS_KEY = "torque_diagnosis_history";
 
@@ -61,8 +61,17 @@ function saveToLS(item: Omit<HistoryItem, "id" | "date">) {
   } catch { /* ignore */ }
 }
 
+function subscribeOnline(callback: () => void) {
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+    window.removeEventListener("offline", callback);
+  };
+}
+
 export default function Home() {
-  const { user, available, signOut, signInWithGoogle } = useAuth();
+  const { user, available, signOut } = useAuth();
   const isSignedIn = !!user;
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { toast } = useToast();
@@ -87,7 +96,7 @@ export default function Home() {
   const [dashboardImage, setDashboardImage] = useState<string | null>(null);
   const [engineBayImage, setEngineBayImage] = useState<string | null>(null);
   const [vinData, setVinData] = useState<{ year: string; make: string; model: string; engine?: string; fuelType?: string; drivetrain?: string } | null>(null);
-  const [isOnline, setIsOnline] = useState(true);
+  const isOnline = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showObdScanner, setShowObdScanner] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -109,18 +118,6 @@ export default function Home() {
   const onDiagnoseWithResult = activeTab === "diagnose" && showDiagnosis;
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    setIsOnline(navigator.onLine);
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
-
-  useEffect(() => {
     if (!loading) return;
     const interval = setInterval(() => {
       setLoadingMsgIdx(i => Math.min(i + 1, loadingMsgsRef.current.length - 1));
@@ -130,6 +127,8 @@ export default function Home() {
 
   useEffect(() => {
     try {
+      // One-time client-only read; localStorage emits no events to subscribe to.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (!localStorage.getItem("torque_onboarded")) setShowOnboarding(true);
     } catch { /* ignore */ }
   }, []);
@@ -166,6 +165,7 @@ export default function Home() {
     setErrorType(null);
     loadingMsgsRef.current = getLoadingMessages(make, model, issue);
     setLoadingMsgIdx(0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setDiagnosis(null);
     setDiagnosisId(null);
     setChatHistory([]);
@@ -430,7 +430,6 @@ export default function Home() {
     marginBottom: "8px",
   };
 
-  const allFilled = !!year && !!make && !!model && !!issue.trim();
   // Canonical CTA blue — matches --accent so this button never drifts navy
   const buttonBg = errorType ? "#f59e0b" : "#4a9eff";
   const capMake = make ? make.charAt(0).toUpperCase() + make.slice(1) : "";
@@ -480,7 +479,7 @@ export default function Home() {
           </button>
         {isSignedIn ? (
             <button onClick={() => signOut()} className="tap-target" style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid #1c2a3e", color: "#7d8fa8", backgroundColor: "transparent", cursor: "pointer" }}>
-              {user?.email?.split("@")[0] ?? "Account"} · out
+              Sign out
             </button>
           ) : (
             <button onClick={() => setShowAuthModal(true)} className="tap-target" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.35)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}>
@@ -522,21 +521,25 @@ export default function Home() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 20px 20px", width: "100%", maxWidth: "100%", boxSizing: "border-box", overflowX: "hidden" }}>
 
-              {/* Hero */}
-              <div style={{ textAlign: "center", padding: "24px 20px 16px" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/carlos/carlos-hero.webp"
-                  alt="Carlos"
-                  style={{ height: "160px", width: "auto", display: "block", margin: "16px auto 20px", filter: "drop-shadow(0 8px 24px rgba(59,130,246,0.3))" }}
-                />
-                <h1 style={{ color: "white", fontSize: "22px", fontWeight: 700, marginBottom: "4px" }}>
-                  What&apos;s going on?
-                </h1>
-                <p style={{ color: "#8b95a8", fontSize: "14px", margin: 0 }}>
-                  Tell Carlos — he&apos;ll figure it out.
-                </p>
-              </div>
+              {/* Hero — compact so the form is the first thing on screen */}
+              {!loading && (
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "20px 4px 16px", width: "100%", maxWidth: "480px", boxSizing: "border-box" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/carlos/carlos-hero.webp"
+                    alt="Carlos"
+                    style={{ height: "56px", width: "auto", display: "block", filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.5))" }}
+                  />
+                  <div>
+                    <h1 style={{ color: "white", fontSize: "20px", fontWeight: 700, margin: "0 0 2px" }}>
+                      What&apos;s going on?
+                    </h1>
+                    <p style={{ color: "#8b95a8", fontSize: "13px", margin: 0 }}>
+                      Tell Carlos — he&apos;ll figure it out.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Carlos thinking — loading state with result skeleton */}
               {loading && (
@@ -552,7 +555,7 @@ export default function Home() {
                     <p style={{ color: "white", fontSize: "15px", fontWeight: 600, margin: "0 0 4px", minHeight: "22px" }}>
                       {loadingMsgsRef.current[loadingMsgIdx] || `Carlos is on it…`}
                     </p>
-                    <p style={{ color: "#7d8fa8", fontSize: "13px", margin: 0 }}>Usually takes 10–15 seconds</p>
+                    <p style={{ color: "#7d8fa8", fontSize: "13px", margin: 0 }}>Carlos checks real repair data — usually 20–40 seconds</p>
                   </div>
                   {/* Skeleton of the incoming report so users see the shape of what's coming */}
                   <div aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -571,12 +574,12 @@ export default function Home() {
               <form
                 id="diagnose-form"
                 onSubmit={handleDiagnose}
-                style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: "20px" }}
+                style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", display: loading ? "none" : "flex", flexDirection: "column", gap: "20px" }}
               >
                 {/* Vehicle card */}
                 <div style={{ background: "#13161f", border: "1px solid #1e2433", borderRadius: "16px", padding: "20px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-                    <span style={{ fontSize: "18px" }}>🚗</span>
+                    <Car size={17} color="#4a9eff" aria-hidden="true" />
                     <span style={{ color: "#f8fafc", fontSize: "15px", fontWeight: 600 }}>What car are we working on?</span>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -800,12 +803,14 @@ export default function Home() {
                 )}
               </form>
 
-              <div style={{ marginTop: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
-                <Lock size={10} color="#2d3f55" />
-                <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#2d3f55", letterSpacing: "0.08em" }}>
-                  No subscription · No hidden fees · Your data is never sold
-                </span>
-              </div>
+              {!loading && (
+                <div style={{ marginTop: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Lock size={11} color="#4a5c72" />
+                  <span style={{ fontSize: "12px", color: "#4a5c72" }}>
+                    Free to use — your data is never sold.
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -257,11 +257,8 @@ img {
 }
 .carlos-pulse { animation: carlos-pulse 2s ease-in-out infinite; }
 
-@keyframes cta-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4), 0 4px 20px rgba(59,130,246,0.3); }
-  50%       { box-shadow: 0 0 0 10px rgba(59,130,246,0), 0 4px 20px rgba(59,130,246,0.3); }
-}
-.cta-button { animation: cta-pulse 2.5s ease-in-out infinite; }
+/* Primary CTAs get one quiet shadow — no animated glow rings. */
+.cta-button { box-shadow: 0 4px 16px rgba(59,130,246,0.25); }
 
 /* ── Primary CTA — the ONE canonical blue. Every "Ask Carlos"-tier button
      uses this class so the brand blue can't drift between screens. ── */
