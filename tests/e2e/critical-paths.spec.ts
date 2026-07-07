@@ -150,6 +150,51 @@ test.describe("Repair Mode", () => {
   });
 });
 
+const HEALTH_REPORT = {
+  summary: "This Compass is holding up fine for the mileage, but the transmission deserves your attention.",
+  mileageAssessment: "At 87k the CVT is entering the window where problems show up.",
+  maintenance: [
+    { item: "Engine oil and filter", intervalMiles: 5000, status: "overdue", estCost: "$40–$70", note: null },
+    { item: "CVT fluid change", intervalMiles: 60000, status: "due_soon", estCost: "$150–$250", note: "Critical on this transmission." },
+    { item: "Brake fluid flush", intervalMiles: 45000, status: "ok", estCost: "$80–$120", note: null },
+  ],
+  weakPoints: [
+    { issue: "CVT transmission overheats and shudders", severity: "major", window: "80k–120k miles", watchFor: "A whine or rubber-band feel on acceleration." },
+  ],
+  prebuy: { questions: ["Has the CVT fluid ever been changed?"], testDrive: ["Hold 45 mph on a hill and feel for shudder."], redFlags: ["Seller can't show any service records"] },
+  scoreNote: "The open recall and overdue oil change are the quickest wins.",
+};
+
+test.describe("Health check flow", () => {
+  test("user runs a pre-purchase health check and sees the scored report", async ({ page }) => {
+    await dismissOnboarding(page);
+    await page.route("**/api/recalls**", (route) => route.fulfill({ json: { count: 1, recalls: [{ campaignNumber: "X1", subject: "Fuel pump may fail", component: "FUEL SYSTEM" }] } }));
+    await page.route("**/api/tsbs**", (route) => route.fulfill({ json: { count: 12, tsbs: [] } }));
+    await page.route("**/api/complaints**", (route) => route.fulfill({ json: { count: 113, topComponents: [{ name: "ENGINE", count: 30 }] } }));
+    await page.route("**/api/health", (route) =>
+      route.fulfill({ contentType: "text/plain; charset=utf-8", body: JSON.stringify(HEALTH_REPORT) })
+    );
+
+    await page.goto("/diagnose");
+    await page.getByRole("button", { name: "Health", exact: true }).click();
+    await page.getByRole("radio", { name: /thinking of buying/i }).click();
+    await page.locator("#health-year").selectOption("2015");
+    await page.locator("#health-make").fill("Jeep");
+    await page.locator("#health-model").fill("Compass");
+    await page.locator("#health-mileage").fill("87000");
+    await page.getByRole("button", { name: /check before i buy/i }).click();
+
+    // Scored report: deterministic engine → 100 -12 (recall) -5 (87k) -4 (113 complaints)
+    // -5 (1 overdue) -2 (1 due soon) -7 (major weak point) = 65
+    await expect(page.getByText("65", { exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Needs attention")).toBeVisible();
+    await expect(page.getByText(/open recall — free to fix/i)).toBeVisible();
+    await expect(page.getByText("CVT transmission overheats and shudders")).toBeVisible();
+    await expect(page.getByText(/has the cvt fluid ever been changed/i)).toBeVisible();
+    await expect(page.getByText(/walk away if/i)).toBeVisible();
+  });
+});
+
 test.describe("Quote checker flow", () => {
   test("user checks a quote and sees the verdict", async ({ page }) => {
     await dismissOnboarding(page);

@@ -1,9 +1,9 @@
 "use client";
 
-import { Wrench, Receipt, Car, Lock } from "lucide-react";
+import { Wrench, Receipt, Car, Lock, HeartPulse } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-export type AppTab = "diagnose" | "quote" | "garage";
+export type AppTab = "diagnose" | "health" | "quote" | "garage";
 
 interface Props {
   activeTab: AppTab;
@@ -12,6 +12,7 @@ interface Props {
 
 const TABS: { id: AppTab; label: string; Icon: React.ElementType }[] = [
   { id: "diagnose", label: "Diagnose", Icon: Wrench },
+  { id: "health",   label: "Health",   Icon: HeartPulse },
   { id: "quote",    label: "Quote",    Icon: Receipt },
   { id: "garage",   label: "Garage",   Icon: Car },
 ];

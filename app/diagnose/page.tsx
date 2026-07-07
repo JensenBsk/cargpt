@@ -15,6 +15,7 @@ import AuthModal from "@/components/AuthModal";
 import ObdScanner, { type ObdResult } from "@/components/ObdScanner";
 import HistorySheet from "@/components/HistorySheet";
 import SettingsSheet from "@/components/SettingsSheet";
+import HealthView from "@/components/HealthView";
 import { useToast } from "@/contexts/ToastContext";
 import { resizeImage } from "@/utils/resizeImage";
 import { hapticSuccess } from "@/lib/native";
@@ -1263,6 +1264,15 @@ export default function Home() {
               )}
             </div>
           )}
+        </div>
+
+        {/* ── HEALTH TAB ── */}
+        <div style={{ display: activeTab === "health" ? "block" : "none" }}>
+          <HealthView
+            savedCars={savedCars}
+            onToast={toast}
+            onDiagnose={() => setActiveTab("diagnose")}
+          />
         </div>
 
         {/* ── QUOTE TAB ── */}
