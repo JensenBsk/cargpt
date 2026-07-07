@@ -13,6 +13,8 @@ import { buildPartLinks } from "@/lib/partsMapping";
 import { buildTextMessage, buildEmailMessage, buildWalkInScript, type MechanicMessageContext } from "@/lib/mechanicMessage";
 import FeedbackCard from "@/components/FeedbackCard";
 import RepairMode from "@/components/RepairMode";
+import { useAuth } from "@/contexts/AuthContext";
+import { track } from "@/lib/track";
 import TorqueLogo from "@/components/TorqueLogo";
 
 const APP_URL = typeof window !== "undefined" ? window.location.origin : "https://mchaniccarlos.com";
@@ -255,6 +257,7 @@ export default function DiagnosticReport({
   // Chat
   const [chatExpanded, setChatExpanded] = useState(false);
   const [repairMode, setRepairMode] = useState(false);
+  const { user: authUser } = useAuth();
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
@@ -884,6 +887,8 @@ export default function DiagnosticReport({
             )}
 
             {/* Outcome tracking */}
+            {!authUser && <EmailReportCard vehicle={`${year} ${cap(make)} ${cap(model)}`} />}
+
             <FeedbackCard
               diagnosisId={diagnosisId}
               year={year}
@@ -1221,6 +1226,66 @@ export default function DiagnosticReport({
           onAskCarlos={(q) => { setChatExpanded(true); handleChatSubmit(q); }}
         />
       )}
+    </div>
+  );
+}
+
+
+// ── Email capture — anonymous users become reachable leads ──
+function EmailReportCard({ vehicle }: { vehicle: string }) {
+  const [email, setEmail] = useState("");
+  const [state, setState] = useState<"idle" | "saving" | "done">("idle");
+
+  async function save() {
+    const v = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) || state === "saving") return;
+    setState("saving");
+    try {
+      await fetch("/api/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: v, source: "report", vehicle }),
+      });
+    } catch { /* lead capture must never error at the user */ }
+    track("report_email_saved");
+    setState("done");
+  }
+
+  if (state === "done") {
+    return (
+      <div style={{ backgroundColor: "#0b1019", border: "1px solid rgba(34,197,94,0.3)", borderRadius: "12px", padding: "14px 16px", fontSize: "13px", color: "#7d8fa8" }}>
+        <span style={{ color: "#22c55e", fontWeight: 600 }}>You&apos;re on the list.</span> Car tips and your report link are coming to {email.trim()}.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "12px", padding: "16px" }}>
+      <div style={{ fontSize: "14px", fontWeight: 600, color: "#dce8f5", marginBottom: "4px" }}>Keep this diagnosis</div>
+      <p style={{ margin: "0 0 12px", fontSize: "12.5px", color: "#7d8fa8", lineHeight: 1.5 }}>
+        Get the report by email, plus what to check before the shop visit.
+      </p>
+      <div style={{ display: "flex", gap: "8px" }}>
+        <label htmlFor="report-email" className="sr-only">Email address</label>
+        <input
+          id="report-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") save(); }}
+          placeholder="you@example.com"
+          autoComplete="email"
+          style={{ flex: 1, minWidth: 0, height: "42px", padding: "0 12px", fontSize: "15px", backgroundColor: "#060810", border: "1px solid #172134", borderRadius: "9px", color: "#dce8f5" }}
+        />
+        <button
+          onClick={save}
+          disabled={state === "saving"}
+          className="tap-target"
+          style={{ height: "42px", padding: "0 16px", borderRadius: "9px", border: "none", backgroundColor: "#4a9eff", color: "white", fontSize: "13px", fontWeight: 700, cursor: "pointer", opacity: state === "saving" ? 0.7 : 1, whiteSpace: "nowrap" }}
+        >
+          {state === "saving" ? "…" : "Send it"}
+        </button>
+      </div>
     </div>
   );
 }

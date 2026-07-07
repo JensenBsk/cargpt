@@ -6,6 +6,7 @@ import { redirectToCheckout } from "@/hooks/useSubscription";
 import { canShowWebCheckout } from "@/lib/native";
 import { useToast } from "@/contexts/ToastContext";
 import { PRICING, proMonthlyEquivalent, enthusiastMonthlyEquivalent } from "@/lib/pricing";
+import { track } from "@/lib/track";
 
 const PRO_MONTHLY = process.env.NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PRICE_ID ?? "";
 const PRO_ANNUAL = process.env.NEXT_PUBLIC_STRIPE_PRO_ANNUAL_PRICE_ID ?? "";
@@ -28,6 +29,7 @@ export default function PricingPage() {
   }, []);
 
   async function handleUpgrade(tier: "pro" | "enthusiast") {
+    track("checkout_clicked", { tier, annual });
     if (!webCheckout) {
       toast("Subscriptions in the app are coming soon.");
       return;

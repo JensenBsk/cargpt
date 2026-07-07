@@ -1,4 +1,13 @@
+// Vercel cron invokes with GET; keep POST for manual triggering.
+export async function GET(request: Request) {
+  return handle(request);
+}
+
 export async function POST(request: Request) {
+  return handle(request);
+}
+
+async function handle(request: Request) {
   const restApiKey = process.env.ONESIGNAL_REST_API_KEY;
   const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
 

@@ -7,6 +7,7 @@ import { describeDtc } from "@/lib/obd/dtcDescriptions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { hapticSuccess, hapticWarning } from "@/lib/native";
+import { track } from "@/lib/track";
 
 export interface ObdResult {
   codes: { code: string; description: string }[];
@@ -124,6 +125,7 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
       }, 2500);
 
       setPhase("connected");
+      track("obd_connected");
       setStatusMsg("");
       hapticSuccess();
     } catch (err) {

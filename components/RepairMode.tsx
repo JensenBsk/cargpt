@@ -9,6 +9,7 @@ import { useState, useEffect, useRef } from "react";
 import { X, Clock, DollarSign, Wrench, Check, ArrowRight, RotateCcw } from "lucide-react";
 import type { DiagnosticStep } from "@/types/diagnostic";
 import { hapticImpact, hapticSuccess } from "@/lib/native";
+import { track } from "@/lib/track";
 
 const S = {
   bg: "#0a0d14",
@@ -230,6 +231,11 @@ export default function RepairMode({ steps, vehicleLabel, causeName, onClose, on
   const [finished, setFinished] = useState<"confirmed" | "exhausted" | null>(null);
   useWakeLock(true);
 
+  useEffect(() => {
+    track("repair_mode_started", { steps: steps.length });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Block body scroll behind the overlay
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -244,12 +250,14 @@ export default function RepairMode({ steps, vehicleLabel, causeName, onClose, on
     setOutcomes((o) => ({ ...o, [idx]: outcome }));
     if (outcome === "confirmed") {
       hapticSuccess();
+      track("repair_mode_confirmed", { atStep: idx + 1 });
       setFinished("confirmed");
     } else if (idx + 1 < total) {
       hapticImpact("light");
       setIdx(idx + 1);
     } else {
       hapticImpact("medium");
+      track("repair_mode_exhausted", { steps: total });
       setFinished("exhausted");
     }
   }

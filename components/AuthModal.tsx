@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { isNativeApp } from "@/lib/native";
+import { track } from "@/lib/track";
 
 interface Props {
   onClose: () => void;
@@ -20,6 +21,7 @@ export default function AuthModal({ onClose }: Props) {
   // appears in the native app. Safe to read directly: the modal only mounts
   // on user interaction, never during SSR/hydration.
   const showApple = isNativeApp();
+  useEffect(() => { track("auth_opened"); }, []);
 
   async function handleGoogle() {
     setLoading(true);

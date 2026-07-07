@@ -17,6 +17,7 @@ import HistorySheet from "@/components/HistorySheet";
 import { useToast } from "@/contexts/ToastContext";
 import { resizeImage } from "@/utils/resizeImage";
 import { hapticSuccess } from "@/lib/native";
+import { track } from "@/lib/track";
 import { MapPin, Camera, Wrench, Lock, WifiOff, Bluetooth, Car, AlertTriangle } from "lucide-react";
 
 const LS_KEY = "torque_diagnosis_history";
@@ -48,6 +49,8 @@ export interface HistoryItem {
   diagnosis: Diagnostic;
   date: string;
   verdict: "STOP" | "CAUTION" | "OKAY";
+  outcome?: "fixed" | "not_fixed";
+  outcomeAskedAt?: string;
 }
 
 function saveToLS(item: Omit<HistoryItem, "id" | "date">) {
@@ -98,6 +101,7 @@ export default function Home() {
   const [vinData, setVinData] = useState<{ year: string; make: string; model: string; engine?: string; fuelType?: string; drivetrain?: string } | null>(null);
   const isOnline = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   const [savedCars, setSavedCars] = useState<{ year: string; make: string; model: string }[]>([]);
+  const [outcomeItem, setOutcomeItem] = useState<HistoryItem | null>(null);
   const [recallData, setRecallData] = useState<{ key: string; count: number; items: { campaignNumber: string; subject: string; component: string }[] } | null>(null);
   const [recallsOpen, setRecallsOpen] = useState(false);
   const recallCacheRef = useRef<Record<string, { count: number; items: { campaignNumber: string; subject: string; component: string }[] }>>({});
@@ -147,8 +151,44 @@ export default function Home() {
       }
        
       setSavedCars(cars);
+
+      // Outcome follow-up: oldest unanswered diagnosis at least 3 days old,
+      // not snoozed in the last 7. One question, one tap — this is the
+      // confirmed-fix dataset being born.
+      const now = Date.now();
+      const candidate = items.find((it) => {
+        if (it.outcome) return false;
+        const age = now - new Date(it.date).getTime();
+        if (age < 3 * 86400_000) return false;
+        if (it.outcomeAskedAt && now - new Date(it.outcomeAskedAt).getTime() < 7 * 86400_000) return false;
+        return true;
+      });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (candidate) setOutcomeItem(candidate);
     } catch { /* ignore */ }
   }, []);
+
+  function recordOutcome(result: "fixed" | "not_fixed" | "later") {
+    if (!outcomeItem) return;
+    try {
+      const items: HistoryItem[] = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+      const idx = items.findIndex((it) => it.id === outcomeItem.id);
+      if (idx >= 0) {
+        if (result === "later") items[idx].outcomeAskedAt = new Date().toISOString();
+        else items[idx].outcome = result;
+        localStorage.setItem(LS_KEY, JSON.stringify(items));
+      }
+    } catch { /* ignore */ }
+    if (result !== "later") {
+      track("outcome_reported", {
+        fixed: result === "fixed",
+        make: outcomeItem.make,
+        cause: outcomeItem.diagnosis.rankedCauses[0]?.cause ?? "unknown",
+      });
+      toast(result === "fixed" ? "Good to hear — logged it 🔧" : "Logged — ask Carlos what to try next");
+    }
+    setOutcomeItem(null);
+  }
 
   // Recall lookup (free NHTSA data) once the vehicle is fully identified.
   // State carries the car key it belongs to, so stale results simply don't
@@ -206,6 +246,7 @@ export default function Home() {
     setShowErrors(false);
     setLoading(true);
     setErrorType(null);
+    track("diagnosis_started", { make, hasPhoto: !!(dashboardImage || engineBayImage), hasAudio: !!audioTranscript });
     loadingMsgsRef.current = getLoadingMessages(make, model, issue);
     setLoadingMsgIdx(0);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -236,8 +277,8 @@ export default function Home() {
       }
 
       if (!res.ok) {
-        if (res.status === 429) { setErrorType("rate_limit"); return; }
-        if (res.status === 402) { setErrorType("free_limit"); return; }
+        if (res.status === 429) { setErrorType("rate_limit"); track("diagnosis_failed", { reason: "rate_limit" }); return; }
+        if (res.status === 402) { setErrorType("free_limit"); track("paywall_hit", { source: "diagnose" }); return; }
         console.error("Diagnosis failed after retry:", { year, make, model, issue });
         setErrorType("diagnosis");
         return;
@@ -253,6 +294,7 @@ export default function Home() {
       const diag: Diagnostic = data.diagnosis;
       setDiagnosis(diag);
       hapticSuccess();
+      track("diagnosis_completed", { make, verdict: diag.driveSafety.verdict });
       setChatHistory([
         { role: "user", content: `Vehicle: ${year} ${make} ${model}${modMode && mods ? `\nMods: ${mods}${hasTune ? " (tuned)" : ""}` : ""}\n\nIssue: ${issue}` },
         { role: "assistant", content: JSON.stringify(diag) },
@@ -619,6 +661,27 @@ export default function Home() {
                 onSubmit={handleDiagnose}
                 style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", display: loading ? "none" : "flex", flexDirection: "column", gap: "20px" }}
               >
+                {/* Outcome follow-up — closes the loop on a past diagnosis */}
+                {outcomeItem && !loading && (
+                  <div style={{ background: "#13161f", border: "1px solid rgba(74,158,255,0.3)", borderRadius: "14px", padding: "16px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: 600, color: "#4a5c72", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "6px" }}>Quick follow-up</div>
+                    <div style={{ fontSize: "14px", color: "#dce8f5", lineHeight: 1.5, marginBottom: "12px" }}>
+                      Did <strong>{outcomeItem.diagnosis.rankedCauses[0]?.cause?.toLowerCase() ?? "the fix"}</strong> turn out to be the problem with your {outcomeItem.year} {outcomeItem.make}?
+                    </div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button type="button" onClick={() => recordOutcome("fixed")} className="tap-target" style={{ flex: 1, height: "40px", borderRadius: "10px", border: "1px solid rgba(34,197,94,0.4)", backgroundColor: "rgba(34,197,94,0.1)", color: "#22c55e", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+                        Yes, fixed it
+                      </button>
+                      <button type="button" onClick={() => recordOutcome("not_fixed")} className="tap-target" style={{ flex: 1, height: "40px", borderRadius: "10px", border: "1px solid #1e2433", backgroundColor: "transparent", color: "#8b95a8", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+                        No / not sure
+                      </button>
+                      <button type="button" onClick={() => recordOutcome("later")} className="tap-target" aria-label="Ask me later" style={{ height: "40px", padding: "0 12px", borderRadius: "10px", border: "none", backgroundColor: "transparent", color: "#4a5c72", fontSize: "13px", cursor: "pointer" }}>
+                        Later
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Your cars — one-tap refill from history */}
                 {savedCars.length > 0 && !(year && make && model) && (
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" as const, margin: "-6px 0 -8px" }}>

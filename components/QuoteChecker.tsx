@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { X } from "lucide-react";
 import type { QuoteAnalysis } from "@/types/quote";
 import { resizeImage } from "@/utils/resizeImage";
+import { track } from "@/lib/track";
 
 interface Props {
   onBack?: () => void;
@@ -99,6 +100,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
         return;
       }
       setResult(data.analysis);
+      track("quote_checked", { verdict: data.analysis?.overallVerdict ?? "unknown" });
       onResultChange?.(true);
     } catch {
       setError("Network error. Please check your connection.");
