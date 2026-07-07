@@ -75,6 +75,22 @@ export function isObdSupported(): boolean {
   return isNativeApp() || isWebBluetoothAvailable();
 }
 
+/**
+ * Why OBD can('t) run here, so the UI can give the right escape hatch.
+ * "ios-browser": WebKit has no Web Bluetooth — but Bluefy (a free iOS
+ * browser that implements navigator.bluetooth) runs our whole BLE stack
+ * unmodified, so we point iPhone users there until the App Store app ships.
+ */
+export function obdPlatformHint(): "ok" | "ios-browser" | "unsupported" {
+  if (isObdSupported()) return "ok";
+  if (typeof navigator === "undefined") return "unsupported";
+  const ua = navigator.userAgent;
+  const isIos = /iPhone|iPad|iPod/.test(ua) ||
+    // iPadOS masquerades as macOS but has touch
+    (/Macintosh/.test(ua) && typeof navigator.maxTouchPoints === "number" && navigator.maxTouchPoints > 1);
+  return isIos ? "ios-browser" : "unsupported";
+}
+
 async function ble(): Promise<BleClientInterface> {
   // Dynamic import keeps the plugin (and @capacitor/core) out of every
   // page bundle — it loads only when the scanner is actually opened.

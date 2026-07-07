@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bluetooth, BluetoothOff, X, AlertTriangle, Trash2, Save } from "lucide-react";
-import { Elm327, isObdSupported, type LiveData, type FreezeFrame } from "@/lib/obd/elm327";
+import { Elm327, isObdSupported, obdPlatformHint, type LiveData, type FreezeFrame } from "@/lib/obd/elm327";
 import { summarizeDatalog, type DatalogSample } from "@/lib/obd/datalog";
 import { describeDtc } from "@/lib/obd/dtcDescriptions";
 import { useAuth } from "@/contexts/AuthContext";
@@ -72,6 +72,8 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
   const capturingRef = useRef(false);
 
   const bluetoothSupported = isObdSupported();
+  const platformHint = obdPlatformHint();
+  const bluefyUrl = `bluefy://open?url=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/diagnose` : "https://mchaniccarlos.com/diagnose")}`;
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -312,16 +314,50 @@ export default function ObdScanner({ onUseInDiagnosis, onClose, carId }: Props) 
           {statusMsg || (phase === "connected" ? `Connected. ${codes.length} trouble codes found.` : "")}
         </div>
 
-        {!bluetoothSupported && (
+        {!bluetoothSupported && platformHint === "ios-browser" && (
+          <div style={{ backgroundColor: S.surface2, border: `1px solid ${S.border}`, borderRadius: "12px", padding: "16px", marginBottom: "16px" }}>
+            <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: "12px" }}>
+              <BluetoothOff size={18} color={S.amber} style={{ flexShrink: 0, marginTop: "2px" }} aria-hidden="true" />
+              <div>
+                <p style={{ margin: "0 0 6px", fontSize: "14px", fontWeight: 600, color: S.text }}>
+                  iPhone browsers can&apos;t use Bluetooth — Apple&apos;s rule, not ours
+                </p>
+                <p style={{ margin: 0, fontSize: "13px", color: S.textSec, lineHeight: 1.5 }}>
+                  Until the Carlos app hits the App Store, there&apos;s a solid workaround: <strong style={{ color: S.text }}>Bluefy</strong> is a free iPhone browser with Bluetooth built in. Carlos works in it as-is.
+                </p>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <a
+                href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "48px", borderRadius: "12px", backgroundColor: "var(--accent)", color: "white", fontWeight: 700, fontSize: "14px", textDecoration: "none" }}
+              >
+                1 · Get Bluefy free on the App Store
+              </a>
+              <a
+                href={bluefyUrl}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "48px", borderRadius: "12px", border: "1px solid var(--accent-border)", backgroundColor: "var(--accent-dim)", color: "var(--accent)", fontWeight: 700, fontSize: "14px", textDecoration: "none" }}
+              >
+                2 · Open Carlos in Bluefy →
+              </a>
+            </div>
+            <p style={{ margin: "10px 0 0", fontSize: "11px", color: S.textMuted, lineHeight: 1.5 }}>
+              In Bluefy: plug the adapter in, key to ON, then tap Connect like normal. The native app with built-in Bluetooth is coming to the App Store.
+            </p>
+          </div>
+        )}
+        {!bluetoothSupported && platformHint !== "ios-browser" && (
           <div style={{ backgroundColor: S.surface2, border: `1px solid ${S.border}`, borderRadius: "12px", padding: "16px", marginBottom: "16px" }}>
             <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
               <BluetoothOff size={18} color={S.amber} style={{ flexShrink: 0, marginTop: "2px" }} aria-hidden="true" />
               <div>
                 <p style={{ margin: "0 0 6px", fontSize: "14px", fontWeight: 600, color: S.text }}>
-                  Bluetooth isn&apos;t available here
+                  Bluetooth isn&apos;t available in this browser
                 </p>
                 <p style={{ margin: 0, fontSize: "13px", color: S.textSec, lineHeight: 1.5 }}>
-                  Web Bluetooth works in Chrome and Edge on desktop/Android. On iPhone, use the Mechanic Carlos app from the App Store.
+                  Open Carlos in Chrome or Edge — works on Windows, Mac, and Android phones.
                 </p>
               </div>
             </div>
