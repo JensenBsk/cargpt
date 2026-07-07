@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Car {
   id: string;
@@ -35,7 +35,8 @@ const fieldStyle: React.CSSProperties = {
 };
 
 export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: Props) {
-  const { user, isSignedIn } = useUser();
+  const { user } = useAuth();
+  const isSignedIn = !!user;
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -99,7 +100,7 @@ export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: P
           {isSignedIn && (
             <button
               onClick={() => setShowAddForm((v) => !v)}
-              style={{ fontSize: "13px", fontWeight: 600, padding: "6px 12px", borderRadius: "8px", border: "1px solid #3b82f6", color: "#3b82f6", backgroundColor: "transparent", cursor: "pointer" }}
+              style={{ fontSize: "13px", fontWeight: 600, padding: "6px 12px", borderRadius: "8px", border: "1px solid #4a9eff", color: "#4a9eff", backgroundColor: "transparent", cursor: "pointer" }}
             >
               {showAddForm ? "Cancel" : "+ Add Car"}
             </button>
@@ -113,7 +114,7 @@ export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: P
             <div style={{ fontSize: "13px", color: "#6b7280", marginBottom: "20px" }}>Save your cars and see your diagnosis history</div>
             <button
               onClick={() => { onClose(); onRequestSignIn(); }}
-              style={{ height: "44px", padding: "0 24px", backgroundColor: "#3b82f6", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer" }}
+              style={{ height: "44px", padding: "0 24px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer" }}
             >
               Sign In
             </button>
@@ -138,12 +139,12 @@ export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: P
                   <button
                     type="button"
                     onClick={() => setForm((f) => ({ ...f, has_tune: !f.has_tune }))}
-                    style={{ width: "40px", height: "22px", borderRadius: "11px", backgroundColor: form.has_tune ? "#3b82f6" : "#1a1e25", border: `1px solid ${form.has_tune ? "#3b82f6" : "#252b34"}`, position: "relative", cursor: "pointer", flexShrink: 0 }}
+                    style={{ width: "40px", height: "22px", borderRadius: "11px", backgroundColor: form.has_tune ? "#4a9eff" : "#1a1e25", border: `1px solid ${form.has_tune ? "#4a9eff" : "#252b34"}`, position: "relative", cursor: "pointer", flexShrink: 0 }}
                   >
                     <div style={{ position: "absolute", top: "2px", left: form.has_tune ? "18px" : "2px", width: "16px", height: "16px", borderRadius: "50%", backgroundColor: "white", transition: "left 150ms ease" }} />
                   </button>
                 </div>
-                <button type="submit" disabled={saving || !form.year || !form.make || !form.model} style={{ height: "44px", backgroundColor: "#3b82f6", color: "white", fontWeight: 600, fontSize: "14px", border: "none", borderRadius: "8px", cursor: "pointer", opacity: saving || !form.year || !form.make || !form.model ? 0.55 : 1 }}>
+                <button type="submit" disabled={saving || !form.year || !form.make || !form.model} style={{ height: "44px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "14px", border: "none", borderRadius: "8px", cursor: "pointer", opacity: saving || !form.year || !form.make || !form.model ? 0.55 : 1 }}>
                   {saving ? "Saving..." : "Save Car"}
                 </button>
               </form>
@@ -179,7 +180,7 @@ export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: P
                           onSelectCar({ year: String(car.year), make: car.make, model: car.model, mods: car.mods || "", hasTune: car.has_tune });
                           onClose();
                         }}
-                        style={{ fontSize: "13px", fontWeight: 600, padding: "6px 12px", borderRadius: "6px", border: "none", backgroundColor: "#3b82f6", color: "white", cursor: "pointer" }}
+                        style={{ fontSize: "13px", fontWeight: 600, padding: "6px 12px", borderRadius: "6px", border: "none", backgroundColor: "#4a9eff", color: "white", cursor: "pointer" }}
                       >
                         Use
                       </button>

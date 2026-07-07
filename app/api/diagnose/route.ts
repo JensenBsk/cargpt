@@ -1,6 +1,18 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { selectModel } from "@/lib/modelSelect";
+import { rateLimit } from "@/lib/rateLimit";
+import {
+  LIMITS,
+  badRequest,
+  isOptionalString,
+  isNonEmptyString,
+  isValidImagePayload,
+  isValidZip,
+  sanitizeHistory,
+  validateVehicle,
+} from "@/lib/validate";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 2 });
 
 const SYSTEM_PROMPT = `YOUR IDENTITY:
 Your name is Carlos. You are a friendly, experienced mechanic with 20+ years working on cars.
@@ -85,7 +97,10 @@ Return ONLY this JSON (no markdown, no text outside the JSON):
       "cause": "Plain English title, max 6 words, no acronyms",
       "reasoning": "MAX 2 SENTENCES. Explain the part's job first, then what's wrong. Plain English only.",
       "likelihood": "Most Likely | Likely | Possible | Unlikely but serious",
-      "modRelated": false
+      "modRelated": false,
+      "confidence": 45,
+      "evidence": "MAX 1 SENTENCE. Which specific symptom(s) in the description point to this cause.",
+      "confidenceBooster": "MAX 1 SENTENCE. The single observation or test that would confirm this cause."
     }
   ],
   "diagnosticSteps": [
@@ -150,40 +165,46 @@ HARD RULES — violating any makes the response wrong:
 - Sequence steps: highest probability cause first, cheapest test first
 - Return ONLY valid JSON
 - Include 3–5 ranked causes, 3–6 diagnostic steps
+- confidence: integer 0–100. All causes must sum to exactly 100. Rank 1 gets the largest share. Never omit this field.
+- evidence: max 1 sentence referencing the user's specific symptom(s) that support this cause
+- confidenceBooster: max 1 sentence — the one test/observation that would confirm this cause
 - modRelated: true only when a mod is the likely trigger
 - Factor in mods if listed, ZIP labor rates if provided, VIN specs and photos if provided`;
 
-export function selectModel(params: {
-  hasImage?: boolean;
-  isModified?: boolean;
-  hasMultipleCodes?: boolean;
-  isFollowUp?: boolean;
-  followUpLength?: number;
-  hasAudioTranscript?: boolean;
-  hasEnginePhoto?: boolean;
-}): string {
-  if (params.hasImage || params.hasEnginePhoto) return "claude-sonnet-4-6";
-  if (params.hasAudioTranscript) return "claude-sonnet-4-6";
-  if (params.isModified || params.hasMultipleCodes) return "claude-sonnet-4-6";
-  if ((params.followUpLength ?? 0) > 150) return "claude-sonnet-4-6";
-  if (params.isFollowUp) return "claude-haiku-4-5-20251001";
-  return "claude-haiku-4-5-20251001";
-}
-
 export async function POST(request: Request) {
+  let year: string | undefined, make: string | undefined, model: string | undefined, issue: string | undefined;
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
-      return Response.json({ error: "API key not configured" }, { status: 500 });
+      return Response.json({ error: "Diagnostic service unavailable. Please try again later." }, { status: 503 });
     }
 
-    const { year, make, model, issue, conversationHistory, mods, hasTune, zip, dashboardImage, engineBayImage, vinData, refinementAnswers, audioTranscript } =
-      await request.json();
+    const limited = rateLimit(request, "diagnose", 10);
+    if (limited) return limited;
 
-    if (!year || !make || !model || !issue) {
-      return Response.json({ error: "Missing required fields" }, { status: 400 });
+    const body = await request.json();
+    ({ year, make, model, issue } = body);
+    const { conversationHistory, mods, hasTune, zip, dashboardImage, engineBayImage, vinData, refinementAnswers, audioTranscript } = body;
+
+    const vehicleError = validateVehicle(year, make, model);
+    if (vehicleError) return vehicleError;
+    if (!isNonEmptyString(issue, LIMITS.issue)) {
+      return badRequest("Describe the issue (up to 4000 characters).");
+    }
+    if (!isOptionalString(mods, LIMITS.mods)) return badRequest("Mods description is too long.");
+    if (zip !== undefined && zip !== null && zip !== "" && !isValidZip(zip)) {
+      return badRequest("Enter a valid 5-digit ZIP code.");
+    }
+    if (!isValidImagePayload(dashboardImage) || !isValidImagePayload(engineBayImage)) {
+      return badRequest("Photo is too large or invalid. Try a smaller photo.");
+    }
+    if (!isOptionalString(refinementAnswers, LIMITS.refinement) || !isOptionalString(audioTranscript, LIMITS.audioTranscript)) {
+      return badRequest("Input is too long.");
     }
 
-    const isFollowUp = Array.isArray(conversationHistory) && conversationHistory.length > 0;
+    const history = sanitizeHistory(conversationHistory);
+    if (history === null) return badRequest("Invalid conversation history.");
+
+    const isFollowUp = history.length > 0;
     const hasMultipleCodes = !isFollowUp && /\bP[0-9]{4}\b/i.test(issue) &&
       issue.split(/[,;.]/).filter((s: string) => s.trim().length > 3).length >= 3;
 
@@ -233,7 +254,7 @@ export async function POST(request: Request) {
     }
 
     const messages: Anthropic.MessageParam[] = isFollowUp
-      ? [...conversationHistory, { role: "user", content: issue }]
+      ? [...history, { role: "user", content: issue }]
       : [{ role: "user", content }];
 
     const systemContent = isFollowUp
@@ -252,12 +273,18 @@ export async function POST(request: Request) {
 
     if (isFollowUp) return Response.json({ reply: block.text });
 
-    // Strip markdown code fences if Claude wrapped the JSON
-    const raw = block.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
-    const parsed = JSON.parse(raw);
+    // Extract the outermost JSON object — robust against any leading/trailing text or fences
+    const raw = block.text;
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start === -1 || end === -1) {
+      console.error("Diagnose: no JSON object in response", { year, make, model, issue, raw: raw.slice(0, 300) });
+      return Response.json({ error: "Failed to parse diagnostic response. Please try again." }, { status: 500 });
+    }
+    const parsed = JSON.parse(raw.slice(start, end + 1));
     return Response.json({ diagnosis: parsed });
   } catch (err) {
-    console.error("Diagnose error:", err);
+    console.error("Diagnose error:", err, "Input:", JSON.stringify({ year, make, model, issue }));
     if (err instanceof SyntaxError) {
       return Response.json({ error: "Failed to parse diagnostic response. Please try again." }, { status: 500 });
     }

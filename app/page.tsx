@@ -18,14 +18,11 @@ export default function LandingPage() {
         top: 0,
         zIndex: 100,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "20px" }}>🔧</span>
-          <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 700, fontSize: "22px", letterSpacing: "0.1em", color: "white" }}>
-            CARLOS
-          </span>
-        </div>
+        <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 700, fontSize: "22px", letterSpacing: "0.1em", color: "white" }}>
+          CARLOS
+        </span>
         <Link href="/diagnose" style={{
-          background: "#3b82f6",
+          background: "#4a9eff",
           color: "white",
           border: "none",
           borderRadius: "8px",
@@ -50,7 +47,7 @@ export default function LandingPage() {
         {/* Carlos — first thing visible */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/carlos/carlos-hero.png"
+          src="/carlos/carlos-hero.webp"
           alt="Carlos your AI mechanic"
           className="carlos-float"
           style={{
@@ -71,7 +68,7 @@ export default function LandingPage() {
           margin: "0 0 16px",
         }}>
           Your car has a problem.<br />
-          <span style={{ color: "#3b82f6" }}>Carlos has the answer.</span>
+          <span style={{ color: "#4a9eff" }}>Carlos has the answer.</span>
         </h1>
 
         <p style={{ fontSize: "16px", color: "#8b95a8", lineHeight: 1.65, margin: "0 0 32px", maxWidth: "420px", display: "inline-block" }}>
@@ -90,7 +87,7 @@ export default function LandingPage() {
               width: "100%",
               maxWidth: "340px",
               height: "54px",
-              background: "#3b82f6",
+              background: "#4a9eff",
               color: "white",
               fontWeight: 700,
               fontSize: "17px",
@@ -105,7 +102,7 @@ export default function LandingPage() {
           </Link>
         </div>
 
-        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", color: "#374151", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: "0", paddingBottom: "48px" }}>
+        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "12px", color: "#6b7280", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: "0", paddingBottom: "48px" }}>
           No account · No credit card · No hardware to buy
         </div>
       </section>
@@ -113,27 +110,27 @@ export default function LandingPage() {
       {/* ── HOW IT WORKS ── */}
       <section style={{ padding: "56px 20px", backgroundColor: "#0d1018", borderTop: "1px solid #1e2433", borderBottom: "1px solid #1e2433" }}>
         <div style={{ maxWidth: "560px", margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: "40px" }}>
-            <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#3b82f6", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase" as const }}>How It Works</span>
+          <div style={{ textAlign: "center", marginBottom: "24px" }}>
+            <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#4a9eff", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase" as const }}>How It Works</span>
             <h2 style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "32px", color: "#f8fafc", margin: "8px 0 0" }}>Carlos thinks like a mechanic.</h2>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {[
               {
                 n: "01",
-                img: "/carlos/carlos-waving.png",
+                img: "/carlos/carlos-waving.webp",
                 title: "Tell Carlos what's wrong",
                 body: "Your car year, make, model. Describe the symptom, paste the code, or snap a photo of your dashboard lights.",
               },
               {
                 n: "02",
-                img: "/carlos/carlos-thinking.png",
+                img: "/carlos/carlos-thinking.webp",
                 title: "Carlos analyzes your specific car",
                 body: "Cross-referencing known issues for your exact vehicle, your symptoms, and real repair data to rank what's most likely wrong.",
               },
               {
                 n: "03",
-                img: "/carlos/carlos-thumbsup.png",
+                img: "/carlos/carlos-thumbsup.webp",
                 title: "You get a real action plan",
                 body: "Ranked causes, step-by-step checks, honest cost ranges, and parts you might need. Everything to go in prepared.",
               },
@@ -153,7 +150,7 @@ export default function LandingPage() {
                 <img
                   src={step.img}
                   alt=""
-                  style={{ height: "80px", width: "auto", filter: "drop-shadow(0 4px 12px rgba(59,130,246,0.3))" }}
+                  style={{ height: "100px", width: "auto", display: "block", margin: "0 auto", filter: "drop-shadow(0 6px 16px rgba(59,130,246,0.25))" }}
                 />
                 <div>
                   <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#374151", fontWeight: 700, letterSpacing: "0.1em", marginBottom: "6px" }}>{step.n}</div>
@@ -169,7 +166,7 @@ export default function LandingPage() {
       {/* ── EXAMPLE DIAGNOSIS ── */}
       <section id="example" style={{ padding: "56px 20px", maxWidth: "560px", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "32px" }}>
-          <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#3b82f6", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase" as const }}>Real Output</span>
+          <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", color: "#4a9eff", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase" as const }}>Real Output</span>
           <h2 style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "32px", color: "#f8fafc", margin: "8px 0 0" }}>This is what Carlos actually gives you.</h2>
         </div>
 
@@ -185,17 +182,17 @@ export default function LandingPage() {
         </div>
 
         {/* Top cause */}
-        <div style={{ backgroundColor: "#12161f", border: "1px solid #1e2433", borderLeft: "3px solid #3b82f6", borderRadius: "10px", padding: "16px", marginBottom: "12px" }}>
+        <div style={{ backgroundColor: "#12161f", border: "1px solid #1e2433", borderLeft: "3px solid #4a9eff", borderRadius: "10px", padding: "16px", marginBottom: "12px" }}>
           <div style={{ fontSize: "10px", color: "#4a5c72", textTransform: "uppercase" as const, letterSpacing: "0.08em", fontWeight: 600, marginBottom: "4px" }}>Most Likely Cause · Rank #1</div>
           <div style={{ fontSize: "18px", fontWeight: 700, color: "#f8fafc", marginBottom: "8px" }}>Ignition coil failing</div>
           <p style={{ margin: "0 0 8px", fontSize: "14px", color: "#8b95a8", lineHeight: 1.6 }}>The ignition coil creates the spark to fire each cylinder. When one fails, that cylinder misfires — causing rough running, especially on cold starts or under load.</p>
-          <span style={{ backgroundColor: "rgba(59,130,246,0.14)", color: "#3b82f6", fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px" }}>Most Likely</span>
+          <span style={{ backgroundColor: "rgba(59,130,246,0.14)", color: "#4a9eff", fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px" }}>Most Likely</span>
         </div>
 
         {/* Diagnostic step */}
         <div style={{ backgroundColor: "#12161f", border: "1px solid #1e2433", borderRadius: "10px", padding: "16px", marginBottom: "12px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-            <div style={{ width: "26px", height: "26px", borderRadius: "8px", backgroundColor: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, color: "#3b82f6" }}>1</div>
+            <div style={{ width: "26px", height: "26px", borderRadius: "8px", backgroundColor: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, color: "#4a9eff" }}>1</div>
             <div style={{ fontSize: "14px", fontWeight: 600, color: "#f8fafc" }}>Swap coils between cylinders</div>
           </div>
           <p style={{ margin: "0 0 8px", fontSize: "13px", color: "#8b95a8", lineHeight: 1.5 }}>If the misfire follows the coil to the new cylinder, you&apos;ve confirmed the coil is bad.</p>
@@ -221,7 +218,7 @@ export default function LandingPage() {
           </div>
           <div style={{ borderTop: "1px solid #1e2433", paddingTop: "8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ fontSize: "9px", color: "#374151", textTransform: "uppercase" as const, letterSpacing: "0.1em", fontWeight: 600 }}>Total</div>
-            <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "16px", color: "#3b82f6", fontWeight: 700 }}>$65–$140</div>
+            <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "16px", color: "#4a9eff", fontWeight: 700 }}>$65–$140</div>
           </div>
         </div>
       </section>
@@ -234,7 +231,7 @@ export default function LandingPage() {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", marginBottom: "40px" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/carlos/carlos-hero.png"
+              src="/carlos/carlos-hero.webp"
               alt=""
               style={{ height: "120px", width: "auto", filter: "drop-shadow(0 8px 20px rgba(59,130,246,0.3))" }}
             />
@@ -272,8 +269,8 @@ export default function LandingPage() {
                 body: "Paste any P0xxx, C0xxx, or B1xxx code. Carlos explains it in plain English with ranked fixes.",
                 icon: (
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <rect x="2" y="4" width="16" height="12" rx="2" stroke="#3b82f6" strokeWidth="1.5" />
-                    <path d="M6 10h8M6 13h4" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" />
+                    <rect x="2" y="4" width="16" height="12" rx="2" stroke="#4a9eff" strokeWidth="1.5" />
+                    <path d="M6 10h8M6 13h4" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" />
                     <circle cx="15" cy="4" r="3" fill="#0a0d14" stroke="#f59e0b" strokeWidth="1.5" />
                     <path d="M15 3v1.5l1 0.5" stroke="#f59e0b" strokeWidth="1" strokeLinecap="round" />
                   </svg>
@@ -284,9 +281,9 @@ export default function LandingPage() {
                 body: "Paste the estimate. Carlos tells you what's fair, what's high, and what's a red flag.",
                 icon: (
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M4 5h12v2H4zM4 9h8v2H4zM4 13h10" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" />
-                    <circle cx="16" cy="15" r="3" fill="rgba(59,130,246,0.15)" stroke="#3b82f6" strokeWidth="1.2" />
-                    <path d="M15 15l.8.8 1.7-1.6" stroke="#3b82f6" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M4 5h12v2H4zM4 9h8v2H4zM4 13h10" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" />
+                    <circle cx="16" cy="15" r="3" fill="rgba(59,130,246,0.15)" stroke="#4a9eff" strokeWidth="1.2" />
+                    <path d="M15 15l.8.8 1.7-1.6" stroke="#4a9eff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 ),
               },
@@ -295,9 +292,9 @@ export default function LandingPage() {
                 body: "Snap your dashboard lights or engine bay. Carlos analyzes what he sees.",
                 icon: (
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <rect x="2" y="5" width="16" height="12" rx="2" stroke="#3b82f6" strokeWidth="1.5" />
-                    <circle cx="10" cy="11" r="3" stroke="#3b82f6" strokeWidth="1.5" />
-                    <path d="M7 5l1.5-2h3L13 5" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" />
+                    <rect x="2" y="5" width="16" height="12" rx="2" stroke="#4a9eff" strokeWidth="1.5" />
+                    <circle cx="10" cy="11" r="3" stroke="#4a9eff" strokeWidth="1.5" />
+                    <path d="M7 5l1.5-2h3L13 5" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 ),
               },
@@ -306,9 +303,9 @@ export default function LandingPage() {
                 body: "Record a knock, squeal, or rattle. Carlos identifies what it likely means.",
                 icon: (
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="8" r="3" stroke="#3b82f6" strokeWidth="1.5" />
-                    <path d="M10 11v5M7 18h6" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" />
-                    <path d="M5 7c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="#3b82f6" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
+                    <circle cx="10" cy="8" r="3" stroke="#4a9eff" strokeWidth="1.5" />
+                    <path d="M10 11v5M7 18h6" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" />
+                    <path d="M5 7c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="#4a9eff" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
                   </svg>
                 ),
               },
@@ -317,8 +314,8 @@ export default function LandingPage() {
                 body: "Save your cars, track repairs over time, and get maintenance reminders.",
                 icon: (
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M3 8l7-5 7 5v9H3V8z" stroke="#3b82f6" strokeWidth="1.5" strokeLinejoin="round" />
-                    <rect x="7" y="12" width="6" height="5" rx="1" stroke="#3b82f6" strokeWidth="1.2" />
+                    <path d="M3 8l7-5 7 5v9H3V8z" stroke="#4a9eff" strokeWidth="1.5" strokeLinejoin="round" />
+                    <rect x="7" y="12" width="6" height="5" rx="1" stroke="#4a9eff" strokeWidth="1.2" />
                   </svg>
                 ),
               },
@@ -327,8 +324,8 @@ export default function LandingPage() {
                 body: "Unlike FIXD or BlueDriver, Carlos works without any dongle or adapter.",
                 icon: (
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2z" stroke="#3b82f6" strokeWidth="1.5" />
-                    <path d="M10 6v4l3 2" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" />
+                    <path d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2z" stroke="#4a9eff" strokeWidth="1.5" />
+                    <path d="M10 6v4l3 2" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 ),
               },
@@ -354,7 +351,7 @@ export default function LandingPage() {
             { stat: "<10s", label: "Avg. response" },
           ].map((s) => (
             <div key={s.label}>
-              <div style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "clamp(28px, 6vw, 36px)", color: "#3b82f6", lineHeight: 1, marginBottom: "4px" }}>{s.stat}</div>
+              <div style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "clamp(28px, 6vw, 36px)", color: "#4a9eff", lineHeight: 1, marginBottom: "4px" }}>{s.stat}</div>
               <div style={{ fontSize: "12px", color: "#4b5563", lineHeight: 1.3 }}>{s.label}</div>
             </div>
           ))}
@@ -368,7 +365,7 @@ export default function LandingPage() {
             {["Powered by Claude AI", "No account needed", "Free to use", "Data never sold"].map((item) => (
               <div key={item} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M2 6l3 3 5-5" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M2 6l3 3 5-5" stroke="#4a9eff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <span style={{ fontSize: "13px", color: "#8b95a8", whiteSpace: "nowrap" as const }}>{item}</span>
               </div>
@@ -387,7 +384,7 @@ export default function LandingPage() {
       }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/carlos/carlos-thumbsup.png"
+          src="/carlos/carlos-thumbsup.webp"
           alt=""
           className="carlos-float"
           style={{
@@ -401,7 +398,7 @@ export default function LandingPage() {
         <h2 style={{ fontFamily: "var(--font-barlow), sans-serif", fontSize: "48px", fontWeight: 700, color: "white", margin: "0 0 0", lineHeight: 1.1 }}>
           Don&apos;t guess.
         </h2>
-        <h2 style={{ fontFamily: "var(--font-barlow), sans-serif", fontSize: "48px", fontWeight: 700, color: "#3b82f6", margin: "0 0 16px", lineHeight: 1.1 }}>
+        <h2 style={{ fontFamily: "var(--font-barlow), sans-serif", fontSize: "48px", fontWeight: 700, color: "#4a9eff", margin: "0 0 16px", lineHeight: 1.1 }}>
           Ask Carlos.
         </h2>
         <p style={{ color: "#8b95a8", fontSize: "16px", marginBottom: "32px", lineHeight: 1.6 }}>
@@ -413,7 +410,7 @@ export default function LandingPage() {
           href="/diagnose"
           className="cta-button"
           style={{
-            background: "#3b82f6",
+            background: "#4a9eff",
             color: "white",
             border: "none",
             borderRadius: "12px",
@@ -439,13 +436,14 @@ export default function LandingPage() {
       <footer style={{ borderTop: "1px solid #1e2433", padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/carlos/carlos-icon.png" alt="" style={{ width: "24px", height: "24px", borderRadius: "6px", opacity: 0.4 }} />
+          <img src="/carlos/carlos-icon.webp" alt="" style={{ width: "24px", height: "24px", borderRadius: "6px", opacity: 0.4 }} />
           <span style={{ fontFamily: "var(--font-barlow), sans-serif", fontWeight: 800, fontSize: "14px", letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "#374151" }}>CARLOS</span>
         </div>
         <div style={{ display: "flex", gap: "20px" }}>
           <Link href="/diagnose" style={{ fontSize: "12px", color: "#374151", textDecoration: "none" }}>App</Link>
           <Link href="/pricing" style={{ fontSize: "12px", color: "#374151", textDecoration: "none" }}>Pricing</Link>
           <Link href="/privacy" style={{ fontSize: "12px", color: "#374151", textDecoration: "none" }}>Privacy</Link>
+          <Link href="/terms" style={{ fontSize: "12px", color: "#374151", textDecoration: "none" }}>Terms</Link>
         </div>
         <div style={{ fontSize: "11px", color: "#1c2a3e", textAlign: "center" }}>
           © {new Date().getFullYear()} Mechanic Carlos · mchaniccarlos.com

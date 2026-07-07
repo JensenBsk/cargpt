@@ -1,9 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import GateSignupButton from "./GateSignupButton";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://mchaniccarlos.com";
 
@@ -14,7 +12,7 @@ const SAFETY_CONFIG = {
 };
 
 const LIKELIHOOD_COLORS: Record<string, { bg: string; text: string }> = {
-  "Most Likely": { bg: "rgba(59,130,246,0.14)", text: "#3b82f6" },
+  "Most Likely": { bg: "rgba(59,130,246,0.14)", text: "#4a9eff" },
   "Likely": { bg: "rgba(99,102,241,0.14)", text: "#818cf8" },
   "Possible": { bg: "rgba(107,114,128,0.18)", text: "#9ca3af" },
   "Unlikely but serious": { bg: "rgba(245,158,11,0.14)", text: "#f59e0b" },
@@ -69,14 +67,11 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
 
   if (error || !share) notFound();
 
-  const { userId } = await auth();
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id ?? null;
 
-  // Increment view count async (don't await)
-  supabase
-    .from("shared_diagnoses")
-    .update({ view_count: (share.view_count || 0) + 1 })
-    .eq("token", token)
-    .then(() => {});
+  // Atomic server-side increment; RLS allows no direct updates to this table.
+  await supabase.rpc("increment_share_views", { share_token: token });
 
   const isSignedIn = !!userId;
   const isOwner = userId === share.created_by && !!share.created_by;
@@ -96,17 +91,17 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
       {/* Header */}
       <div style={{ position: "sticky", top: 0, zIndex: 10, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#0d0f12", borderBottom: "1px solid #1e2329" }}>
         <Link href="/" style={{ textDecoration: "none" }}>
-          <span style={{ fontWeight: 900, fontSize: "18px", color: "#3b82f6", letterSpacing: "0.15em" }}>CARLOS</span>
+          <span style={{ fontWeight: 900, fontSize: "18px", color: "#4a9eff", letterSpacing: "0.15em" }}>CARLOS</span>
         </Link>
         {isOwner && (
           <div style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "#1a1e25", border: "1px solid #252b34", borderRadius: "20px", padding: "4px 12px" }}>
             <span style={{ fontSize: "12px", color: "#9ca3af" }}>You shared this</span>
             <span style={{ fontSize: "12px", color: "#6b7280" }}>·</span>
-            <span style={{ fontSize: "12px", color: "#3b82f6", fontWeight: 600 }}>{view_count} views</span>
+            <span style={{ fontSize: "12px", color: "#4a9eff", fontWeight: 600 }}>{view_count} views</span>
           </div>
         )}
         {!isSignedIn && (
-          <Link href="/" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(59,130,246,0.5)", color: "#3b82f6", backgroundColor: "rgba(59,130,246,0.08)", textDecoration: "none" }}>
+          <Link href="/" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(59,130,246,0.5)", color: "#4a9eff", backgroundColor: "rgba(59,130,246,0.08)", textDecoration: "none" }}>
             Try Carlos
           </Link>
         )}
@@ -123,7 +118,7 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/carlos/carlos-icon.png"
+            src="/carlos/carlos-icon.webp"
             alt="Carlos"
             style={{ width: "40px", height: "40px", borderRadius: "10px", boxShadow: "0 0 12px rgba(59,130,246,0.3)", flexShrink: 0 }}
           />
@@ -157,14 +152,14 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
 
         {/* Top cause — always visible */}
         {topCause && (
-          <div style={{ backgroundColor: "#13161b", border: "1px solid #1e2329", borderLeft: "3px solid #3b82f6", borderRadius: "10px", padding: "14px 16px" }}>
+          <div style={{ backgroundColor: "#13161b", border: "1px solid #1e2329", borderLeft: "3px solid #4a9eff", borderRadius: "10px", padding: "14px 16px" }}>
             <div style={{ fontSize: "10px", fontWeight: 600, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "6px" }}>
               #1 Most Likely
             </div>
             <div style={{ fontSize: "17px", fontWeight: 700, color: "#f1f5f9", marginBottom: "4px" }}>{topCause.cause}</div>
             <span style={{
               backgroundColor: LIKELIHOOD_COLORS[topCause.likelihood]?.bg ?? "rgba(59,130,246,0.14)",
-              color: LIKELIHOOD_COLORS[topCause.likelihood]?.text ?? "#3b82f6",
+              color: LIKELIHOOD_COLORS[topCause.likelihood]?.text ?? "#4a9eff",
               fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px",
             }}>{topCause.likelihood}</span>
           </div>
@@ -174,7 +169,7 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
         {topEst && (
           <div style={{ backgroundColor: "#13161b", border: "1px solid #1e2329", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ fontSize: "13px", color: "#6b7280" }}>Est. Repair Cost</span>
-            <span style={{ fontSize: "22px", fontWeight: 800, color: "#3b82f6" }}>{topEst.total}</span>
+            <span style={{ fontSize: "22px", fontWeight: 800, color: "#4a9eff" }}>{topEst.total}</span>
           </div>
         )}
 
@@ -261,7 +256,6 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
       </div>
 
       {/* Gate CTA */}
-      {!isSignedIn && <GateSignupButton token={token} />}
     </div>
   );
 }

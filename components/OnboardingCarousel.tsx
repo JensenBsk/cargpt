@@ -4,24 +4,34 @@ import { useState } from "react";
 
 const CARDS = [
   {
-    img: "/carlos/carlos-hero.png",
+    img: "/carlos/carlos-hero.webp",
     alt: "Meet Carlos",
     title: "Meet Carlos",
     body: "Your AI mechanic. Tell him what's wrong and he figures it out — ranked causes, step-by-step checks, real cost estimates. In seconds. Free.",
   },
   {
-    img: "/carlos/carlos-reading.png",
+    img: "/carlos/carlos-reading.webp",
     alt: "Carlos checking your quote",
     title: "Never overpay again",
     body: "Paste your mechanic's quote. Carlos tells you what's fair, what's high, and what's a red flag — before you approve anything.",
   },
   {
-    img: "/carlos/carlos-waving.png",
+    img: "/carlos/carlos-waving.webp",
     alt: "Carlos welcoming you",
     title: "Your garage, remembered",
     body: "Save your cars. Track repairs over time. Get maintenance reminders before things go wrong. Carlos has your back.",
   },
+  // Required AI disclosure — must be seen before first use (App Store
+  // guideline on AI transparency). Skip lands here; it can't be bypassed.
+  {
+    img: "/carlos/carlos-thumbsup.webp",
+    alt: "Carlos giving a thumbs up",
+    title: "One honest thing first",
+    body: "Carlos is an AI assistant powered by Claude. His diagnoses are smart estimates, not certainties — and he's not a substitute for a qualified mechanic. For safety-critical problems, always get professional eyes on your car.",
+  },
 ];
+
+const DISCLOSURE_IDX = CARDS.length - 1;
 
 interface Props {
   onDone: () => void;
@@ -39,12 +49,14 @@ export default function OnboardingCarousel({ onDone }: Props) {
 
   return (
     <div style={{ position: "fixed", inset: 0, backgroundColor: "#060810", zIndex: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px" }}>
-      <button
-        onClick={onDone}
-        style={{ position: "absolute", top: "20px", right: "20px", fontSize: "13px", color: "#4a5c72", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "8px 12px" }}
-      >
-        Skip
-      </button>
+      {idx < DISCLOSURE_IDX && (
+        <button
+          onClick={() => setIdx(DISCLOSURE_IDX)}
+          style={{ position: "absolute", top: "20px", right: "20px", fontSize: "13px", color: "#4a5c72", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "8px 12px" }}
+        >
+          Skip
+        </button>
+      )}
 
       <div key={idx} className="view-enter" style={{ width: "100%", maxWidth: "340px", textAlign: "center" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -76,7 +88,7 @@ export default function OnboardingCarousel({ onDone }: Props) {
         onClick={advance}
         style={{ width: "100%", maxWidth: "340px", height: "54px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "16px", border: "none", borderRadius: "12px", cursor: "pointer", boxShadow: "0 4px 20px rgba(74,158,255,0.3)" }}
       >
-        {idx === CARDS.length - 1 ? "Get Started" : "Next →"}
+        {idx === CARDS.length - 1 ? "Got it — let's go" : "Next →"}
       </button>
     </div>
   );

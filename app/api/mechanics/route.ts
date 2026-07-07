@@ -1,9 +1,15 @@
+import { rateLimit } from "@/lib/rateLimit";
+import { isValidZip } from "@/lib/validate";
+
 export async function GET(request: Request) {
+  const limited = rateLimit(request, "mechanics", 20);
+  if (limited) return limited;
+
   const { searchParams } = new URL(request.url);
   const zip = searchParams.get("zip");
-  const make = searchParams.get("make") || "";
+  const make = (searchParams.get("make") || "").slice(0, 40);
 
-  if (!zip) return Response.json({ error: "ZIP required" }, { status: 400 });
+  if (!zip || !isValidZip(zip)) return Response.json({ error: "Valid 5-digit ZIP required" }, { status: 400 });
 
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) return Response.json({ shops: [], missing: true });

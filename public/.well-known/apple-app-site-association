@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.mechaniccarlos.app",
+        "paths": ["/r/*", "/diagnose", "/pricing", "/"]
+      }
+    ]
+  }
+}

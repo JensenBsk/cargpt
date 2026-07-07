@@ -1,22 +1,43 @@
+import { randomBytes } from "crypto";
 import { createClient } from "@/lib/supabase/server";
-import { auth } from "@clerk/nextjs/server";
+import { rateLimit } from "@/lib/rateLimit";
+import { badRequest, validateVehicle } from "@/lib/validate";
+
+// 96 bits of entropy, URL-safe — share tokens must not be guessable.
+function generateShareToken(): string {
+  return randomBytes(12).toString("base64url");
+}
+
+const MAX_DIAGNOSIS_JSON_BYTES = 100_000;
 
 export async function POST(request: Request) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    return Response.json({ error: "Supabase not configured" }, { status: 503 });
+    return Response.json({ error: "Sharing unavailable" }, { status: 503 });
   }
+
+  const limited = rateLimit(request, "share", 10);
+  if (limited) return limited;
 
   const { diagnosis, year, make, model, issue } = await request.json();
 
-  if (!diagnosis || !year || !make || !model) {
-    return Response.json({ error: "Missing required fields" }, { status: 400 });
+  if (!diagnosis) return badRequest("Missing diagnosis");
+  const vehicleError = validateVehicle(year, make, model);
+  if (vehicleError) return vehicleError;
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const token = generateShareToken();
+  let diagnosisJson: unknown;
+  try {
+    diagnosisJson = typeof diagnosis === "string" ? JSON.parse(diagnosis) : diagnosis;
+  } catch {
+    return badRequest("Invalid diagnosis payload");
+  }
+  if (JSON.stringify(diagnosisJson).length > MAX_DIAGNOSIS_JSON_BYTES) {
+    return badRequest("Diagnosis payload too large");
   }
 
-  const { userId } = await auth();
-  const token = Math.random().toString(36).substring(2, 10);
-  const diagnosisJson = typeof diagnosis === "string" ? JSON.parse(diagnosis) : diagnosis;
-
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("shared_diagnoses")
     .insert({
@@ -25,15 +46,15 @@ export async function POST(request: Request) {
       car_year: year,
       car_make: make,
       car_model: model,
-      code_or_symptom: issue || "",
-      created_by: userId ?? null,
+      code_or_symptom: typeof issue === "string" ? issue.slice(0, 500) : "",
+      created_by: user?.id ?? null,
     })
     .select("token")
     .single();
 
   if (error) {
     console.error("[share] insert error:", error.message, error.details);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: "Could not create share link. Please try again." }, { status: 500 });
   }
 
   return Response.json({ token: data.token });
@@ -48,7 +69,7 @@ export async function GET(request: Request) {
   const token = searchParams.get("token");
   if (!token) return Response.json({ error: "Missing token" }, { status: 400 });
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("shared_diagnoses")
     .select("view_count")

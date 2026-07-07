@@ -10,12 +10,34 @@ import TorqueLogo from "@/components/TorqueLogo";
 import VinInput from "@/components/VinInput";
 import ErrorCard, { type ErrorType } from "@/components/ErrorCard";
 import OnboardingCarousel from "@/components/OnboardingCarousel";
-import { useUser, useClerk } from "@clerk/nextjs";
+import { useAuth } from "@/contexts/AuthContext";
+import AuthModal from "@/components/AuthModal";
+import ObdScanner, { type ObdResult } from "@/components/ObdScanner";
+import HistorySheet from "@/components/HistorySheet";
 import { useToast } from "@/contexts/ToastContext";
 import { resizeImage } from "@/utils/resizeImage";
-import { MapPin, Camera, Wrench, Lock, WifiOff } from "lucide-react";
+import { hapticSuccess } from "@/lib/native";
+import { MapPin, Camera, Wrench, Lock, WifiOff, Bluetooth } from "lucide-react";
 
 const LS_KEY = "torque_diagnosis_history";
+
+function getLoadingMessages(make: string, model: string, issue: string): string[] {
+  const carName = make || "your car";
+  const hasCode = /\bP[0-9]{4}\b/i.test(issue);
+  const hasNoise = /knock|rattle|squeal|click|grind|whine|hiss/i.test(issue);
+  const msgs: string[] = [];
+  if (hasCode) msgs.push(`Decoding that OBD-II code on the ${carName}…`);
+  if (hasNoise) msgs.push(`Analyzing that sound description…`);
+  msgs.push(
+    `Checking common issues for the ${carName}…`,
+    "Cross-referencing with real repair records…",
+    "Ranking causes by likelihood…",
+    "Calculating parts and labor costs…",
+    "Preparing your step-by-step guide…",
+    "Almost done — wrapping up your diagnosis…"
+  );
+  return msgs;
+}
 
 export interface HistoryItem {
   id: string;
@@ -40,9 +62,9 @@ function saveToLS(item: Omit<HistoryItem, "id" | "date">) {
 }
 
 export default function Home() {
-  const { user, isSignedIn } = useUser();
-  const { signOut, openSignIn } = useClerk();
-  const available = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const { user, available, signOut, signInWithGoogle } = useAuth();
+  const isSignedIn = !!user;
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<AppTab>("diagnose");
@@ -67,14 +89,15 @@ export default function Home() {
   const [vinData, setVinData] = useState<{ year: string; make: string; model: string; engine?: string; fuelType?: string; drivetrain?: string } | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showObdScanner, setShowObdScanner] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   // Audio recording
   const [isRecording, setIsRecording] = useState(false);
-  const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [audioTranscript, setAudioTranscript] = useState("");
-  const [audioDraft, setAudioDraft] = useState("");
-  const [audioSaved, setAudioSaved] = useState(false);
   const recognitionRef = useRef<{ stop(): void; abort(): void } | null>(null);
-  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+  const loadingMsgsRef = useRef<string[]>([]);
 
   const yearRef = useRef<HTMLDivElement>(null);
   const makeRef = useRef<HTMLDivElement>(null);
@@ -96,6 +119,14 @@ export default function Home() {
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
+
+  useEffect(() => {
+    if (!loading) return;
+    const interval = setInterval(() => {
+      setLoadingMsgIdx(i => Math.min(i + 1, loadingMsgsRef.current.length - 1));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [loading]);
 
   useEffect(() => {
     try {
@@ -133,41 +164,52 @@ export default function Home() {
     setShowErrors(false);
     setLoading(true);
     setErrorType(null);
+    loadingMsgsRef.current = getLoadingMessages(make, model, issue);
+    setLoadingMsgIdx(0);
     setDiagnosis(null);
     setDiagnosisId(null);
     setChatHistory([]);
 
     try {
-      const res = await fetch("/api/diagnose", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          year, make, model, issue,
-          mods: modMode ? mods : "",
-          hasTune: modMode ? hasTune : false,
-          zip: zip.length === 5 ? zip : "",
-          dashboardImage: dashboardImage ?? undefined,
-          engineBayImage: engineBayImage ?? undefined,
-          audioTranscript: audioTranscript || undefined,
-          vinData: vinData ?? undefined,
-        }),
+      const diagBody = JSON.stringify({
+        year, make, model, issue,
+        mods: modMode ? mods : "",
+        hasTune: modMode ? hasTune : false,
+        zip: zip.length === 5 ? zip : "",
+        dashboardImage: dashboardImage ?? undefined,
+        engineBayImage: engineBayImage ?? undefined,
+        audioTranscript: audioTranscript || undefined,
+        vinData: vinData ?? undefined,
       });
+
+      const doFetch = () => fetch("/api/diagnose", { method: "POST", headers: { "Content-Type": "application/json" }, body: diagBody });
+
+      let res = await doFetch();
+
+      // Retry once on transient server errors (not rate-limit or payment errors)
+      if (!res.ok && res.status !== 429 && res.status !== 402) {
+        await new Promise(r => setTimeout(r, 1200));
+        res = await doFetch();
+      }
 
       if (!res.ok) {
         if (res.status === 429) { setErrorType("rate_limit"); return; }
         if (res.status === 402) { setErrorType("free_limit"); return; }
+        console.error("Diagnosis failed after retry:", { year, make, model, issue });
         setErrorType("diagnosis");
         return;
       }
 
       const data = await res.json();
       if (data.error) {
+        console.error("Diagnosis API returned error:", data.error, { year, make, model, issue });
         setErrorType("diagnosis");
         return;
       }
 
       const diag: Diagnostic = data.diagnosis;
       setDiagnosis(diag);
+      hapticSuccess();
       setChatHistory([
         { role: "user", content: `Vehicle: ${year} ${make} ${model}${modMode && mods ? `\nMods: ${mods}${hasTune ? " (tuned)" : ""}` : ""}\n\nIssue: ${issue}` },
         { role: "assistant", content: JSON.stringify(diag) },
@@ -204,8 +246,6 @@ export default function Home() {
     setDashboardImage(null);
     setEngineBayImage(null);
     setAudioTranscript("");
-    setAudioDraft("");
-    setAudioSaved(false);
   }
 
   function handleVinDecode(data: { year: string; make: string; model: string; engine?: string; fuelType?: string; drivetrain?: string }) {
@@ -214,6 +254,68 @@ export default function Home() {
     setModel(data.model);
     setVinData(data);
     setShowErrors(false);
+  }
+
+  async function handleObdResult(result: ObdResult) {
+    setShowObdScanner(false);
+
+    // Build an issue description from everything the scanner read
+    const parts: string[] = [];
+    if (result.codes.length > 0) {
+      parts.push(
+        "OBD2 scan found these codes:\n" +
+          result.codes.map((c) => `${c.code} — ${c.description}`).join("\n")
+      );
+    }
+    if (result.freezeFrame?.rpm !== undefined || result.freezeFrame?.dtc) {
+      const ff = result.freezeFrame;
+      const bits = [
+        ff.rpm !== undefined ? `${Math.round(ff.rpm)} RPM` : null,
+        ff.coolantTempC !== undefined ? `coolant ${Math.round((ff.coolantTempC * 9) / 5 + 32)}°F` : null,
+        ff.speedKmh !== undefined ? `${Math.round(ff.speedKmh * 0.621)} mph` : null,
+        ff.engineLoadPct !== undefined ? `${Math.round(ff.engineLoadPct)}% load` : null,
+      ].filter(Boolean);
+      if (bits.length) parts.push(`Freeze frame when the fault hit: ${bits.join(", ")}.`);
+    }
+    const ld = result.liveData;
+    const sensorBits = [
+      ld.coolantTempC !== undefined ? `coolant ${Math.round((ld.coolantTempC * 9) / 5 + 32)}°F` : null,
+      ld.shortFuelTrimPct !== undefined ? `short fuel trim ${ld.shortFuelTrimPct > 0 ? "+" : ""}${ld.shortFuelTrimPct}%` : null,
+      ld.longFuelTrimPct !== undefined ? `long fuel trim ${ld.longFuelTrimPct > 0 ? "+" : ""}${ld.longFuelTrimPct}%` : null,
+      ld.mafGs !== undefined ? `MAF ${ld.mafGs} g/s at idle` : null,
+    ].filter(Boolean);
+    if (sensorBits.length) parts.push(`Live sensor readings: ${sensorBits.join(", ")}.`);
+
+    if (parts.length) {
+      setIssue((prev) => (prev.trim() ? prev.trimEnd() + "\n\n" : "") + parts.join("\n\n"));
+    }
+
+    // Auto-fill the vehicle from the VIN the car reported
+    if (result.vin && (!year || !make || !model)) {
+      try {
+        const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${result.vin}?format=json`);
+        const data = await res.json();
+        const get = (v: string) => data.Results?.find((r: { Variable: string; Value: string | null }) => r.Variable === v)?.Value ?? "";
+        const vinYear = get("Model Year");
+        const vinMake = get("Make");
+        const vinModel = get("Model");
+        if (vinYear && vinMake && vinModel) {
+          handleVinDecode({
+            year: vinYear,
+            make: vinMake.charAt(0) + vinMake.slice(1).toLowerCase(),
+            model: vinModel,
+            engine: get("Displacement (L)") ? `${get("Displacement (L)")}L ${get("Engine Configuration")}` : undefined,
+            fuelType: get("Fuel Type - Primary") || undefined,
+            drivetrain: get("Drive Type") || undefined,
+          });
+          toast("Vehicle filled in from your car's VIN");
+        }
+      } catch {
+        /* VIN decode is best-effort */
+      }
+    }
+    hapticSuccess();
+    if (result.codes.length) toast(`${result.codes.length} code${result.codes.length > 1 ? "s" : ""} added to your diagnosis`);
   }
 
   async function handleDashboardPhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -239,58 +341,39 @@ export default function Home() {
     type SpeechRecognitionType = {
       continuous: boolean; interimResults: boolean; maxAlternatives: number;
       onresult: ((e: { results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
-      onerror: (() => void) | null; onend: (() => void) | null;
+      onerror: ((e: { error: string }) => void) | null; onend: (() => void) | null;
       start(): void; stop(): void; abort(): void;
     };
     type WindowWithSR = Window & { SpeechRecognition?: new () => SpeechRecognitionType; webkitSpeechRecognition?: new () => SpeechRecognitionType };
     const SR = (window as WindowWithSR).SpeechRecognition || (window as WindowWithSR).webkitSpeechRecognition;
-    if (!SR) { toast("Voice recording requires Chrome or Safari"); return; }
+    if (!SR) { toast("Voice input requires Chrome or Safari"); return; }
     const recog = new SR();
     recog.continuous = true;
-    recog.interimResults = true;
+    recog.interimResults = false;
     recog.maxAlternatives = 1;
-    let finalText = "";
     recog.onresult = (e) => {
-      let interim = "";
       for (let i = 0; i < (e.results as ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>).length; i++) {
         const r = (e.results as ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>)[i];
-        if (r.isFinal) { finalText += r[0].transcript + " "; }
-        else { interim = r[0].transcript; }
+        if (r.isFinal) {
+          const text = r[0].transcript.trim();
+          setIssue(prev => prev ? prev.trimEnd() + " " + text : text);
+          setAudioTranscript(t => t + " " + text);
+        }
       }
-      setAudioDraft(finalText + interim);
     };
-    recog.onerror = () => stopRecording();
-    recog.onend = () => stopRecording();
+    recog.onerror = (e) => { if (e.error !== "no-speech") stopRecording(); };
+    recog.onend = () => {
+      // restart automatically while still in recording state
+      if (recognitionRef.current) { try { recog.start(); } catch { stopRecording(); } }
+    };
     recog.start();
     recognitionRef.current = recog;
     setIsRecording(true);
-    setAudioDraft("");
-    setAudioSaved(false);
-    setRecordingSeconds(0);
-    recordingTimerRef.current = setInterval(() => {
-      setRecordingSeconds(s => {
-        if (s >= 29) { stopRecording(); return 30; }
-        return s + 1;
-      });
-    }, 1000);
   }
 
   function stopRecording() {
     recognitionRef.current?.stop();
     recognitionRef.current = null;
-    if (recordingTimerRef.current) { clearInterval(recordingTimerRef.current); recordingTimerRef.current = null; }
-    setIsRecording(false);
-  }
-
-  function useRecording() {
-    setAudioTranscript(audioDraft.trim());
-    setAudioSaved(true);
-  }
-
-  function clearRecording() {
-    setAudioTranscript("");
-    setAudioDraft("");
-    setAudioSaved(false);
     setIsRecording(false);
   }
 
@@ -348,7 +431,8 @@ export default function Home() {
   };
 
   const allFilled = !!year && !!make && !!model && !!issue.trim();
-  const buttonBg = errorType ? "#f59e0b" : "#2563eb";
+  // Canonical CTA blue — matches --accent so this button never drifts navy
+  const buttonBg = errorType ? "#f59e0b" : "#4a9eff";
   const capMake = make ? make.charAt(0).toUpperCase() + make.slice(1) : "";
   const buttonText = loading ? `Carlos is analyzing your ${capMake || "car"}…` : errorType ? "Try Again" : "Ask Carlos";
 
@@ -385,25 +469,35 @@ export default function Home() {
         ) : (
           <TorqueLogo markSize={28} wordmarkSize={20} glow="soft" />
         )}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <button
+            onClick={() => setShowHistory(true)}
+            className="tap-target"
+            aria-label="Diagnosis history"
+            style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid #1c2a3e", color: "#7d8fa8", backgroundColor: "transparent", cursor: "pointer" }}
+          >
+            History
+          </button>
         {isSignedIn ? (
-            <button onClick={() => signOut()} className="tap-target" style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid #1c2a3e", color: "#4a5c72", backgroundColor: "transparent", cursor: "pointer" }}>
-              {user?.primaryEmailAddress?.emailAddress?.split("@")[0] ?? "Account"} · out
+            <button onClick={() => signOut()} className="tap-target" style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid #1c2a3e", color: "#7d8fa8", backgroundColor: "transparent", cursor: "pointer" }}>
+              {user?.email?.split("@")[0] ?? "Account"} · out
             </button>
           ) : (
-            <button onClick={() => openSignIn()} className="tap-target" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.35)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}>
+            <button onClick={() => setShowAuthModal(true)} className="tap-target" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.35)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}>
               Sign In
             </button>
           )
         }
+        </div>
       </header>
 
-      <main style={{
+      <main id="main-content" style={{
         flex: 1,
         overflowX: "hidden",
         width: "100%",
         maxWidth: "100%",
         boxSizing: "border-box",
-        paddingBottom: onDiagnoseWithResult ? 0 : "calc(60px + env(safe-area-inset-bottom, 0px) + 12px)",
+        paddingBottom: onDiagnoseWithResult ? 0 : "calc(154px + env(safe-area-inset-bottom, 0px))",
       }}>
 
         {/* ── DIAGNOSE TAB ── */}
@@ -432,9 +526,9 @@ export default function Home() {
               <div style={{ textAlign: "center", padding: "24px 20px 16px" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/carlos/carlos-hero.png"
+                  src="/carlos/carlos-hero.webp"
                   alt="Carlos"
-                  style={{ height: "100px", width: "auto", margin: "0 auto 12px", display: "block", filter: "drop-shadow(0 6px 16px rgba(59,130,246,0.3))" }}
+                  style={{ height: "160px", width: "auto", display: "block", margin: "16px auto 20px", filter: "drop-shadow(0 8px 24px rgba(59,130,246,0.3))" }}
                 />
                 <h1 style={{ color: "white", fontSize: "22px", fontWeight: 700, marginBottom: "4px" }}>
                   What&apos;s going on?
@@ -444,18 +538,33 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Carlos thinking — loading state */}
+              {/* Carlos thinking — loading state with result skeleton */}
               {loading && (
-                <div style={{ textAlign: "center", padding: "32px 24px", borderRadius: "16px", background: "#13161b", border: "1px solid #1e2329", margin: "0 0 16px", width: "100%", maxWidth: "480px", boxSizing: "border-box" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/carlos/carlos-thinking.png"
-                    alt="Carlos thinking"
-                    className="carlos-think"
-                    style={{ height: "100px", width: "auto", margin: "0 auto 16px", display: "block", filter: "drop-shadow(0 4px 16px rgba(59,130,246,0.3)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }}
-                  />
-                  <p style={{ color: "white", fontSize: "15px", fontWeight: 600, margin: "0 0 4px" }}>Carlos is on it...</p>
-                  <p style={{ color: "#6b7280", fontSize: "13px", margin: 0 }}>Analyzing your {make || "car"} — usually takes 10 seconds</p>
+                <div aria-live="polite" style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", margin: "0 0 16px" }}>
+                  <div style={{ textAlign: "center", padding: "28px 24px", borderRadius: "16px", background: "#13161b", border: "1px solid #1e2329", marginBottom: "12px" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/carlos/carlos-thinking.webp"
+                      alt=""
+                      className="carlos-pulse"
+                      style={{ height: "100px", width: "auto", margin: "0 auto 16px", display: "block", filter: "drop-shadow(0 4px 16px rgba(59,130,246,0.3)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }}
+                    />
+                    <p style={{ color: "white", fontSize: "15px", fontWeight: 600, margin: "0 0 4px", minHeight: "22px" }}>
+                      {loadingMsgsRef.current[loadingMsgIdx] || `Carlos is on it…`}
+                    </p>
+                    <p style={{ color: "#7d8fa8", fontSize: "13px", margin: 0 }}>Usually takes 10–15 seconds</p>
+                  </div>
+                  {/* Skeleton of the incoming report so users see the shape of what's coming */}
+                  <div aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div className="skeleton" style={{ height: "64px" }} />
+                    <div className="skeleton" style={{ height: "96px" }} />
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <div className="skeleton" style={{ height: "56px", flex: 1 }} />
+                      <div className="skeleton" style={{ height: "56px", flex: 1 }} />
+                      <div className="skeleton" style={{ height: "56px", flex: 1 }} />
+                    </div>
+                    <div className="skeleton" style={{ height: "80px" }} />
+                  </div>
                 </div>
               )}
 
@@ -466,68 +575,109 @@ export default function Home() {
               >
                 {/* Vehicle card */}
                 <div style={{ background: "#13161f", border: "1px solid #1e2433", borderRadius: "16px", padding: "20px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/carlos/carlos-icon.png" alt="" style={{ width: "28px", height: "28px", borderRadius: "7px" }} />
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+                    <span style={{ fontSize: "18px" }}>🚗</span>
                     <span style={{ color: "#f8fafc", fontSize: "15px", fontWeight: 600 }}>What car are we working on?</span>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 1fr", gap: "10px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <div ref={yearRef}>
+                      <label htmlFor="vehicle-year" className="sr-only">Model year</label>
                       <select
+                        id="vehicle-year"
                         value={year}
                         onChange={(e) => { setYear(e.target.value); if (showErrors) setShowErrors(false); }}
-                        style={{ ...fieldStyle, padding: "0 8px", color: year ? "#f8fafc" : "#4b5563", borderColor: showErrors && !year ? "#ef4444" : "#1e2433" }}
+                        aria-invalid={showErrors && !year}
+                        aria-describedby={showErrors && !year ? "vehicle-error" : undefined}
+                        style={{ ...fieldStyle, padding: "0 14px", color: year ? "#f8fafc" : "#4a5c72", borderColor: showErrors && !year ? "#ef4444" : "#1e2433" }}
                       >
                         <option value="">Year</option>
                         {years.map((y) => <option key={y} value={y}>{y}</option>)}
                       </select>
                     </div>
                     <div ref={makeRef}>
+                      <label htmlFor="vehicle-make" className="sr-only">Vehicle make</label>
                       <input
+                        id="vehicle-make"
                         type="text"
                         value={make}
                         onChange={(e) => { const v = e.target.value; setMake(v ? v.charAt(0).toUpperCase() + v.slice(1) : v); if (showErrors) setShowErrors(false); }}
-                        placeholder="Make"
+                        placeholder="Make (e.g. Ford)"
                         autoComplete="off"
                         autoCapitalize="words"
+                        aria-invalid={showErrors && !make}
+                        aria-describedby={showErrors && !make ? "vehicle-error" : undefined}
                         style={{ ...fieldStyle, borderColor: showErrors && !make ? "#ef4444" : "#1e2433" }}
                       />
                     </div>
                     <div ref={modelRef}>
+                      <label htmlFor="vehicle-model" className="sr-only">Vehicle model</label>
                       <input
+                        id="vehicle-model"
                         type="text"
                         value={model}
                         onChange={(e) => { setModel(e.target.value); if (showErrors) setShowErrors(false); }}
-                        placeholder="Model"
+                        placeholder="Model (e.g. F-150)"
                         autoComplete="off"
+                        aria-invalid={showErrors && !model}
+                        aria-describedby={showErrors && !model ? "vehicle-error" : undefined}
                         style={{ ...fieldStyle, borderColor: showErrors && !model ? "#ef4444" : "#1e2433" }}
                       />
                     </div>
                   </div>
                   {showErrors && (!year || !make || !model) && (
-                    <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#ef4444" }}>
+                    <p id="vehicle-error" role="alert" style={{ margin: "8px 0 0", fontSize: "12px", color: "#ef4444" }}>
                       Enter your vehicle year, make, and model
                     </p>
                   )}
                   <div style={{ marginTop: "12px" }}>
                     <VinInput onDecode={handleVinDecode} />
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowObdScanner(true)}
+                    className="tap-target"
+                    style={{ marginTop: "10px", width: "100%", height: "46px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", backgroundColor: "rgba(74,158,255,0.06)", border: "1px dashed rgba(74,158,255,0.35)", borderRadius: "10px", color: "#4a9eff", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}
+                  >
+                    <Bluetooth size={15} aria-hidden="true" />
+                    Connect OBD2 Scanner
+                  </button>
                 </div>
 
                 {/* Issue card */}
                 <div style={{ background: "#13161f", border: "1px solid #1e2433", borderRadius: "16px", padding: "20px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/carlos/carlos-thinking.png" alt="" style={{ width: "28px", height: "28px", objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(59,130,246,0.2))" }} />
+                    <img src="/carlos/carlos-thinking.webp" alt="" style={{ width: "28px", height: "28px", objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(59,130,246,0.2))" }} />
                     <span style={{ color: "#f8fafc", fontSize: "15px", fontWeight: 600 }}>What&apos;s going on with it?</span>
                   </div>
-                  <textarea
-                    value={issue}
-                    onChange={(e) => setIssue(e.target.value)}
-                    placeholder="P0301 misfire on cyl 1, rough idle at startup, knocking under load — describe what you see or hear"
-                    rows={4}
-                    style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", minHeight: "130px", padding: "14px 16px", fontSize: "16px", backgroundColor: "#0a0d14", border: "1px solid #1e2433", borderRadius: "12px", color: "#f8fafc", resize: "none", lineHeight: 1.6, fontFamily: "var(--font-ibm), sans-serif" }}
-                  />
+                  <div style={{ position: "relative" }}>
+                    <label htmlFor="issue-description" className="sr-only">Describe the problem with your car</label>
+                    <textarea
+                      id="issue-description"
+                      value={issue}
+                      onChange={(e) => setIssue(e.target.value)}
+                      placeholder="P0301 misfire on cyl 1, rough idle at startup, knocking under load — describe what you see or hear"
+                      rows={4}
+                      style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", minHeight: "130px", padding: "14px 48px 14px 16px", fontSize: "16px", backgroundColor: "#0a0d14", border: `1px solid ${isRecording ? "rgba(239,68,68,0.5)" : "#1e2433"}`, borderRadius: "12px", color: "#f8fafc", resize: "none", lineHeight: 1.6, fontFamily: "var(--font-ibm), sans-serif", transition: "border-color 200ms" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={isRecording ? stopRecording : startRecording}
+                      style={{ position: "absolute", bottom: "10px", right: "10px", width: "32px", height: "32px", borderRadius: "8px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: isRecording ? "rgba(239,68,68,0.15)" : "rgba(74,158,255,0.08)", transition: "background-color 200ms" }}
+                      aria-label={isRecording ? "Stop recording" : "Start voice input"}
+                    >
+                      {isRecording ? (
+                        <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#ef4444" }} className="badge-pulse-stop" />
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isRecording ? "#ef4444" : "#4a5c72"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                          <line x1="12" y1="19" x2="12" y2="23"/>
+                          <line x1="8" y1="23" x2="16" y2="23"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Secondary details card */}
@@ -569,43 +719,6 @@ export default function Home() {
                     )}
                   </div>
 
-                  {/* Audio recording */}
-                  <div style={{ borderTop: "1px solid #1c2a3e", paddingTop: "14px" }}>
-                    <label style={labelStyle}>Record the sound <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#2d3f55" }}>optional</span></label>
-                    <div style={{ fontSize: "11px", color: "#4a5c72", marginBottom: "8px" }}>Tap to record a knock, squeal, rattle or noise your car is making</div>
-                    {audioSaved ? (
-                      <div style={{ backgroundColor: "rgba(74,158,255,0.07)", border: "1px solid rgba(74,158,255,0.2)", borderRadius: "10px", padding: "10px 12px" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-                          <span style={{ fontSize: "11px", fontWeight: 700, color: "#4a9eff", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>🎙️ Recording saved</span>
-                          <button type="button" onClick={clearRecording} style={{ fontSize: "11px", color: "#4a5c72", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: 0 }}>Re-record</button>
-                        </div>
-                        <p style={{ margin: 0, fontSize: "13px", color: "#7d8fa8", lineHeight: 1.5, fontStyle: "italic" }}>&quot;{audioTranscript}&quot;</p>
-                      </div>
-                    ) : isRecording ? (
-                      <div style={{ backgroundColor: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "10px", padding: "12px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-                          <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#ef4444", flexShrink: 0 }} className="badge-pulse-stop" />
-                          <span style={{ fontSize: "13px", color: "#ef4444", fontWeight: 600 }}>Recording — {recordingSeconds}s / 30s</span>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "3px", height: "24px", marginBottom: "10px" }}>
-                          {Array.from({ length: 20 }).map((_, i) => (
-                            <div key={i} className="typing-dot" style={{ width: "3px", height: `${8 + (i % 7) * 2}px`, borderRadius: "2px", backgroundColor: "#ef4444", opacity: 0.7, margin: 0 }} />
-                          ))}
-                        </div>
-                        {audioDraft && <p style={{ margin: "0 0 10px", fontSize: "12px", color: "#7d8fa8", lineHeight: 1.4, fontStyle: "italic" }}>&quot;{audioDraft}&quot;</p>}
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <button type="button" onClick={stopRecording} style={{ flex: 1, height: "38px", backgroundColor: "transparent", border: "1px solid rgba(239,68,68,0.3)", borderRadius: "8px", color: "#ef4444", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>Stop</button>
-                          {audioDraft.trim() && <button type="button" onClick={useRecording} style={{ flex: 1, height: "38px", backgroundColor: "rgba(74,158,255,0.1)", border: "1px solid rgba(74,158,255,0.3)", borderRadius: "8px", color: "#4a9eff", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>Use this</button>}
-                        </div>
-                      </div>
-                    ) : (
-                      <button type="button" onClick={startRecording} className="tap-target" style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 14px", boxSizing: "border-box", backgroundColor: "#101822", border: "1px dashed #172134", borderRadius: "10px", cursor: "pointer", fontSize: "13px", color: "#4a5c72", width: "100%" }}>
-                        <span style={{ fontSize: "16px" }}>🎙️</span>
-                        <span>Tap to record a sound</span>
-                      </button>
-                    )}
-                  </div>
-
                   {/* Mods toggle */}
                   <div style={{ borderTop: "1px solid #1c2a3e", paddingTop: "14px" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: modMode ? "14px" : 0 }}>
@@ -623,7 +736,9 @@ export default function Home() {
                         onClick={() => setModMode(!modMode)}
                         className="tap-target"
                         style={{ width: "42px", height: "24px", borderRadius: "12px", backgroundColor: modMode ? "#4a9eff" : "#162232", border: "none", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background-color 200ms" }}
-                        aria-label="Toggle modified car mode"
+                        role="switch"
+                        aria-checked={modMode}
+                        aria-label="Modified or tuned car"
                       >
                         <div style={{ position: "absolute", top: "2px", left: modMode ? "20px" : "2px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "white", transition: "left 200ms ease", boxShadow: "0 1px 3px rgba(0,0,0,0.4)" }} />
                       </button>
@@ -647,6 +762,9 @@ export default function Home() {
                             onClick={() => setHasTune(!hasTune)}
                             className="tap-target"
                             style={{ width: "42px", height: "24px", borderRadius: "12px", backgroundColor: hasTune ? "#4a9eff" : "#162232", border: "none", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background-color 200ms" }}
+                            role="switch"
+                            aria-checked={hasTune}
+                            aria-label="Running a tune"
                           >
                             <div style={{ position: "absolute", top: "2px", left: hasTune ? "20px" : "2px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "white", transition: "left 200ms ease", boxShadow: "0 1px 3px rgba(0,0,0,0.4)" }} />
                           </button>
@@ -657,11 +775,12 @@ export default function Home() {
 
                   {/* ZIP */}
                   <div style={{ borderTop: "1px solid #1c2a3e", paddingTop: "14px" }}>
-                    <label style={labelStyle}>
-                      <MapPin size={9} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} />
-                      Area ZIP <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#2d3f55" }}>— for local pricing</span>
+                    <label htmlFor="area-zip" style={labelStyle}>
+                      <MapPin size={9} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} aria-hidden="true" />
+                      Area ZIP <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#5d7290" }}>— for local pricing</span>
                     </label>
                     <input
+                      id="area-zip"
                       type="text"
                       inputMode="numeric"
                       value={zip}
@@ -704,7 +823,7 @@ export default function Home() {
         <div style={{ display: activeTab === "garage" ? "block" : "none" }}>
           <GarageView
             onSelectCar={handleSelectCar}
-            onRequestSignIn={() => openSignIn()}
+            onRequestSignIn={() => setShowAuthModal(true)}
             onOpenDiagnosis={handleOpenHistoryDiagnosis}
           />
         </div>
@@ -723,12 +842,11 @@ export default function Home() {
               display: "flex", alignItems: "center", justifyContent: "center",
               width: "100%", height: "54px",
               background: loading ? undefined : buttonBg,
-              color: "white", fontWeight: 600, fontSize: "15px", letterSpacing: "0.04em",
+              color: "white", fontWeight: 700, fontSize: "15px", letterSpacing: "0.04em",
               border: "none", borderRadius: "12px",
               cursor: loading ? "default" : "pointer",
-              opacity: allFilled || loading || errorType ? 1 : 0.4,
-              boxShadow: allFilled && !loading && !errorType ? "0 4px 20px rgba(37,99,235,0.3)" : "none",
-              transition: "box-shadow 200ms ease, opacity 200ms ease, background 200ms ease",
+              boxShadow: "0 4px 16px rgba(59,130,246,0.3)",
+              transition: "background 200ms ease",
             }}
           >
             {buttonText}
@@ -736,8 +854,21 @@ export default function Home() {
         </div>
       )}
 
+      {/* Announce the finished diagnosis to screen readers */}
+      <div aria-live="assertive" className="sr-only">
+        {showDiagnosis ? "Your diagnosis is ready." : ""}
+      </div>
+
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />
       {showOnboarding && <OnboardingCarousel onDone={finishOnboarding} />}
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+      {showObdScanner && <ObdScanner onClose={() => setShowObdScanner(false)} onUseInDiagnosis={handleObdResult} />}
+      {showHistory && (
+        <HistorySheet
+          onClose={() => setShowHistory(false)}
+          onOpenLocal={(item) => handleOpenHistoryDiagnosis({ year: item.year, make: item.make, model: item.model, issue: item.issue, diagnosis: item.diagnosis as Diagnostic })}
+        />
+      )}
     </>
   );
 }

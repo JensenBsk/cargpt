@@ -6,9 +6,10 @@ export async function POST(request: Request) {
     return Response.json({ sent: false, reason: "OneSignal not configured" });
   }
 
-  // Verify Vercel cron secret to prevent unauthorized calls
+  // Verify Vercel cron secret to prevent unauthorized calls.
+  // Fail closed if CRON_SECRET is unset — otherwise "Bearer undefined" would match.
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 

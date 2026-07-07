@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useUser, useClerk } from "@clerk/nextjs";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import VinInput from "@/components/VinInput";
 import { AlertTriangle, Bell } from "lucide-react";
 import type { Diagnostic } from "@/types/diagnostic";
@@ -78,8 +78,8 @@ function formatDate(iso: string): string {
 }
 
 export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnosis }: Props) {
-  const { user, isSignedIn } = useUser();
-  const { openSignIn } = useClerk();
+  const { user, signInWithGoogle } = useAuth();
+  const isSignedIn = !!user;
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -112,9 +112,8 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
     } catch { /* ignore */ }
   }, []);
 
-  useEffect(() => {
-    if (!isSignedIn) { setLoading(false); return; }
-    fetch("/api/garage")
+  const loadGarage = useCallback(() => {
+    return fetch("/api/garage")
       .then((r) => r.json())
       .then((d) => {
         const carList: Car[] = d.cars || [];
@@ -130,7 +129,36 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
         });
       })
       .catch(() => setLoading(false));
-  }, [isSignedIn]);
+  }, []);
+
+  useEffect(() => {
+    if (!isSignedIn) { setLoading(false); return; }
+    loadGarage();
+  }, [isSignedIn, loadGarage]);
+
+  // Pull-to-refresh: pulling down >70px from the top of the page refetches.
+  const pullStartY = useRef<number | null>(null);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    if (window.scrollY <= 0) pullStartY.current = e.touches[0].clientY;
+  }
+  function handleTouchMove(e: React.TouchEvent) {
+    if (pullStartY.current === null || refreshing) return;
+    const delta = e.touches[0].clientY - pullStartY.current;
+    if (delta > 0 && window.scrollY <= 0) setPullDistance(Math.min(delta * 0.5, 90));
+  }
+  async function handleTouchEnd() {
+    const shouldRefresh = pullDistance > 70;
+    pullStartY.current = null;
+    setPullDistance(0);
+    if (shouldRefresh && isSignedIn && !refreshing) {
+      setRefreshing(true);
+      await loadGarage();
+      setRefreshing(false);
+    }
+  }
 
   async function addCar(e: React.FormEvent) {
     e.preventDefault();
@@ -181,55 +209,102 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
 
   if (!isSignedIn) {
     return (
-      <div className="view-enter" style={{ padding: "60px 24px", textAlign: "center" }}>
-        <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔒</div>
-        <div style={{ fontSize: "18px", fontWeight: 700, color: "#dce8f5", marginBottom: "8px" }}>Sign in to use My Garage</div>
-        <div style={{ fontSize: "14px", color: "#7d8fa8", marginBottom: "28px", lineHeight: 1.6 }}>
-          Save your cars and track repairs over time.<br />
-          <span style={{ fontSize: "13px", color: "#4a5c72" }}>Your garage data is stored locally on your device until you sign in.</span>
-        </div>
-        <button onClick={() => openSignIn()} className="tap-target" style={{ height: "48px", padding: "0 28px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: "pointer" }}>
-          Sign In
-        </button>
-
-        {/* Show local history even when not signed in */}
-        {visibleHistory.length > 0 && (
-          <div style={{ marginTop: "40px", textAlign: "left" }}>
-            <div style={{ fontSize: "13px", fontWeight: 700, color: "#7d8fa8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>Recent Diagnoses</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {visibleHistory.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => onOpenDiagnosis(item)}
-                  style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "10px", padding: "12px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
-                >
-                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: VERDICT_DOT[item.verdict] ?? "#7d8fa8", flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: "14px", fontWeight: 600, color: "#dce8f5" }}>{item.year} {item.make} {item.model}</div>
-                    <div style={{ fontSize: "12px", color: "#7d8fa8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.issue}</div>
-                  </div>
-                  <div style={{ fontSize: "11px", color: "#4a5c72", flexShrink: 0 }}>{formatDate(item.date)}</div>
-                </button>
-              ))}
-            </div>
-            <p style={{ textAlign: "center", fontSize: "12px", color: "#4a5c72", marginTop: "12px" }}>
-              <button onClick={onRequestSignIn} style={{ color: "#4a9eff", backgroundColor: "transparent", border: "none", cursor: "pointer", fontSize: "12px", padding: 0 }}>Sign in</button>
-              {" to sync across devices"}
-            </p>
+      <div className="view-enter" style={{ position: "relative", minHeight: "100dvh", overflow: "hidden" }}>
+        {/* Blurred fake preview */}
+        <div style={{ filter: "blur(5px)", pointerEvents: "none", userSelect: "none", padding: "16px", opacity: 0.7 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+            <div style={{ height: "20px", width: "80px", backgroundColor: "#172134", borderRadius: "4px" }} />
+            <div style={{ height: "32px", width: "80px", backgroundColor: "#101822", borderRadius: "8px" }} />
           </div>
-        )}
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "12px", padding: "16px", marginBottom: "8px", opacity: 1 - i * 0.25 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ height: "14px", width: i === 0 ? "160px" : i === 1 ? "130px" : "110px", backgroundColor: "#172134", borderRadius: "4px", marginBottom: "6px" }} />
+                  <div style={{ height: "11px", width: "70px", backgroundColor: "#101822", borderRadius: "4px" }} />
+                </div>
+                <div style={{ height: "32px", width: "48px", backgroundColor: "#4a9eff", borderRadius: "8px", opacity: 0.4 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Gate overlay */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(6,8,16,0.2) 0%, rgba(6,8,16,0.92) 35%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 24px 80px", textAlign: "center" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/carlos/carlos-waving.webp" alt="Carlos" style={{ height: "120px", width: "auto", margin: "0 auto 16px", display: "block", filter: "drop-shadow(0 6px 20px rgba(59,130,246,0.3)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }} />
+          <div style={{ fontSize: "20px", fontWeight: 700, color: "#dce8f5", marginBottom: "8px" }}>Your garage is waiting</div>
+          <div style={{ fontSize: "14px", color: "#7d8fa8", marginBottom: "28px", lineHeight: 1.6 }}>
+            Save your cars, track repairs, and get<br />Carlos to remember your car every time.
+          </div>
+          <button onClick={() => signInWithGoogle()} className="tap-target" style={{ height: "50px", padding: "0 32px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "12px", cursor: "pointer", boxShadow: "0 4px 20px rgba(74,158,255,0.35)" }}>
+            Sign In to Unlock
+          </button>
+
+          {/* Show local history if any */}
+          {visibleHistory.length > 0 && (
+            <div style={{ marginTop: "36px", textAlign: "left", width: "100%", maxWidth: "400px" }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "#4a5c72", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>Recent Diagnoses</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {visibleHistory.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => onOpenDiagnosis(item)}
+                    style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "rgba(11,16,25,0.8)", border: "1px solid #1e2329", borderRadius: "10px", padding: "10px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
+                  >
+                    <div style={{ width: "7px", height: "7px", borderRadius: "50%", backgroundColor: VERDICT_DOT[item.verdict] ?? "#7d8fa8", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: "#dce8f5" }}>{item.year} {item.make} {item.model}</div>
+                      <div style={{ fontSize: "11px", color: "#7d8fa8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.issue}</div>
+                    </div>
+                    <div style={{ fontSize: "10px", color: "#4a5c72", flexShrink: 0 }}>{formatDate(item.date)}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="view-enter" style={{ padding: "16px 16px 0", overflowX: "hidden", boxSizing: "border-box" }}>
+    <div
+      className="view-enter"
+      style={{ padding: "16px 16px 0", overflowX: "hidden", boxSizing: "border-box", transform: pullDistance ? `translateY(${pullDistance}px)` : undefined, transition: pullDistance ? "none" : "transform 200ms ease" }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull-to-refresh indicator */}
+      {(pullDistance > 0 || refreshing) && (
+        <div aria-live="polite" style={{ position: "absolute", top: "-34px", left: 0, right: 0, textAlign: "center", fontSize: "12px", color: "#7d8fa8" }}>
+          {refreshing ? "Refreshing…" : pullDistance > 70 ? "Release to refresh" : "Pull to refresh"}
+        </div>
+      )}
+
+      {/* Carlos summary panel */}
+      {!loading && (
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "12px", padding: "12px 14px", marginBottom: "16px", boxSizing: "border-box" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/carlos/carlos-thumbsup.webp" alt="" aria-hidden="true" style={{ height: "48px", width: "auto", filter: "drop-shadow(0 2px 8px rgba(59,130,246,0.2))", flexShrink: 0 }} />
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: "14px", fontWeight: 700, color: "#dce8f5" }}>Your Garage</div>
+            <div style={{ fontSize: "12px", color: "#4a5c72" }}>
+              {cars.length > 0
+                ? `${cars.length} car${cars.length !== 1 ? "s" : ""} saved · Carlos has your back`
+                : "Add your first car and Carlos will remember it"}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
         <span style={{ fontSize: "16px", fontWeight: 700, color: "#dce8f5" }}>My Cars</span>
         <button
           onClick={() => setShowAddForm((v) => !v)}
           className="tap-target"
-          style={{ fontSize: "13px", fontWeight: 600, padding: "6px 14px", borderRadius: "8px", border: "1px solid #3b82f6", color: "#4a9eff", backgroundColor: "transparent", cursor: "pointer" }}
+          style={{ fontSize: "13px", fontWeight: 600, padding: "6px 14px", borderRadius: "8px", border: "1px solid #4a9eff", color: "#4a9eff", backgroundColor: "transparent", cursor: "pointer" }}
         >
           {showAddForm ? "Cancel" : "+ Add Car"}
         </button>
@@ -277,14 +352,23 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
         <div style={{ textAlign: "center", padding: "48px 24px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/carlos/carlos-waving.png"
+            src="/carlos/carlos-waving.webp"
             alt="Carlos waving"
             style={{ height: "140px", width: "auto", margin: "0 auto 20px", display: "block", filter: "drop-shadow(0 6px 20px rgba(59,130,246,0.25)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }}
           />
           <h3 style={{ color: "white", fontSize: "18px", fontWeight: 600, margin: "0 0 8px" }}>No cars yet</h3>
-          <p style={{ color: "#6b7280", fontSize: "14px", margin: "0 0 24px", lineHeight: 1.6 }}>
+          <p style={{ color: "#7d8fa8", fontSize: "14px", margin: "0 0 24px", lineHeight: 1.6 }}>
             Add your first car and Carlos will<br />remember it every time you&apos;re back.
           </p>
+          {!showAddForm && (
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="tap-target btn-primary"
+              style={{ height: "50px", padding: "0 28px", fontWeight: 700, fontSize: "15px", borderRadius: "12px", cursor: "pointer" }}
+            >
+              + Add Your First Car
+            </button>
+          )}
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>

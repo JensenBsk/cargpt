@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { redirectToCheckout } from "@/hooks/useSubscription";
+import { canShowWebCheckout } from "@/lib/native";
+import { useToast } from "@/contexts/ToastContext";
 
 const PRO_MONTHLY = process.env.NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PRICE_ID ?? "";
 const PRO_ANNUAL = process.env.NEXT_PUBLIC_STRIPE_PRO_ANNUAL_PRICE_ID ?? "";
@@ -12,8 +14,18 @@ const ENT_ANNUAL = process.env.NEXT_PUBLIC_STRIPE_ENTHUSIAST_ANNUAL_PRICE_ID ?? 
 export default function PricingPage() {
   const [annual, setAnnual] = useState(true);
   const [loading, setLoading] = useState<string | null>(null);
+  // App Store guideline 3.1.1: never link to external checkout from the
+  // native shell. Until RevenueCat IAP ships, native users see a notice
+  // instead of Stripe checkout.
+  const [webCheckout, setWebCheckout] = useState(true);
+  const { toast } = useToast();
+  useEffect(() => { setWebCheckout(canShowWebCheckout()); }, []);
 
   async function handleUpgrade(tier: "pro" | "enthusiast") {
+    if (!webCheckout) {
+      toast("Subscriptions in the app are coming soon.");
+      return;
+    }
     const priceId = tier === "pro"
       ? (annual ? PRO_ANNUAL : PRO_MONTHLY)
       : (annual ? ENT_ANNUAL : ENT_MONTHLY);

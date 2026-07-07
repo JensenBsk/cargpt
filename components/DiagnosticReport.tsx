@@ -4,8 +4,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Wrench, DollarSign, AlertTriangle, Send, MessageCircle,
   Image as ImageIcon, MapPin, Star, AlertOctagon, Zap, ChevronDown,
-  Clock, CheckCircle2, Loader2, X,
+  Clock, CheckCircle2, Loader2, X, Check,
 } from "lucide-react";
+import { hapticImpact } from "@/lib/native";
 import type { Diagnostic, ChatMessage, ClarifyQuestion } from "@/types/diagnostic";
 import type { RankedCause, DiagnosticStep, CostEstimate, PartNeeded } from "@/types/diagnostic";
 import { buildPartLinks } from "@/lib/partsMapping";
@@ -42,7 +43,7 @@ const LIKELIHOOD_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 const ACCENT_BORDERS: Record<string, string> = {
-  "Most Likely": "#3b82f6",
+  "Most Likely": "#4a9eff",
   "Likely": "#1e2433",
   "Possible": "#1e2433",
   "Unlikely but serious": "#f59e0b",
@@ -102,9 +103,15 @@ function AnswerCard({ topCause, firstStep, topEst, hasAudio, eli5Mode, eli5Text,
             {topCause.modRelated && (
               <span style={{ backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "4px" }}>MOD</span>
             )}
+            {topCause.confidence !== undefined && (
+              <span style={{ backgroundColor: "rgba(74,158,255,0.12)", border: "1px solid rgba(74,158,255,0.3)", color: "#4a9eff", fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" as const, fontFamily: "var(--font-jetbrains), monospace" }}>{topCause.confidence}%</span>
+            )}
             <span style={{ backgroundColor: lhColor.bg, color: lhColor.text, fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" as const }}>{topCause.likelihood}</span>
           </div>
         </div>
+        {topCause.evidence && (
+          <p style={{ margin: "5px 0 0", fontSize: "12px", color: "#4a5c72", lineHeight: 1.4, fontStyle: "italic" }}>{topCause.evidence}</p>
+        )}
         {eli5Mode && eli5Text && (
           <div style={{ backgroundColor: "rgba(74,158,255,0.06)", border: "1px solid rgba(74,158,255,0.15)", borderRadius: "8px", padding: "10px 12px", marginTop: "10px" }}>
             <p style={{ margin: 0, fontSize: "13px", color: "#7d8fa8", lineHeight: 1.6 }}>{eli5Text}</p>
@@ -165,13 +172,13 @@ function SafetyCard({ verdict, reason }: { verdict: "STOP" | "CAUTION" | "OKAY";
           <span style={{ fontSize: "13px", color: "#4a5c72", marginLeft: "8px" }}>{reason}</span>
         </div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/carlos/carlos-thumbsup.png" alt="" aria-hidden="true" style={{ position: "absolute", right: "8px", bottom: "0", height: "72px", width: "auto", filter: "drop-shadow(0 4px 12px rgba(34,197,94,0.3))" }} />
+        <img src="/carlos/carlos-thumbsup.webp" alt="" aria-hidden="true" style={{ position: "absolute", right: "8px", bottom: "0", height: "72px", width: "auto", filter: "drop-shadow(0 4px 12px rgba(34,197,94,0.3))" }} />
       </div>
     );
   }
   const cfg = verdict === "STOP"
-    ? { bg: "#120608", border: "#2d0f0f", accent: "#ef4444", label: "STOP DRIVING", reasonColor: "#fca5a5", pulseClass: "badge-pulse-stop", img: "/carlos/carlos-warning.png", glow: "rgba(239,68,68,0.3)" }
-    : { bg: "#120d02", border: "#2d2200", accent: "#f59e0b", label: "DRIVE WITH CAUTION", reasonColor: "#fcd34d", pulseClass: "badge-pulse-caution", img: "/carlos/carlos-thinking.png", glow: "rgba(245,158,11,0.3)" };
+    ? { bg: "#120608", border: "#2d0f0f", accent: "#ef4444", label: "STOP DRIVING", reasonColor: "#fca5a5", pulseClass: "badge-pulse-stop", img: "/carlos/carlos-warning.webp", glow: "rgba(239,68,68,0.3)" }
+    : { bg: "#120d02", border: "#2d2200", accent: "#f59e0b", label: "DRIVE WITH CAUTION", reasonColor: "#fcd34d", pulseClass: "badge-pulse-caution", img: "/carlos/carlos-thinking.webp", glow: "rgba(245,158,11,0.3)" };
   return (
     <div style={{ position: "relative", backgroundColor: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: "12px", overflow: "hidden" }}>
       <div style={{ borderBottom: `1px solid ${cfg.border}`, padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px" }}>
@@ -224,6 +231,7 @@ export default function DiagnosticReport({
 
   // Steps accordion (for full diagnosis section)
   const [expandedStep, setExpandedStep] = useState<number | null>(0);
+  const [doneSteps, setDoneSteps] = useState<Set<number>>(new Set());
   // Causes progressive disclosure
   const [expandedCauseIdx, setExpandedCauseIdx] = useState<number | null>(null);
   // ELI5 mode
@@ -495,7 +503,7 @@ export default function DiagnosticReport({
   }, [chatInput, chatLoading, chatHistory, year, make, model, currentDiagnosis, setChatHistory]);
 
   return (
-    <div style={{ minHeight: "100dvh", backgroundColor: "#060810", overflowX: "hidden" }}>
+    <div className="result-enter" style={{ minHeight: "100dvh", backgroundColor: "#060810", overflowX: "hidden" }}>
 
       {/* Sticky header */}
       <div style={{ position: "sticky", top: 0, zIndex: 10, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "rgba(6,8,16,0.96)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid #172134", boxSizing: "border-box" }}>
@@ -519,7 +527,7 @@ export default function DiagnosticReport({
         </div>
       )}
 
-      <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "10px", width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
+      <div role="region" aria-label="Diagnosis result" style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "10px", width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
 
         {/* 1. Safety verdict */}
         <SafetyCard verdict={verdict} reason={currentDiagnosis.driveSafety.reason} />
@@ -534,6 +542,11 @@ export default function DiagnosticReport({
             </div>
           </div>
         )}
+
+        {/* AI disclaimer — required on every diagnosis result */}
+        <p style={{ margin: 0, fontSize: "12px", color: "#7d8fa8", lineHeight: 1.55, padding: "10px 14px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px" }}>
+          Carlos provides AI-generated estimates for informational purposes only. Always consult a qualified mechanic before making repair decisions.
+        </p>
 
         {/* Refined pill */}
         {isRefined && (
@@ -560,7 +573,7 @@ export default function DiagnosticReport({
           <button
             onClick={() => setShowFullDiagnosis(v => !v)}
             className="tap-target"
-            style={{ flex: 1, height: "44px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", color: "#7d8fa8", fontWeight: 600, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+            style={{ flex: 1, height: "44px", backgroundColor: showFullDiagnosis ? "#0b1019" : "#4a9eff", border: showFullDiagnosis ? "1px solid #172134" : "none", borderRadius: "10px", color: showFullDiagnosis ? "#7d8fa8" : "white", fontWeight: 700, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", boxShadow: showFullDiagnosis ? "none" : "0 4px 14px rgba(59,130,246,0.35)" }}
           >
             <ChevronDown size={14} style={{ transform: showFullDiagnosis ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }} />
             {showFullDiagnosis ? "Hide diagnosis" : "See full diagnosis"}
@@ -597,21 +610,37 @@ export default function DiagnosticReport({
                     <div key={cause.rank} style={{ backgroundColor: "#101822", border: "1px solid #172134", borderLeft: `3px solid ${accentColor}`, borderRadius: "8px", overflow: "hidden" }}>
                       <button
                         onClick={() => setExpandedCauseIdx(isOpen ? null : causeIdx)}
-                        style={{ width: "100%", padding: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", backgroundColor: "transparent", border: "none", cursor: "pointer", textAlign: "left" as const }}
+                        style={{ width: "100%", padding: "12px", display: "flex", flexDirection: "column" as const, gap: "6px", backgroundColor: "transparent", border: "none", cursor: "pointer", textAlign: "left" as const }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
-                          <span style={{ width: "22px", height: "22px", borderRadius: "6px", backgroundColor: "rgba(74,158,255,0.15)", border: "1px solid rgba(74,158,255,0.3)", color: "#4a9eff", fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{cause.rank}</span>
-                          <span style={{ fontSize: "14px", fontWeight: 600, color: "#dce8f5", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const, flex: 1 }}>{cause.cause}</span>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", width: "100%" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
+                            <span style={{ width: "22px", height: "22px", borderRadius: "6px", backgroundColor: "rgba(74,158,255,0.15)", border: "1px solid rgba(74,158,255,0.3)", color: "#4a9eff", fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{cause.rank}</span>
+                            <span style={{ fontSize: "14px", fontWeight: 600, color: "#dce8f5", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const, flex: 1 }}>{cause.cause}</span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
+                            {cause.modRelated && <span style={{ backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "4px" }}>MOD</span>}
+                            <span style={{ backgroundColor: colors.bg, color: colors.text, fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" as const }}>{cause.likelihood}</span>
+                            <ChevronDown size={13} color="#4a5c72" style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms", flexShrink: 0 }} />
+                          </div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
-                          {cause.modRelated && <span style={{ backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "4px" }}>MOD</span>}
-                          <span style={{ backgroundColor: colors.bg, color: colors.text, fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" as const }}>{cause.likelihood}</span>
-                          <ChevronDown size={13} color="#4a5c72" style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms", flexShrink: 0 }} />
-                        </div>
+                        {cause.confidence !== undefined && (
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingLeft: "30px" }}>
+                            <div style={{ flex: 1, height: "3px", backgroundColor: "#172134", borderRadius: "2px", overflow: "hidden" }}>
+                              <div style={{ width: `${cause.confidence}%`, height: "100%", backgroundColor: accentColor === "#1e2433" ? "#4a5c72" : accentColor, borderRadius: "2px" }} />
+                            </div>
+                            <span style={{ fontSize: "10px", color: accentColor === "#1e2433" ? "#4a5c72" : accentColor, fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, flexShrink: 0 }}>{cause.confidence}%</span>
+                          </div>
+                        )}
                       </button>
                       {isOpen && (
                         <div style={{ padding: "0 12px 12px 42px", borderTop: "1px solid #172134" }}>
                           <p style={{ margin: "10px 0 0", fontSize: "13px", color: "#6a7e96", lineHeight: 1.6, wordBreak: "break-word" as const }}>{cause.reasoning}</p>
+                          {cause.confidenceBooster && (
+                            <div style={{ marginTop: "8px", display: "flex", gap: "6px", alignItems: "flex-start" }}>
+                              <span style={{ fontSize: "10px", fontWeight: 700, color: "#4a9eff", flexShrink: 0, marginTop: "1px", letterSpacing: "0.06em" }}>CONFIRM →</span>
+                              <span style={{ fontSize: "12px", color: "#4a9eff", lineHeight: 1.4 }}>{cause.confidenceBooster}</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -627,16 +656,31 @@ export default function DiagnosticReport({
                 {currentDiagnosis.diagnosticSteps.map((step, idx) => {
                   const isLast = idx === currentDiagnosis.diagnosticSteps.length - 1;
                   const isOpen = expandedStep === step.step - 1;
+                  const isDone = doneSteps.has(step.step);
                   return (
                     <div key={step.step} style={{ display: "flex", gap: "12px" }}>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: "14px" }}>
-                        <div style={{ width: "26px", height: "26px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, flexShrink: 0, backgroundColor: isOpen ? "#4a9eff" : "#101822", border: `1px solid ${isOpen ? "#4a9eff" : "#172134"}`, color: isOpen ? "white" : "#4a5c72" }}>{step.step}</div>
-                        {!isLast && <div style={{ width: "1px", flex: 1, minHeight: "12px", backgroundColor: "#172134", marginTop: "4px" }} />}
+                        <button
+                          onClick={() => {
+                            setDoneSteps((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(step.step)) next.delete(step.step);
+                              else { next.add(step.step); hapticImpact("light"); }
+                              return next;
+                            });
+                          }}
+                          aria-pressed={isDone}
+                          aria-label={`Mark step ${step.step} ${isDone ? "not done" : "done"}: ${step.action}`}
+                          style={{ width: "26px", height: "26px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, flexShrink: 0, cursor: "pointer", padding: 0, backgroundColor: isDone ? "#22c55e" : isOpen ? "#4a9eff" : "#101822", border: `1px solid ${isDone ? "#22c55e" : isOpen ? "#4a9eff" : "#172134"}`, color: isDone || isOpen ? "white" : "#5d7290", transition: "background-color 160ms ease, border-color 160ms ease" }}
+                        >
+                          {isDone ? <Check size={14} className="check-pop" aria-hidden="true" /> : step.step}
+                        </button>
+                        {!isLast && <div style={{ width: "1px", flex: 1, minHeight: "12px", backgroundColor: isDone ? "rgba(34,197,94,0.4)" : "#172134", marginTop: "4px" }} />}
                       </div>
                       <div style={{ flex: 1, minWidth: 0, paddingBottom: isLast ? "0" : "16px" }}>
-                        <button onClick={() => setExpandedStep(isOpen ? null : step.step - 1)} style={{ width: "100%", minHeight: "48px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "0", textAlign: "left" }}>
-                          <span style={{ fontSize: "15px", fontWeight: 600, color: "#dce8f5", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{step.action}</span>
-                          <span style={{ color: "#4a5c72", fontSize: "10px", flexShrink: 0 }}>{isOpen ? "▲" : "▼"}</span>
+                        <button onClick={() => setExpandedStep(isOpen ? null : step.step - 1)} aria-expanded={isOpen} style={{ width: "100%", minHeight: "48px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "0", textAlign: "left" }}>
+                          <span style={{ fontSize: "15px", fontWeight: 600, color: isDone ? "#5d7290" : "#dce8f5", textDecoration: isDone ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{step.action}</span>
+                          <span style={{ color: "#4a5c72", fontSize: "10px", flexShrink: 0 }} aria-hidden="true">{isOpen ? "▲" : "▼"}</span>
                         </button>
                         <Expandable open={isOpen}>
                           <div style={{ backgroundColor: "#060810", border: "1px solid #172134", borderRadius: "8px", padding: "12px", display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>

@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { rateLimit } from "@/lib/rateLimit";
+import { badRequest, validateVehicle } from "@/lib/validate";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 2 });
 
 const SYSTEM_PROMPT = `You are an automotive maintenance expert. Given a car's make, model, year, and current mileage, return a maintenance timeline as JSON.
 
@@ -44,13 +46,19 @@ Use manufacturer-recommended intervals for the specific vehicle. Some vehicles (
 export async function POST(request: Request) {
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
-      return Response.json({ error: "API key not configured" }, { status: 500 });
+      return Response.json({ error: "Service unavailable. Please try again later." }, { status: 503 });
     }
+
+    const limited = rateLimit(request, "maintenance", 15);
+    if (limited) return limited;
 
     const { year, make, model, mileage } = await request.json();
 
-    if (!year || !make || !model || !mileage) {
-      return Response.json({ error: "Missing required fields" }, { status: 400 });
+    const vehicleError = validateVehicle(year, make, model);
+    if (vehicleError) return vehicleError;
+    const miles = Number(mileage);
+    if (!Number.isFinite(miles) || miles < 0 || miles > 1_500_000) {
+      return badRequest("Enter a valid mileage.");
     }
 
     const response = await client.messages.create({

@@ -75,7 +75,7 @@ export default function FeedbackCard({ diagnosisId, year, make, model, repairLab
       <div style={{ backgroundColor: resolved ? "#0a1a0f" : "#0b1019", border: `1px solid ${resolved ? "#1a3a25" : "#172134"}`, borderRadius: "10px", padding: "20px 16px", textAlign: "center" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={resolved ? "/carlos/carlos-thumbsup.png" : "/carlos/carlos-thinking.png"}
+          src={resolved ? "/carlos/carlos-thumbsup.webp" : "/carlos/carlos-thinking.webp"}
           alt=""
           aria-hidden="true"
           style={{ height: "80px", width: "auto", margin: "0 auto 12px", display: "block", filter: `drop-shadow(0 4px 16px ${resolved ? "rgba(34,197,94,0.3)" : "rgba(59,130,246,0.25)"})` }}

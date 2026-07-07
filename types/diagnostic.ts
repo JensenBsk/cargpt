@@ -4,6 +4,9 @@ export interface RankedCause {
   reasoning: string;
   likelihood: "Most Likely" | "Likely" | "Possible" | "Unlikely but serious";
   modRelated?: boolean;
+  confidence?: number;
+  evidence?: string;
+  confidenceBooster?: string;
 }
 
 export interface DiagnosticStep {

@@ -1,16 +1,22 @@
 import { createClient } from "@/lib/supabase/server";
-import { auth } from "@clerk/nextjs/server";
+import { rateLimit } from "@/lib/rateLimit";
+import { badRequest, isOptionalString, isValidUuid } from "@/lib/validate";
 
 export async function POST(request: Request) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return Response.json({ saved: false });
   }
 
-  const { userId } = await auth();
+  const limited = rateLimit(request, "feedback", 20);
+  if (limited) return limited;
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   const { diagnosisId, resolved, actualFix } = await request.json();
 
-  if (!diagnosisId || resolved === undefined) {
-    return Response.json({ error: "Missing required fields" }, { status: 400 });
+  if (!isValidUuid(diagnosisId) || typeof resolved !== "boolean" || !isOptionalString(actualFix, 500)) {
+    return badRequest("Missing or invalid fields");
   }
 
   const record: Record<string, unknown> = {
@@ -18,11 +24,15 @@ export async function POST(request: Request) {
     resolved,
     actual_fix: actualFix || null,
   };
-  if (userId) record.user_id = userId;
+  if (user) record.user_id = user.id;
 
-  const supabase = createClient();
-  const { error } = await supabase.from("diagnosis_feedback").upsert(record);
+  const { error } = await supabase
+    .from("diagnosis_feedback")
+    .upsert(record, { onConflict: "diagnosis_id,user_id" });
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[feedback] upsert error:", error.message);
+    return Response.json({ error: "Could not save feedback" }, { status: 500 });
+  }
   return Response.json({ saved: true });
 }

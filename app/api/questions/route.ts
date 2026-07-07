@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { rateLimit } from "@/lib/rateLimit";
+import { LIMITS, badRequest, isNonEmptyString, isOptionalString, validateVehicle } from "@/lib/validate";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 2 });
 
 export async function POST(request: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -8,7 +10,15 @@ export async function POST(request: Request) {
   }
 
   try {
+    const limited = rateLimit(request, "questions", 15);
+    if (limited) return limited;
+
     const { year, make, model, issue, topCause } = await request.json();
+    const vehicleError = validateVehicle(year, make, model);
+    if (vehicleError) return vehicleError;
+    if (!isNonEmptyString(issue, LIMITS.issue) || !isOptionalString(topCause, 200)) {
+      return badRequest("Invalid input.");
+    }
 
     const prompt = `Car: ${year} ${make} ${model}
 Issue reported: ${issue}

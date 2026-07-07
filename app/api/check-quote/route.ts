@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { rateLimit } from "@/lib/rateLimit";
+import { LIMITS, badRequest, isValidImagePayload, isValidZip, validateVehicle } from "@/lib/validate";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 2 });
 
 const SYSTEM_PROMPT = `YOUR IDENTITY:
 Your name is Carlos. You are a friendly, experienced mechanic with 20+ years working on cars.
@@ -45,16 +47,27 @@ Always cite real parts cost ranges and labor hours. The negotiationScript must s
 export async function POST(request: Request) {
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
-      return Response.json({ error: "API key not configured" }, { status: 500 });
+      return Response.json({ error: "Service unavailable. Please try again later." }, { status: 503 });
     }
+
+    const limited = rateLimit(request, "check-quote", 10);
+    if (limited) return limited;
 
     const { year, make, model, quote, imageBase64, zip } = await request.json();
 
-    if (!year || !make || !model) {
-      return Response.json({ error: "Missing required fields" }, { status: 400 });
-    }
+    const vehicleError = validateVehicle(year, make, model);
+    if (vehicleError) return vehicleError;
     if (!quote?.trim() && !imageBase64) {
       return Response.json({ error: "Provide a quote (text or photo)" }, { status: 400 });
+    }
+    if (typeof quote === "string" && quote.length > LIMITS.quote) {
+      return badRequest("Quote text is too long (max 4000 characters).");
+    }
+    if (!isValidImagePayload(imageBase64)) {
+      return badRequest("Photo is too large or invalid. Try a smaller photo.");
+    }
+    if (zip !== undefined && zip !== null && zip !== "" && !isValidZip(zip)) {
+      return badRequest("Enter a valid 5-digit ZIP code.");
     }
 
     const hasImage = !!imageBase64;
@@ -87,7 +100,8 @@ export async function POST(request: Request) {
     const block = response.content[0];
     if (block.type !== "text") throw new Error("Unexpected response type");
 
-    const parsed = JSON.parse(block.text);
+    const raw = block.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
+    const parsed = JSON.parse(raw);
     if (parsed.error) return Response.json({ error: parsed.error }, { status: 422 });
     return Response.json({ analysis: parsed });
   } catch (err) {

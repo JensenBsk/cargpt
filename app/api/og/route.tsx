@@ -51,7 +51,7 @@ export async function GET(request: Request) {
         >
           {/* Brand */}
           <div style={{ display: "flex", marginBottom: "36px" }}>
-            <span style={{ fontSize: 26, fontWeight: 900, color: "#3b82f6", letterSpacing: "0.2em" }}>
+            <span style={{ fontSize: 26, fontWeight: 900, color: "#4a9eff", letterSpacing: "0.2em" }}>
               CARLOS
             </span>
           </div>
@@ -92,7 +92,7 @@ export async function GET(request: Request) {
           {/* Cost */}
           <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "auto" }}>
             <div style={{ fontSize: 18, color: "#6b7280" }}>Est. Repair:</div>
-            <div style={{ fontSize: 44, fontWeight: 800, color: "#3b82f6" }}>{topCost}</div>
+            <div style={{ fontSize: 44, fontWeight: 800, color: "#4a9eff" }}>{topCost}</div>
           </div>
 
           {/* Footer */}
@@ -106,7 +106,7 @@ export async function GET(request: Request) {
             }}
           >
             <div style={{ fontSize: 15, color: "#4b5563" }}>Get your free diagnosis → mchaniccarlos.com</div>
-            <div style={{ fontSize: 19, color: "#3b82f6", fontWeight: 700 }}>mchaniccarlos.com</div>
+            <div style={{ fontSize: 19, color: "#4a9eff", fontWeight: 700 }}>mchaniccarlos.com</div>
           </div>
         </div>
       ),
@@ -132,7 +132,7 @@ function fallbackImage() {
           fontFamily: "sans-serif",
         }}
       >
-        <span style={{ fontSize: 48, fontWeight: 900, color: "#3b82f6", letterSpacing: "0.2em" }}>
+        <span style={{ fontSize: 48, fontWeight: 900, color: "#4a9eff", letterSpacing: "0.2em" }}>
           CARLOS
         </span>
       </div>

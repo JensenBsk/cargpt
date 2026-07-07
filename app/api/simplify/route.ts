@@ -1,11 +1,19 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { rateLimit } from "@/lib/rateLimit";
+import { badRequest, isNonEmptyString } from "@/lib/validate";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 2 });
 
 export async function POST(request: Request) {
-  if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: "No API key" }, { status: 500 });
+  if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: "Service unavailable" }, { status: 503 });
   try {
+    const limited = rateLimit(request, "simplify", 15);
+    if (limited) return limited;
+
     const { whatsWrong, causeTitle, causeReasoning } = await request.json();
+    if (!isNonEmptyString(whatsWrong, 2000) || !isNonEmptyString(causeTitle, 200) || !isNonEmptyString(causeReasoning, 2000)) {
+      return badRequest("Invalid input.");
+    }
     const prompt = `Re-explain this car diagnosis as if talking to someone who has never opened a hood in their life. Use analogies. Compare car parts to things in everyday life. Max 3 sentences total. No technical terms at all.
 
 Original explanation: "${whatsWrong}"

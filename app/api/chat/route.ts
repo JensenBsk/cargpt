@@ -1,19 +1,26 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { selectModel } from "@/app/api/diagnose/route";
+import { selectModel } from "@/lib/modelSelect";
+import { rateLimit } from "@/lib/rateLimit";
+import { LIMITS, badRequest, isNonEmptyString, sanitizeHistory } from "@/lib/validate";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 2 });
 
 export async function POST(request: Request) {
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
-      return Response.json({ error: "API key not configured" }, { status: 500 });
+      return Response.json({ error: "Chat service unavailable. Please try again later." }, { status: 503 });
     }
+
+    const limited = rateLimit(request, "chat", 20);
+    if (limited) return limited;
 
     const { year, make, model, diagnosis, conversationHistory, message } = await request.json();
 
-    if (!message?.trim()) {
-      return Response.json({ error: "Missing message" }, { status: 400 });
+    if (!isNonEmptyString(message, LIMITS.message)) {
+      return badRequest("Message is missing or too long.");
     }
+    const history = sanitizeHistory(conversationHistory);
+    if (history === null) return badRequest("Invalid conversation history.");
 
     const modelId = selectModel({ followUpLength: message.length });
 
@@ -39,7 +46,7 @@ Cost estimates: ${costs}
 The user is asking a follow-up about this specific diagnosis. Answer directly and specifically — they can see the full diagnosis above. Don't repeat it back to them. Just answer what they asked. Be direct, specific, and honest like a knowledgeable mechanic friend. Use clear language, no jargon without explanation.`;
 
     const messages: Anthropic.MessageParam[] = [
-      ...(Array.isArray(conversationHistory) ? conversationHistory : []),
+      ...history,
       { role: "user", content: message },
     ];
 

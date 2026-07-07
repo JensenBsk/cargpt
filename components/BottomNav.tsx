@@ -1,7 +1,7 @@
 "use client";
 
 import { Wrench, Receipt, Car, Lock } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/contexts/AuthContext";
 
 export type AppTab = "diagnose" | "quote" | "garage";
 
@@ -17,7 +17,7 @@ const TABS: { id: AppTab; label: string; Icon: React.ElementType }[] = [
 ];
 
 export default function BottomNav({ activeTab, onChange }: Props) {
-  const { isSignedIn } = useUser();
+  const { user: isSignedIn } = useAuth();
 
   return (
     <nav
@@ -35,6 +35,7 @@ export default function BottomNav({ activeTab, onChange }: Props) {
         display: "flex",
         zIndex: 40,
       }}
+      aria-label="Main navigation"
     >
       {TABS.map(({ id, label, Icon }) => {
         const isActive = activeTab === id;
@@ -56,11 +57,13 @@ export default function BottomNav({ activeTab, onChange }: Props) {
               backgroundColor: "transparent",
               border: "none",
               cursor: "pointer",
-              color: isActive ? "white" : "#4b5563",
+              // #7d8fa8 on #060810 ≈ 7:1 — inactive tabs stay WCAG AA readable
+              color: isActive ? "white" : "#7d8fa8",
               paddingTop: "8px",
               position: "relative",
             }}
-            aria-label={label}
+            aria-label={locked ? `${label} (sign in required)` : label}
+            aria-current={isActive ? "page" : undefined}
           >
             {/* Active indicator background — subtle, not blue */}
             {isActive && (
@@ -76,7 +79,7 @@ export default function BottomNav({ activeTab, onChange }: Props) {
                 pointerEvents: "none",
               }} />
             )}
-            {locked ? <Lock size={18} /> : <Icon size={18} />}
+            {locked ? <Lock size={18} aria-hidden="true" /> : <Icon size={18} aria-hidden="true" />}
             <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.04em", position: "relative", zIndex: 1 }}>
               {label}
             </span>
@@ -92,7 +95,7 @@ export default function BottomNav({ activeTab, onChange }: Props) {
                   width: "20px",
                   height: "3px",
                   borderRadius: "2px",
-                  backgroundColor: "#3b82f6",
+                  backgroundColor: "#4a9eff",
                 }}
               />
             )}

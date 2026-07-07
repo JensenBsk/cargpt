@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Camera, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { QuoteAnalysis } from "@/types/quote";
 import { resizeImage } from "@/utils/resizeImage";
 
@@ -19,11 +19,11 @@ const VERDICT_CONFIG = {
 
 const labelStyle: React.CSSProperties = {
   display: "block",
-  fontSize: "11px",
-  fontWeight: 600,
-  color: "#7d8fa8",
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
+  fontSize: "13px",
+  fontWeight: 500,
+  color: "#8b95a8",
+  textTransform: "none",
+  letterSpacing: 0,
   marginBottom: "6px",
 };
 
@@ -122,8 +122,15 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
 
   const canSubmit = !loading && !!year && !!make && !!model && (!!quoteText.trim() || !!quoteImage);
 
+  function parseDollarAmount(s: string): number | null {
+    const n = parseInt(s.replace(/[^0-9]/g, ""));
+    return isNaN(n) ? null : n;
+  }
+
   if (result) {
     const overall = VERDICT_CONFIG[result.overallVerdict];
+    const fairLow = parseDollarAmount((result.totalFair ?? "").split("–")[0]);
+    const potentialSavings = fairLow && result.totalQuoted > fairLow ? result.totalQuoted - fairLow : null;
     return (
       <div style={{ minHeight: "100dvh", backgroundColor: "#060810", display: "flex", flexDirection: "column" }}>
         <div style={{ position: "sticky", top: 0, zIndex: 10, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#0b1019", borderBottom: "1px solid #1e2329" }}>
@@ -159,6 +166,20 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
               <span style={{ fontSize: "11px", color: "#4a5c72" }}>✓ Independent analysis — Carlos has no relationship with any mechanic or repair shop</span>
             </div>
           </div>
+
+          {/* Savings callout */}
+          {potentialSavings !== null && potentialSavings > 0 && (
+            <div style={{ backgroundColor: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "14px" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/carlos/carlos-reading.webp" alt="" aria-hidden="true" style={{ height: "52px", width: "auto", filter: "drop-shadow(0 2px 8px rgba(34,197,94,0.2))", flexShrink: 0 }} />
+              <div>
+                <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "22px", fontWeight: 800, color: "#22c55e", lineHeight: 1 }}>
+                  ${potentialSavings.toLocaleString()}+ to save
+                </div>
+                <div style={{ fontSize: "12px", color: "#4a5c72", marginTop: "3px" }}>Use the negotiation script below to push back</div>
+              </div>
+            </div>
+          )}
 
           {/* Red flags */}
           {result.redFlags.length > 0 && (
@@ -261,14 +282,13 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
       <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px 0" }}>
         <div style={{ width: "100%", maxWidth: "480px" }}>
           <div style={{ textAlign: "center", marginBottom: "24px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "6px" }}>
-              <span style={{ fontSize: "22px" }}>💰</span>
-              <h1 style={{ fontSize: "28px", fontWeight: 700, color: "#dce8f5", margin: 0, lineHeight: 1 }}>
-                Check My Quote
-              </h1>
-            </div>
-            <p style={{ color: "#7d8fa8", fontSize: "14px", margin: 0 }}>
-              Find out if your mechanic is being fair.
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/carlos/carlos-reading.webp" alt="" aria-hidden="true" style={{ height: "100px", width: "auto", margin: "0 auto 12px", display: "block", filter: "drop-shadow(0 4px 16px rgba(59,130,246,0.25)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }} />
+            <h1 style={{ fontSize: "24px", fontWeight: 700, color: "#dce8f5", margin: "0 0 6px", lineHeight: 1.15 }}>
+              Is your mechanic overcharging?
+            </h1>
+            <p style={{ color: "#7d8fa8", fontSize: "14px", margin: 0, lineHeight: 1.5 }}>
+              Paste the estimate or photograph it. Carlos flags what&apos;s fair, inflated, or a red flag.
             </p>
           </div>
 
@@ -297,7 +317,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
             </div>
 
             <div>
-              <label style={labelStyle}>Mechanic&apos;s Quote</label>
+              <label style={labelStyle}>Paste the quote</label>
               <textarea
                 value={quoteText}
                 onChange={(e) => setQuoteText(e.target.value)}
@@ -316,10 +336,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
 
             {/* Photo upload */}
             <div>
-              <label style={labelStyle}>
-                <Camera size={10} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} />
-                Photograph your quote
-              </label>
+              <label style={labelStyle}>Or photograph it</label>
               {quoteImage ? (
                 <div style={{ position: "relative" }}>
                   <div className={loading ? "photo-scanning" : ""} style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #252b34" }}>
@@ -338,10 +355,12 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
                 </div>
               ) : (
                 <label htmlFor="quote-photo-input" style={{ display: "block", cursor: resizing ? "wait" : "pointer" }}>
-                  <div style={{ border: "2px dashed #252b34", borderRadius: "10px", padding: "20px", textAlign: "center", color: "#4a5c72", fontSize: "13px", backgroundColor: "#060810" }}>
-                    <Camera size={22} color="#2d3f55" style={{ margin: "0 auto 6px", display: "block" }} />
-                    <div style={{ fontWeight: 600, marginBottom: "2px", color: "#7d8fa8" }}>{resizing ? "Resizing…" : "Tap to photograph"}</div>
-                    <div style={{ fontSize: "12px" }}>Opens camera on mobile</div>
+                  <div style={{ background: "#0a0d14", border: "1px solid #1e2433", borderRadius: "12px", padding: "28px 24px", textAlign: "center" }}>
+                    <span style={{ fontSize: "28px", display: "block", marginBottom: "8px" }}>📷</span>
+                    <p style={{ color: "#6b7280", fontSize: "14px", fontWeight: 600, margin: "0 0 4px" }}>
+                      {resizing ? "Resizing…" : "Tap to photograph your quote"}
+                    </p>
+                    <p style={{ color: "#4b5563", fontSize: "12px", margin: 0 }}>Opens camera on mobile</p>
                   </div>
                   <input
                     id="quote-photo-input"
@@ -376,7 +395,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
           form="quote-form"
           disabled={!canSubmit}
           className={loading ? "btn-shimmer" : "tap-target"}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", height: "56px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "10px", cursor: canSubmit ? "pointer" : "not-allowed", opacity: canSubmit ? 1 : 0.4 }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", height: "56px", background: "#4a9eff", color: "white", fontWeight: 700, fontSize: "15px", border: "none", borderRadius: "10px", cursor: canSubmit ? "pointer" : "not-allowed", boxShadow: "0 4px 16px rgba(59,130,246,0.3)" }}
         >
           {loading ? (quoteImage ? "Carlos is reading your quote…" : "Carlos is reading your quote…") : "Ask Carlos"}
         </button>

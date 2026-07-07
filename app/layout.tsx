@@ -1,55 +1,24 @@
 import type { Metadata } from "next";
 import { Inter, Barlow_Condensed, IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
-import Script from "next/script";
-import { ClerkProvider } from "@clerk/nextjs";
-import { dark } from "@clerk/themes";
 import Providers from "@/components/Providers";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const barlow = Barlow_Condensed({
-  variable: "--font-barlow",
-  weight: ["700", "800"],
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const ibm = IBM_Plex_Sans({
-  variable: "--font-ibm",
-  weight: ["300", "400", "500", "600", "700"],
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const jetbrains = JetBrains_Mono({
-  variable: "--font-jetbrains",
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-  display: "swap",
-});
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
+const barlow = Barlow_Condensed({ variable: "--font-barlow", weight: ["700", "800"], subsets: ["latin"], display: "swap" });
+const ibm = IBM_Plex_Sans({ variable: "--font-ibm", weight: ["300", "400", "500", "600", "700"], subsets: ["latin"], display: "swap" });
+const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", weight: ["400", "500", "600", "700"], subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "Carlos — Your AI Mechanic",
-  description:
-    "Describe your car problem. Carlos gives you a real diagnosis — ranked causes, step-by-step checks, and fair cost estimates. Free. No hardware needed.",
+  description: "Describe your car problem. Carlos gives you a real diagnosis in seconds.",
   metadataBase: new URL("https://mchaniccarlos.com"),
-  icons: {
-    icon: [
-      { url: "/carlos-icon.png", type: "image/png" },
-    ],
-    apple: "/carlos-icon.png",
-  },
+  icons: { icon: [{ url: "/carlos-icon.png", type: "image/png" }], apple: "/carlos-icon.png" },
   openGraph: {
     title: "Carlos — Your AI Mechanic",
     description: "Get a real car diagnosis in seconds. Free.",
     url: "https://mchaniccarlos.com",
     siteName: "Mechanic Carlos",
-    images: ["/og-image.png"],
   },
   twitter: {
     card: "summary_large_image",
@@ -58,34 +27,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider
-      appearance={{ baseTheme: dark, variables: { colorPrimary: "#4a9eff", colorBackground: "#060810", colorInputBackground: "#101822", colorText: "#dce8f5" } }}
-    >
-      <html
-        lang="en"
-        className={`${inter.variable} ${barlow.variable} ${ibm.variable} ${jetbrains.variable} h-full antialiased`}
-      >
-        <body
-          className="min-h-full flex flex-col"
-          style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}
-          suppressHydrationWarning
-        >
-          {process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID && (
-            <Script
-              src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
-              defer
-              strategy="lazyOnload"
-            />
-          )}
-          <Providers>{children}</Providers>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" className={`${inter.variable} ${barlow.variable} ${ibm.variable} ${jetbrains.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <a href="#main-content" className="skip-link">Skip to main content</a>
+        <Providers>{children}</Providers>
+        <Analytics />
+      </body>
+    </html>
   );
 }
