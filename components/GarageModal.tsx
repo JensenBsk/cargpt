@@ -91,7 +91,7 @@ export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: P
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: "560px", backgroundColor: "#0b1019", border: "1px solid #172134", borderTop: "1px solid #252b34", borderRadius: "16px 16px 0 0", padding: "20px 16px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", maxHeight: "85dvh", overflowY: "auto" }}
+        style={{ width: "100%", maxWidth: "560px", backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderTop: "1px solid #252b34", borderRadius: "16px 16px 0 0", padding: "20px 16px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", maxHeight: "85dvh", overflowY: "auto" }}
       >
         <div style={{ width: "32px", height: "4px", backgroundColor: "#252b34", borderRadius: "2px", margin: "0 auto 20px" }} />
 
@@ -100,7 +100,7 @@ export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: P
           {isSignedIn && (
             <button
               onClick={() => setShowAddForm((v) => !v)}
-              style={{ fontSize: "13px", fontWeight: 600, padding: "6px 12px", borderRadius: "8px", border: "1px solid #4a9eff", color: "#4a9eff", backgroundColor: "transparent", cursor: "pointer" }}
+              style={{ fontSize: "13px", fontWeight: 600, padding: "6px 12px", borderRadius: "8px", border: "1px solid var(--accent)", color: "var(--accent)", backgroundColor: "transparent", cursor: "pointer" }}
             >
               {showAddForm ? "Cancel" : "+ Add Car"}
             </button>
@@ -114,7 +114,7 @@ export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: P
             <div style={{ fontSize: "13px", color: "#6b7280", marginBottom: "20px" }}>Save your cars and see your diagnosis history</div>
             <button
               onClick={() => { onClose(); onRequestSignIn(); }}
-              style={{ height: "44px", padding: "0 24px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer" }}
+              style={{ height: "44px", padding: "0 24px", backgroundColor: "var(--accent)", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer" }}
             >
               Sign In
             </button>
@@ -139,12 +139,12 @@ export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: P
                   <button
                     type="button"
                     onClick={() => setForm((f) => ({ ...f, has_tune: !f.has_tune }))}
-                    style={{ width: "40px", height: "22px", borderRadius: "11px", backgroundColor: form.has_tune ? "#4a9eff" : "#1a1e25", border: `1px solid ${form.has_tune ? "#4a9eff" : "#252b34"}`, position: "relative", cursor: "pointer", flexShrink: 0 }}
+                    style={{ width: "40px", height: "22px", borderRadius: "11px", backgroundColor: form.has_tune ? "var(--accent)" : "#1a1e25", border: `1px solid ${form.has_tune ? "var(--accent)" : "#252b34"}`, position: "relative", cursor: "pointer", flexShrink: 0 }}
                   >
                     <div style={{ position: "absolute", top: "2px", left: form.has_tune ? "18px" : "2px", width: "16px", height: "16px", borderRadius: "50%", backgroundColor: "white", transition: "left 150ms ease" }} />
                   </button>
                 </div>
-                <button type="submit" disabled={saving || !form.year || !form.make || !form.model} style={{ height: "44px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "14px", border: "none", borderRadius: "8px", cursor: "pointer", opacity: saving || !form.year || !form.make || !form.model ? 0.55 : 1 }}>
+                <button type="submit" disabled={saving || !form.year || !form.make || !form.model} style={{ height: "44px", backgroundColor: "var(--accent)", color: "white", fontWeight: 600, fontSize: "14px", border: "none", borderRadius: "8px", cursor: "pointer", opacity: saving || !form.year || !form.make || !form.model ? 0.55 : 1 }}>
                   {saving ? "Saving..." : "Save Car"}
                 </button>
               </form>
@@ -180,7 +180,7 @@ export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: P
                           onSelectCar({ year: String(car.year), make: car.make, model: car.model, mods: car.mods || "", hasTune: car.has_tune });
                           onClose();
                         }}
-                        style={{ fontSize: "13px", fontWeight: 600, padding: "6px 12px", borderRadius: "6px", border: "none", backgroundColor: "#4a9eff", color: "white", cursor: "pointer" }}
+                        style={{ fontSize: "13px", fontWeight: 600, padding: "6px 12px", borderRadius: "6px", border: "none", backgroundColor: "var(--accent)", color: "white", cursor: "pointer" }}
                       >
                         Use
                       </button>

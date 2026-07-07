@@ -26,16 +26,16 @@ interface Props {
 type Phase = "idle" | "connecting" | "reading" | "connected" | "error";
 
 const S = {
-  surface: "#0b1019",
-  surface2: "#101822",
-  border: "#172134",
-  text: "#dce8f5",
-  textSec: "#7d8fa8",
+  surface: "var(--surface)",
+  surface2: "var(--surface-2)",
+  border: "var(--border)",
+  text: "var(--text)",
+  textSec: "var(--text-2)",
   textMuted: "#5d7290",
-  accent: "#4a9eff",
-  red: "#ef4444",
-  amber: "#f59e0b",
-  green: "#22c55e",
+  accent: "var(--accent)",
+  red: "var(--red)",
+  amber: "var(--amber)",
+  green: "var(--green)",
   mono: "var(--font-jetbrains), monospace",
 };
 

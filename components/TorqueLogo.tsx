@@ -20,7 +20,7 @@ export default function TorqueLogo({
             fontSize: `${wordmarkSize}px`,
             fontWeight: 700,
             letterSpacing: "0.12em",
-            color: "#ffffff",
+            color: "var(--text)",
             lineHeight: 1,
             userSelect: "none",
           }}

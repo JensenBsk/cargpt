@@ -80,7 +80,7 @@ export default function ErrorCard({ type, onRetry, onSecondary }: ErrorCardProps
     <div style={{
       backgroundColor: "#0f0a00",
       border: "1px solid #2d1f00",
-      borderLeft: "3px solid #f59e0b",
+      borderLeft: "3px solid var(--amber)",
       borderRadius: "10px",
       padding: "14px 16px",
       display: "flex",
@@ -109,7 +109,7 @@ export default function ErrorCard({ type, onRetry, onSecondary }: ErrorCardProps
               style={{
                 height: "36px",
                 padding: "0 16px",
-                backgroundColor: "#f59e0b",
+                backgroundColor: "var(--amber)",
                 color: "white",
                 fontWeight: 600,
                 fontSize: "13px",
@@ -132,7 +132,7 @@ export default function ErrorCard({ type, onRetry, onSecondary }: ErrorCardProps
                 color: "#6b7280",
                 fontWeight: 500,
                 fontSize: "13px",
-                border: "1px solid #1c2a3e",
+                border: "1px solid var(--border-muted)",
                 borderRadius: "8px",
                 cursor: "pointer",
               }}

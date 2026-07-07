@@ -28,10 +28,10 @@ export default function BottomNav({ activeTab, onChange }: Props) {
         right: 0,
         height: "calc(60px + env(safe-area-inset-bottom, 0px))",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        backgroundColor: "rgba(6,8,16,0.96)",
+        backgroundColor: "var(--header-bg)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
-        borderTop: "1px solid #172134",
+        borderTop: "1px solid var(--border)",
         display: "flex",
         zIndex: 40,
       }}
@@ -58,7 +58,7 @@ export default function BottomNav({ activeTab, onChange }: Props) {
               border: "none",
               cursor: "pointer",
               // #7d8fa8 on #060810 ≈ 7:1 — inactive tabs stay WCAG AA readable
-              color: isActive ? "white" : "#7d8fa8",
+              color: isActive ? "var(--text)" : "var(--text-2)",
               paddingTop: "8px",
               position: "relative",
             }}
@@ -75,7 +75,7 @@ export default function BottomNav({ activeTab, onChange }: Props) {
                 width: "44px",
                 height: "36px",
                 borderRadius: "10px",
-                backgroundColor: "rgba(255,255,255,0.05)",
+                backgroundColor: "rgba(125,143,168,0.12)",
                 pointerEvents: "none",
               }} />
             )}
@@ -95,7 +95,7 @@ export default function BottomNav({ activeTab, onChange }: Props) {
                   width: "20px",
                   height: "3px",
                   borderRadius: "2px",
-                  backgroundColor: "#4a9eff",
+                  backgroundColor: "var(--accent)",
                 }}
               />
             )}

@@ -7,16 +7,16 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div style={{ minHeight: "100dvh", backgroundColor: "#060810", color: "#dce8f5", padding: "48px 24px 80px", fontFamily: "var(--font-ibm), system-ui, sans-serif" }}>
+    <div style={{ minHeight: "100dvh", backgroundColor: "var(--bg)", color: "var(--text)", padding: "48px 24px 80px", fontFamily: "var(--font-ibm), system-ui, sans-serif" }}>
       <div style={{ maxWidth: "640px", margin: "0 auto" }}>
-        <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#4a9eff", textDecoration: "none", marginBottom: "32px" }}>
+        <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "var(--accent)", textDecoration: "none", marginBottom: "32px" }}>
           ← Back to Carlos
         </a>
 
-        <h1 style={{ fontSize: "28px", fontWeight: 700, color: "#dce8f5", marginBottom: "8px", marginTop: "0" }}>
+        <h1 style={{ fontSize: "28px", fontWeight: 700, color: "var(--text)", marginBottom: "8px", marginTop: "0" }}>
           Carlos Privacy Policy
         </h1>
-        <p style={{ fontSize: "13px", color: "#4a5c72", marginBottom: "40px" }}>
+        <p style={{ fontSize: "13px", color: "var(--text-3)", marginBottom: "40px" }}>
           Last updated: May 2026
         </p>
 
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="What We Don't Do">
-          <ul style={{ margin: "0", paddingLeft: "20px", lineHeight: 2, color: "#7d8fa8", fontSize: "15px" }}>
+          <ul style={{ margin: "0", paddingLeft: "20px", lineHeight: 2, color: "var(--text-2)", fontSize: "15px" }}>
             <li>We never sell your personal data to third parties</li>
             <li>Your diagnosis data is used solely to provide you with the service and improve accuracy over time</li>
             <li>We do not use your data to train AI models without your consent</li>
@@ -85,7 +85,7 @@ export default function PrivacyPage() {
 
         <Section title="Your Rights">
           To delete your account and all associated data, contact us at{" "}
-          <a href="mailto:mcchaniccarlossupport@gmail.com" style={{ color: "#4a9eff" }}>
+          <a href="mailto:mcchaniccarlossupport@gmail.com" style={{ color: "var(--accent)" }}>
             mcchaniccarlossupport@gmail.com
           </a>
           . You also have the right to access, correct, or export the personal data we hold about you.
@@ -105,7 +105,7 @@ export default function PrivacyPage() {
 
         <Section title="Contact">
           Questions or data requests? Email us at{" "}
-          <a href="mailto:mcchaniccarlossupport@gmail.com" style={{ color: "#4a9eff" }}>
+          <a href="mailto:mcchaniccarlossupport@gmail.com" style={{ color: "var(--accent)" }}>
             mcchaniccarlossupport@gmail.com
           </a>
           .
@@ -118,10 +118,10 @@ export default function PrivacyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: "36px" }}>
-      <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#dce8f5", marginBottom: "12px", marginTop: "0" }}>
+      <h2 style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)", marginBottom: "12px", marginTop: "0" }}>
         {title}
       </h2>
-      <div style={{ fontSize: "15px", color: "#7d8fa8", lineHeight: 1.7 }}>
+      <div style={{ fontSize: "15px", color: "var(--text-2)", lineHeight: 1.7 }}>
         {children}
       </div>
     </div>
@@ -131,7 +131,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Subsection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: "16px" }}>
-      <div style={{ fontSize: "13px", fontWeight: 600, color: "#dce8f5", marginBottom: "4px" }}>{title}</div>
+      <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>{title}</div>
       <div>{children}</div>
     </div>
   );

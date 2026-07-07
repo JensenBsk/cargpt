@@ -13,16 +13,16 @@ interface Props {
 }
 
 const VERDICT_CONFIG = {
-  FAIR: { bg: "rgba(34,197,94,0.12)", border: "#1e3a28", text: "#22c55e", label: "FAIR" },
-  HIGH: { bg: "rgba(245,158,11,0.12)", border: "#3a2a00", text: "#f59e0b", label: "HIGH" },
-  RED_FLAG: { bg: "rgba(239,68,68,0.12)", border: "#3a1515", text: "#ef4444", label: "RED FLAG" },
+  FAIR: { bg: "rgba(34,197,94,0.12)", border: "#1e3a28", text: "var(--green)", label: "FAIR" },
+  HIGH: { bg: "rgba(245,158,11,0.12)", border: "#3a2a00", text: "var(--amber)", label: "HIGH" },
+  RED_FLAG: { bg: "rgba(239,68,68,0.12)", border: "#3a1515", text: "var(--red)", label: "RED FLAG" },
 };
 
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: "13px",
   fontWeight: 500,
-  color: "#7d8fa8",
+  color: "var(--text-2)",
   textTransform: "none",
   letterSpacing: 0,
   marginBottom: "6px",
@@ -34,10 +34,10 @@ const fieldStyle: React.CSSProperties = {
   height: "48px",
   padding: "0 12px",
   fontSize: "16px",
-  backgroundColor: "#101822",
-  border: "1px solid #172134",
+  backgroundColor: "var(--surface-2)",
+  border: "1px solid var(--border)",
   borderRadius: "8px",
-  color: "#dce8f5",
+  color: "var(--text)",
   boxSizing: "border-box",
 };
 
@@ -134,38 +134,38 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
     const fairLow = parseDollarAmount((result.totalFair ?? "").split("–")[0]);
     const potentialSavings = fairLow && result.totalQuoted > fairLow ? result.totalQuoted - fairLow : null;
     return (
-      <div style={{ minHeight: "100dvh", backgroundColor: "#060810", display: "flex", flexDirection: "column" }}>
-        <div style={{ position: "sticky", top: 0, zIndex: 10, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#0b1019", borderBottom: "1px solid #172134" }}>
+      <div style={{ minHeight: "100dvh", backgroundColor: "var(--bg)", display: "flex", flexDirection: "column" }}>
+        <div style={{ position: "sticky", top: 0, zIndex: 10, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
           <div>
-            <div style={{ fontSize: "15px", fontWeight: 600, lineHeight: 1.2, color: "#dce8f5" }}>Quote Analysis</div>
-            <div style={{ fontSize: "11px", color: "#7d8fa8", lineHeight: 1.2 }}>{year} {make} {model}</div>
+            <div style={{ fontSize: "15px", fontWeight: 600, lineHeight: 1.2, color: "var(--text)" }}>Quote Analysis</div>
+            <div style={{ fontSize: "11px", color: "var(--text-2)", lineHeight: 1.2 }}>{year} {make} {model}</div>
           </div>
-          <button onClick={clearResult} className="tap-target" style={{ fontSize: "12px", fontWeight: 500, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.2)", color: "white", backgroundColor: "transparent", cursor: "pointer" }}>
+          <button onClick={clearResult} className="tap-target" style={{ fontSize: "12px", fontWeight: 500, padding: "5px 12px", borderRadius: "20px", border: "1px solid var(--border-muted)", color: "var(--text-2)", backgroundColor: "transparent", cursor: "pointer" }}>
             ← New
           </button>
         </div>
 
         <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "12px" }}>
           {/* Total comparison */}
-          <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "16px" }}>
+          <div style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "16px" }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "10px" }}>
               <div>
-                <div style={{ fontSize: "11px", color: "#7d8fa8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Quoted</div>
-                <div style={{ fontSize: "28px", fontWeight: 700, color: "#dce8f5" }}>${result.totalQuoted}</div>
+                <div style={{ fontSize: "11px", color: "var(--text-2)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Quoted</div>
+                <div style={{ fontSize: "28px", fontWeight: 700, color: "var(--text)" }}>${result.totalQuoted}</div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: "11px", color: "#7d8fa8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Fair Range</div>
-                <div style={{ fontSize: "28px", fontWeight: 700, color: "#22c55e" }}>{result.totalFair}</div>
+                <div style={{ fontSize: "11px", color: "var(--text-2)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Fair Range</div>
+                <div style={{ fontSize: "28px", fontWeight: 700, color: "var(--green)" }}>{result.totalFair}</div>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <p style={{ margin: 0, fontSize: "13px", color: "#7d8fa8", lineHeight: 1.5, flex: 1, paddingRight: "12px" }}>{result.summary}</p>
+              <p style={{ margin: 0, fontSize: "13px", color: "var(--text-2)", lineHeight: 1.5, flex: 1, paddingRight: "12px" }}>{result.summary}</p>
               <span style={{ backgroundColor: overall.bg, border: `1px solid ${overall.border}`, color: overall.text, fontSize: "11px", fontWeight: 700, padding: "4px 10px", borderRadius: "20px", whiteSpace: "nowrap", flexShrink: 0 }}>
                 {overall.label}
               </span>
             </div>
-            <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid #172134" }}>
-              <span style={{ fontSize: "11px", color: "#4a5c72" }}>✓ Independent analysis — Carlos has no relationship with any mechanic or repair shop</span>
+            <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid var(--border)" }}>
+              <span style={{ fontSize: "11px", color: "var(--text-3)" }}>✓ Independent analysis — Carlos has no relationship with any mechanic or repair shop</span>
             </div>
           </div>
 
@@ -175,10 +175,10 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/carlos/carlos-reading.webp" alt="" aria-hidden="true" style={{ height: "52px", width: "auto", filter: "drop-shadow(0 2px 8px rgba(34,197,94,0.2))", flexShrink: 0 }} />
               <div>
-                <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "22px", fontWeight: 800, color: "#22c55e", lineHeight: 1 }}>
+                <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "22px", fontWeight: 800, color: "var(--green)", lineHeight: 1 }}>
                   ${potentialSavings.toLocaleString()}+ to save
                 </div>
-                <div style={{ fontSize: "12px", color: "#4a5c72", marginTop: "3px" }}>Use the negotiation script below to push back</div>
+                <div style={{ fontSize: "12px", color: "var(--text-3)", marginTop: "3px" }}>Use the negotiation script below to push back</div>
               </div>
             </div>
           )}
@@ -186,12 +186,12 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
           {/* Red flags */}
           {result.redFlags.length > 0 && (
             <div style={{ backgroundColor: "#150a0a", border: "1px solid #2a1515", borderRadius: "10px", padding: "14px 16px" }}>
-              <div style={{ fontSize: "11px", fontWeight: 600, color: "#7d8fa8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>🚩 Red Flags</div>
+              <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>🚩 Red Flags</div>
               <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "6px" }}>
                 {result.redFlags.map((flag, i) => (
                   <li key={i} style={{ display: "flex", gap: "8px", fontSize: "13px", lineHeight: 1.4 }}>
-                    <span style={{ color: "#ef4444", fontWeight: 700, flexShrink: 0 }}>›</span>
-                    <span style={{ color: "#dce8f5" }}>{flag}</span>
+                    <span style={{ color: "var(--red)", fontWeight: 700, flexShrink: 0 }}>›</span>
+                    <span style={{ color: "var(--text)" }}>{flag}</span>
                   </li>
                 ))}
               </ul>
@@ -199,26 +199,26 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
           )}
 
           {/* Line items */}
-          <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "14px 16px" }}>
-            <div style={{ fontSize: "11px", fontWeight: 600, color: "#7d8fa8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>🔍 Line by Line</div>
+          <div style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "14px 16px" }}>
+            <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>🔍 Line by Line</div>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {result.lineItems.map((item, i) => {
                 const vc = VERDICT_CONFIG[item.verdict];
                 return (
-                  <div key={i} style={{ backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", padding: "12px", borderLeft: `3px solid ${vc.text}` }}>
+                  <div key={i} style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "8px", padding: "12px", borderLeft: `3px solid ${vc.text}` }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "6px" }}>
-                      <span style={{ fontSize: "15px", fontWeight: 600, color: "#dce8f5" }}>{item.service}</span>
+                      <span style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)" }}>{item.service}</span>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                        <span style={{ fontSize: "15px", fontWeight: 700, color: "#dce8f5" }}>${item.quotedPrice}</span>
+                        <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>${item.quotedPrice}</span>
                         <span style={{ backgroundColor: vc.bg, color: vc.text, fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px", letterSpacing: "0.04em" }}>{vc.label}</span>
                       </div>
                     </div>
-                    <div style={{ fontSize: "12px", color: "#7d8fa8", marginBottom: "4px" }}>Fair: {item.fairRange}</div>
-                    <p style={{ margin: 0, fontSize: "13px", color: "#7d8fa8", lineHeight: 1.5, marginBottom: "8px" }}>{item.note}</p>
+                    <div style={{ fontSize: "12px", color: "var(--text-2)", marginBottom: "4px" }}>Fair: {item.fairRange}</div>
+                    <p style={{ margin: 0, fontSize: "13px", color: "var(--text-2)", lineHeight: 1.5, marginBottom: "8px" }}>{item.note}</p>
                     {item.verdict !== "FAIR" && (
-                      <div style={{ backgroundColor: "#060810", border: "1px solid #172134", borderRadius: "6px", padding: "8px 10px" }}>
-                        <span style={{ fontSize: "11px", color: "#7d8fa8", fontWeight: 600 }}>ASK: </span>
-                        <span style={{ fontSize: "13px", color: "#7d8fa8" }}>{item.askMechanic}</span>
+                      <div style={{ backgroundColor: "var(--bg)", border: "1px solid var(--border)", borderRadius: "6px", padding: "8px 10px" }}>
+                        <span style={{ fontSize: "11px", color: "var(--text-2)", fontWeight: 600 }}>ASK: </span>
+                        <span style={{ fontSize: "13px", color: "var(--text-2)" }}>{item.askMechanic}</span>
                       </div>
                     )}
                   </div>
@@ -228,13 +228,13 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
           </div>
 
           {/* Customer rights */}
-          <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", overflow: "hidden" }}>
+          <div style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
             <button onClick={() => setShowRights(v => !v)} style={{ width: "100%", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "transparent", border: "none", cursor: "pointer" }}>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: "#7d8fa8" }}>⚖️ Your rights as a customer</span>
-              <span style={{ fontSize: "12px", color: "#4a5c72" }}>{showRights ? "↑" : "↓"}</span>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-2)" }}>⚖️ Your rights as a customer</span>
+              <span style={{ fontSize: "12px", color: "var(--text-3)" }}>{showRights ? "↑" : "↓"}</span>
             </button>
             {showRights && (
-              <div style={{ padding: "0 16px 14px", borderTop: "1px solid #172134" }}>
+              <div style={{ padding: "0 16px 14px", borderTop: "1px solid var(--border)" }}>
                 <ul style={{ margin: "12px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "8px" }}>
                   {[
                     "You can always ask for an itemized invoice showing parts cost separately from labor.",
@@ -243,8 +243,8 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
                     "If labor exceeds the estimate by more than 10%, the shop should have called you first (required by law in most US states).",
                     "You never have to approve additional work discovered during a repair without a new estimate.",
                   ].map((right, i) => (
-                    <li key={i} style={{ display: "flex", gap: "8px", fontSize: "13px", color: "#7d8fa8", lineHeight: 1.5 }}>
-                      <span style={{ color: "#4a9eff", flexShrink: 0, fontWeight: 700 }}>›</span>
+                    <li key={i} style={{ display: "flex", gap: "8px", fontSize: "13px", color: "var(--text-2)", lineHeight: 1.5 }}>
+                      <span style={{ color: "var(--accent)", flexShrink: 0, fontWeight: 700 }}>›</span>
                       {right}
                     </li>
                   ))}
@@ -254,20 +254,20 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
           </div>
 
           {/* Negotiation script */}
-          <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "14px 16px" }}>
+          <div style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "14px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-              <div style={{ fontSize: "11px", fontWeight: 600, color: "#7d8fa8", textTransform: "uppercase", letterSpacing: "0.08em" }}>💬 Negotiation Script</div>
-              <span style={{ fontSize: "11px", color: "#7d8fa8" }}>Screenshot this</span>
+              <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: "0.08em" }}>💬 Negotiation Script</div>
+              <span style={{ fontSize: "11px", color: "var(--text-2)" }}>Screenshot this</span>
             </div>
-            <div style={{ backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", padding: "14px", marginBottom: "12px" }}>
-              <p style={{ margin: 0, fontSize: "14px", color: "#dce8f5", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+            <div style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "8px", padding: "14px", marginBottom: "12px" }}>
+              <p style={{ margin: 0, fontSize: "14px", color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
                 {result.negotiationScript}
               </p>
             </div>
             <button
               onClick={copyScript}
               className="tap-target"
-              style={{ width: "100%", height: "48px", backgroundColor: copied ? "#22c55e" : "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer", transition: "background-color 200ms" }}
+              style={{ width: "100%", height: "48px", backgroundColor: copied ? "var(--green)" : "var(--accent)", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer", transition: "background-color 200ms" }}
             >
               {copied ? "✓ Copied!" : "Copy Script"}
             </button>
@@ -280,16 +280,16 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
   }
 
   return (
-    <div style={{ minHeight: "100dvh", backgroundColor: "#060810", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100dvh", backgroundColor: "var(--bg)", display: "flex", flexDirection: "column" }}>
       <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px 0" }}>
         <div style={{ width: "100%", maxWidth: "480px" }}>
           <div style={{ textAlign: "center", marginBottom: "24px" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/carlos/carlos-reading.webp" alt="" aria-hidden="true" style={{ height: "100px", width: "auto", margin: "0 auto 12px", display: "block", filter: "drop-shadow(0 4px 16px rgba(59,130,246,0.25)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }} />
-            <h1 style={{ fontSize: "24px", fontWeight: 700, color: "#dce8f5", margin: "0 0 6px", lineHeight: 1.15 }}>
+            <h1 style={{ fontSize: "24px", fontWeight: 700, color: "var(--text)", margin: "0 0 6px", lineHeight: 1.15 }}>
               Is your mechanic overcharging?
             </h1>
-            <p style={{ color: "#7d8fa8", fontSize: "14px", margin: 0, lineHeight: 1.5 }}>
+            <p style={{ color: "var(--text-2)", fontSize: "14px", margin: 0, lineHeight: 1.5 }}>
               Paste the estimate or photograph it. Carlos flags what&apos;s fair, inflated, or a red flag.
             </p>
           </div>
@@ -297,11 +297,11 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
           <form
             id="quote-form"
             onSubmit={handleSubmit}
-            style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}
+            style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}
           >
             <div>
               <label style={labelStyle}>Year</label>
-              <select value={year} onChange={(e) => setYear(e.target.value)} required style={{ ...fieldStyle, color: year ? "#dce8f5" : "#7d8fa8" }}>
+              <select value={year} onChange={(e) => setYear(e.target.value)} required style={{ ...fieldStyle, color: year ? "var(--text)" : "var(--text-2)" }}>
                 <option value="">Select year</option>
                 {years.map((y) => <option key={y} value={y}>{y}</option>)}
               </select>
@@ -325,15 +325,15 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
                 onChange={(e) => setQuoteText(e.target.value)}
                 placeholder={"Oil change $89, Brake pads front $320, Brake fluid flush $180\n\nor paste line items from a written estimate"}
                 rows={4}
-                style={{ display: "block", width: "100%", minHeight: "100px", padding: "10px 12px", fontSize: "16px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", color: "#dce8f5", resize: "none", lineHeight: 1.5, boxSizing: "border-box" }}
+                style={{ display: "block", width: "100%", minHeight: "100px", padding: "10px 12px", fontSize: "16px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "8px", color: "var(--text)", resize: "none", lineHeight: 1.5, boxSizing: "border-box" }}
               />
             </div>
 
             {/* OR divider */}
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div style={{ flex: 1, height: "1px", backgroundColor: "#172134" }} />
-              <span style={{ fontSize: "11px", fontWeight: 600, color: "#2d3f55", letterSpacing: "0.08em" }}>OR</span>
-              <div style={{ flex: 1, height: "1px", backgroundColor: "#172134" }} />
+              <div style={{ flex: 1, height: "1px", backgroundColor: "var(--border)" }} />
+              <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-4)", letterSpacing: "0.08em" }}>OR</span>
+              <div style={{ flex: 1, height: "1px", backgroundColor: "var(--border)" }} />
             </div>
 
             {/* Photo upload */}
@@ -357,7 +357,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
                 </div>
               ) : (
                 <label htmlFor="quote-photo-input" style={{ display: "block", cursor: resizing ? "wait" : "pointer" }}>
-                  <div style={{ background: "#0a0d14", border: "1px solid #172134", borderRadius: "12px", padding: "28px 24px", textAlign: "center" }}>
+                  <div style={{ background: "var(--input)", border: "1px solid var(--border)", borderRadius: "12px", padding: "28px 24px", textAlign: "center" }}>
                     <span style={{ fontSize: "28px", display: "block", marginBottom: "8px" }}>📷</span>
                     <p style={{ color: "#6b7280", fontSize: "14px", fontWeight: 600, margin: "0 0 4px" }}>
                       {resizing ? "Resizing…" : "Tap to photograph your quote"}
@@ -379,25 +379,25 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
             </div>
 
             {error && (
-              <div style={{ padding: "10px 12px", backgroundColor: "#1a0a0a", border: "1px solid #3a1515", borderRadius: "8px", color: "#ef4444", fontSize: "13px" }}>
+              <div style={{ padding: "10px 12px", backgroundColor: "#1a0a0a", border: "1px solid #3a1515", borderRadius: "8px", color: "var(--red)", fontSize: "13px" }}>
                 {error}
               </div>
             )}
           </form>
 
-          <p style={{ textAlign: "center", marginTop: "12px", fontSize: "12px", color: "#7d8fa8", opacity: 0.45 }}>
+          <p style={{ textAlign: "center", marginTop: "12px", fontSize: "12px", color: "var(--text-2)", opacity: 0.45 }}>
             🔒 Your data is never stored
           </p>
         </div>
       </div>
 
-      <div style={{ padding: "12px 16px", paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))", backgroundColor: "#060810", borderTop: "1px solid #172134", flexShrink: 0 }}>
+      <div style={{ padding: "12px 16px", paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))", backgroundColor: "var(--bg)", borderTop: "1px solid var(--border)", flexShrink: 0 }}>
         <button
           type="submit"
           form="quote-form"
           disabled={!canSubmit}
           className={loading ? "btn-shimmer" : "tap-target"}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", height: "56px", background: "#4a9eff", color: "white", fontWeight: 700, fontSize: "15px", border: "none", borderRadius: "10px", cursor: canSubmit ? "pointer" : "not-allowed", boxShadow: "0 4px 16px rgba(59,130,246,0.3)" }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", height: "56px", background: "var(--accent)", color: "white", fontWeight: 700, fontSize: "15px", border: "none", borderRadius: "10px", cursor: canSubmit ? "pointer" : "not-allowed", boxShadow: "0 4px 16px rgba(59,130,246,0.3)" }}
         >
           {loading ? (quoteImage ? "Carlos is reading your quote…" : "Carlos is reading your quote…") : "Ask Carlos"}
         </button>

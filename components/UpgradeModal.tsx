@@ -47,7 +47,7 @@ export default function UpgradeModal({ reason, onClose }: Props) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: "480px", backgroundColor: "#0b1019", border: "1px solid #172134", borderTopLeftRadius: "20px", borderTopRightRadius: "20px", padding: "24px 20px", paddingBottom: "calc(24px + env(safe-area-inset-bottom, 0px))", boxSizing: "border-box" as const }}
+        style={{ width: "100%", maxWidth: "480px", backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderTopLeftRadius: "20px", borderTopRightRadius: "20px", padding: "24px 20px", paddingBottom: "calc(24px + env(safe-area-inset-bottom, 0px))", boxSizing: "border-box" as const }}
       >
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "12px" }}>
@@ -57,14 +57,14 @@ export default function UpgradeModal({ reason, onClose }: Props) {
                 <path d="M8 2l1.8 3.6H14l-3.3 2.4 1.3 4L8 9.8l-4 2.2 1.3-4L2 5.6h4.2L8 2z" fill="#4a9eff" opacity="0.7" />
               </svg>
             </div>
-            <h2 style={{ margin: 0, fontSize: "17px", fontWeight: 700, color: "#dce8f5", lineHeight: 1.3 }}>{copy.title}</h2>
+            <h2 style={{ margin: 0, fontSize: "17px", fontWeight: 700, color: "var(--text)", lineHeight: 1.3 }}>{copy.title}</h2>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#4a5c72", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", flexShrink: 0 }}>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", flexShrink: 0 }}>
             <X size={18} />
           </button>
         </div>
 
-        <p style={{ margin: "0 0 24px", fontSize: "14px", color: "#7d8fa8", lineHeight: 1.6 }}>{copy.body}</p>
+        <p style={{ margin: "0 0 24px", fontSize: "14px", color: "var(--text-2)", lineHeight: 1.6 }}>{copy.body}</p>
 
         <Link
           href="/pricing"
@@ -75,7 +75,7 @@ export default function UpgradeModal({ reason, onClose }: Props) {
 
         <button
           onClick={onClose}
-          style={{ display: "block", width: "100%", textAlign: "center", fontSize: "13px", color: "#4a5c72", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "6px 0" }}
+          style={{ display: "block", width: "100%", textAlign: "center", fontSize: "13px", color: "var(--text-3)", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "6px 0" }}
         >
           Maybe later
         </button>

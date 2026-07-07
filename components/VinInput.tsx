@@ -27,10 +27,10 @@ const fieldStyle: React.CSSProperties = {
   fontFamily: "monospace",
   letterSpacing: "0.12em",
   textTransform: "uppercase",
-  backgroundColor: "#101822",
-  border: "1px solid #172134",
+  backgroundColor: "var(--surface-2)",
+  border: "1px solid var(--border)",
   borderRadius: "10px",
-  color: "#dce8f5",
+  color: "var(--text)",
   boxSizing: "border-box",
 };
 
@@ -141,7 +141,7 @@ export default function VinInput({ onDecode }: Props) {
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        style={{ fontSize: "12px", color: "#4a9eff", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "0", textDecoration: "underline", textDecorationStyle: "dotted" }}
+        style={{ fontSize: "12px", color: "var(--accent)", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "0", textDecoration: "underline", textDecorationStyle: "dotted" }}
       >
         Or enter your VIN for exact specs →
       </button>
@@ -158,7 +158,7 @@ export default function VinInput({ onDecode }: Props) {
           placeholder="17-CHARACTER VIN"
           maxLength={17}
           autoCapitalize="characters"
-          style={{ ...fieldStyle, borderColor: error ? "#ef4444" : vin.length === 17 && decoded ? "#22c55e" : "#172134" }}
+          style={{ ...fieldStyle, borderColor: error ? "var(--red)" : vin.length === 17 && decoded ? "var(--green)" : "var(--border)" }}
         />
         <button
           type="button"
@@ -174,12 +174,12 @@ export default function VinInput({ onDecode }: Props) {
         <div style={{ fontSize: "12px", color: "#6b7280" }}>Decoding VIN…</div>
       )}
       {error && (
-        <div style={{ fontSize: "12px", color: "#ef4444" }}>{error}</div>
+        <div style={{ fontSize: "12px", color: "var(--red)" }}>{error}</div>
       )}
       {decoded && (
         <div style={{ backgroundColor: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: "8px", padding: "10px 12px", display: "flex", alignItems: "center", gap: "8px" }}>
           <Check size={14} color="#22c55e" />
-          <span style={{ fontSize: "13px", color: "#22c55e", fontWeight: 500 }}>{decoded.displayLine}</span>
+          <span style={{ fontSize: "13px", color: "var(--green)", fontWeight: 500 }}>{decoded.displayLine}</span>
         </div>
       )}
 
@@ -197,7 +197,7 @@ export default function VinInput({ onDecode }: Props) {
           <button
             type="button"
             onClick={() => { stopCamera(); setScanOpen(false); }}
-            style={{ marginTop: "20px", padding: "10px 28px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", color: "#dce8f5", fontSize: "14px", cursor: "pointer" }}
+            style={{ marginTop: "20px", padding: "10px 28px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "8px", color: "var(--text)", fontSize: "14px", cursor: "pointer" }}
           >
             Cancel
           </button>

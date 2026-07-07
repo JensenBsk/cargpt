@@ -33,7 +33,7 @@ interface Row {
   local?: LocalItem;
 }
 
-const VERDICT_DOT: Record<string, string> = { STOP: "#ef4444", CAUTION: "#f59e0b", OKAY: "#22c55e" };
+const VERDICT_DOT: Record<string, string> = { STOP: "var(--red)", CAUTION: "var(--amber)", OKAY: "var(--green)" };
 
 interface Props {
   onClose: () => void;
@@ -103,10 +103,10 @@ export default function HistorySheet({ onClose, onOpenLocal }: Props) {
         aria-label="Diagnosis history"
         className="sheet-enter"
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: "480px", maxHeight: "80dvh", overflowY: "auto", backgroundColor: "#0b1019", border: "1px solid #172134", borderTopLeftRadius: "20px", borderTopRightRadius: "20px", padding: "20px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", boxSizing: "border-box" }}
+        style={{ width: "100%", maxWidth: "480px", maxHeight: "80dvh", overflowY: "auto", backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderTopLeftRadius: "20px", borderTopRightRadius: "20px", padding: "20px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", boxSizing: "border-box" }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-          <h2 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#dce8f5", display: "flex", alignItems: "center", gap: "8px" }}>
+          <h2 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
             <Clock size={16} color="#4a9eff" aria-hidden="true" /> Diagnosis History
           </h2>
           <button
@@ -128,7 +128,7 @@ export default function HistorySheet({ onClose, onOpenLocal }: Props) {
           <div style={{ textAlign: "center", padding: "24px 16px" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/carlos/carlos-waving.webp" alt="" style={{ height: "90px", width: "auto", margin: "0 auto 12px", display: "block" }} />
-            <p style={{ margin: 0, fontSize: "14px", color: "#7d8fa8", lineHeight: 1.6 }}>
+            <p style={{ margin: 0, fontSize: "14px", color: "var(--text-2)", lineHeight: 1.6 }}>
               No diagnoses yet. Run your first one and it&apos;ll show up here.
             </p>
           </div>
@@ -140,8 +140,8 @@ export default function HistorySheet({ onClose, onOpenLocal }: Props) {
                 <>
                   <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: VERDICT_DOT[row.verdict], flexShrink: 0 }} aria-hidden="true" />
                   <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: "block", fontSize: "14px", fontWeight: 600, color: "#dce8f5" }}>{row.car}</span>
-                    <span style={{ display: "block", fontSize: "12px", color: "#7d8fa8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.issue}</span>
+                    <span style={{ display: "block", fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>{row.car}</span>
+                    <span style={{ display: "block", fontSize: "12px", color: "var(--text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.issue}</span>
                   </span>
                   <span style={{ fontSize: "11px", color: "#5d7290", flexShrink: 0 }}>
                     {new Date(row.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
@@ -153,12 +153,12 @@ export default function HistorySheet({ onClose, onOpenLocal }: Props) {
                   {clickable ? (
                     <button
                       onClick={() => { onOpenLocal(row.local as LocalItem & { diagnosis: unknown }); onClose(); }}
-                      style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%", minHeight: "56px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "10px", padding: "10px 14px", cursor: "pointer", textAlign: "left", boxSizing: "border-box" }}
+                      style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%", minHeight: "56px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "10px", padding: "10px 14px", cursor: "pointer", textAlign: "left", boxSizing: "border-box" }}
                     >
                       {inner}
                     </button>
                   ) : (
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "56px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "10px", padding: "10px 14px", boxSizing: "border-box" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "56px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "10px", padding: "10px 14px", boxSizing: "border-box" }}>
                       {inner}
                     </div>
                   )}

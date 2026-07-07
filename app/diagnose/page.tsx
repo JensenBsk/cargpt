@@ -14,12 +14,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "@/components/AuthModal";
 import ObdScanner, { type ObdResult } from "@/components/ObdScanner";
 import HistorySheet from "@/components/HistorySheet";
+import SettingsSheet from "@/components/SettingsSheet";
 import { useToast } from "@/contexts/ToastContext";
 import { resizeImage } from "@/utils/resizeImage";
 import { hapticSuccess } from "@/lib/native";
 import { track } from "@/lib/track";
 import { parsePartialJson } from "@/lib/partialJson";
-import { MapPin, Camera, Wrench, Lock, WifiOff, Bluetooth, Car, AlertTriangle, Users } from "lucide-react";
+import { MapPin, Camera, Wrench, Lock, WifiOff, Bluetooth, Car, AlertTriangle, Users, Settings } from "lucide-react";
 
 // Common symptoms as one-tap chips (mirrors how people actually describe
 // problems). Tapping toggles the phrase in the issue description.
@@ -124,7 +125,7 @@ function subscribeOnline(callback: () => void) {
 }
 
 export default function Home() {
-  const { user, available, signOut } = useAuth();
+  const { user, available } = useAuth();
   const isSignedIn = !!user;
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { toast } = useToast();
@@ -163,6 +164,7 @@ export default function Home() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showObdScanner, setShowObdScanner] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   // Audio recording
   const [isRecording, setIsRecording] = useState(false);
   const [audioTranscript, setAudioTranscript] = useState("");
@@ -638,24 +640,24 @@ export default function Home() {
     height: "48px",
     padding: "0 14px",
     fontSize: "16px",
-    backgroundColor: "#0a0d14",
-    border: "1px solid #1c2a3e",
+    backgroundColor: "var(--input)",
+    border: "1px solid var(--border-muted)",
     borderRadius: "10px",
-    color: "#dce8f5",
+    color: "var(--text)",
   };
 
   const labelStyle: React.CSSProperties = {
     display: "block",
     fontSize: "13px",
     fontWeight: 500,
-    color: "#7d8fa8",
+    color: "var(--text-2)",
     letterSpacing: 0,
     textTransform: "none" as const,
     marginBottom: "8px",
   };
 
   // Canonical CTA blue — matches --accent so this button never drifts navy
-  const buttonBg = errorType ? "#f59e0b" : "#4a9eff";
+  const buttonBg = errorType ? "var(--amber)" : "var(--accent)";
   const capMake = make ? make.charAt(0).toUpperCase() + make.slice(1) : "";
   const buttonText = loading ? `Carlos is analyzing your ${capMake || "car"}…` : errorType ? "Try Again" : "Ask Carlos";
 
@@ -682,11 +684,11 @@ export default function Home() {
         position: "sticky", top: !isOnline ? "33px" : 0, zIndex: 30,
         height: "52px", padding: "0 16px",
         alignItems: "center", justifyContent: "space-between",
-        backgroundColor: "rgba(6,8,16,0.96)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid #172134",
+        backgroundColor: "var(--header-bg)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid var(--border)",
         width: "100%", boxSizing: "border-box",
       }}>
         {activeTab === "quote" && quoteHasResult ? (
-          <button onClick={handleBackFromQuote} className="tap-target" style={{ fontSize: "14px", fontWeight: 500, color: "#7d8fa8", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: "4px" }}>
+          <button onClick={handleBackFromQuote} className="tap-target" style={{ fontSize: "14px", fontWeight: 500, color: "var(--text-2)", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: "4px" }}>
             ← Back
           </button>
         ) : (
@@ -697,20 +699,23 @@ export default function Home() {
             onClick={() => setShowHistory(true)}
             className="tap-target"
             aria-label="Diagnosis history"
-            style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid #1c2a3e", color: "#7d8fa8", backgroundColor: "transparent", cursor: "pointer" }}
+            style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid var(--border-muted)", color: "var(--text-2)", backgroundColor: "transparent", cursor: "pointer" }}
           >
             History
           </button>
-        {isSignedIn ? (
-            <button onClick={() => signOut()} className="tap-target" style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid #1c2a3e", color: "#7d8fa8", backgroundColor: "transparent", cursor: "pointer" }}>
-              Sign out
-            </button>
-          ) : (
-            <button onClick={() => setShowAuthModal(true)} className="tap-target" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.35)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}>
+        {!isSignedIn && (
+            <button onClick={() => setShowAuthModal(true)} className="tap-target" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.35)", color: "var(--accent)", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}>
               Sign In
             </button>
-          )
-        }
+          )}
+          <button
+            onClick={() => setShowSettings(true)}
+            className="tap-target"
+            aria-label="Settings"
+            style={{ width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", border: "1px solid var(--border-muted)", color: "var(--text-2)", backgroundColor: "transparent", cursor: "pointer" }}
+          >
+            <Settings size={15} aria-hidden="true" />
+          </button>
         </div>
       </header>
 
@@ -755,10 +760,10 @@ export default function Home() {
                     style={{ height: "56px", width: "auto", display: "block", filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.5))" }}
                   />
                   <div>
-                    <h1 style={{ color: "white", fontSize: "20px", fontWeight: 700, margin: "0 0 2px" }}>
+                    <h1 style={{ color: "var(--text)", fontSize: "20px", fontWeight: 700, margin: "0 0 2px" }}>
                       What&apos;s going on?
                     </h1>
-                    <p style={{ color: "#7d8fa8", fontSize: "13px", margin: 0 }}>
+                    <p style={{ color: "var(--text-2)", fontSize: "13px", margin: 0 }}>
                       Tell Carlos — he&apos;ll figure it out.
                     </p>
                   </div>
@@ -768,7 +773,7 @@ export default function Home() {
               {/* Carlos thinking — loading state with result skeleton */}
               {loading && (
                 <div style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", margin: "0 0 16px" }}>
-                  <div aria-live="polite" style={{ textAlign: "center", padding: "28px 24px", borderRadius: "16px", background: "#0b1019", border: "1px solid #172134", marginBottom: "12px" }}>
+                  <div aria-live="polite" style={{ textAlign: "center", padding: "28px 24px", borderRadius: "16px", background: "var(--surface)", border: "1px solid var(--border)", marginBottom: "12px" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src="/carlos/carlos-thinking.webp"
@@ -776,10 +781,10 @@ export default function Home() {
                       className="carlos-pulse"
                       style={{ height: "100px", width: "auto", margin: "0 auto 16px", display: "block", filter: "drop-shadow(0 4px 16px rgba(59,130,246,0.3)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }}
                     />
-                    <p style={{ color: "white", fontSize: "15px", fontWeight: 600, margin: "0 0 4px", minHeight: "22px" }}>
+                    <p style={{ color: "var(--text)", fontSize: "15px", fontWeight: 600, margin: "0 0 4px", minHeight: "22px" }}>
                       {streamPreview ? "Here's what Carlos is finding…" : loadingMsgsRef.current[loadingMsgIdx] || `Carlos is on it…`}
                     </p>
-                    <p style={{ color: "#7d8fa8", fontSize: "13px", margin: 0 }}>
+                    <p style={{ color: "var(--text-2)", fontSize: "13px", margin: 0 }}>
                       {streamPreview ? "Report coming in live — full details in a moment" : "Live report — first findings land in seconds"}
                     </p>
                   </div>
@@ -787,9 +792,9 @@ export default function Home() {
                   {/* Live report preview — sections replace their skeletons as the diagnosis streams in */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     {streamPreview?.whatsWrong ? (
-                      <div className="preview-row-in" style={{ padding: "14px 16px", borderRadius: "12px", background: "#0b1019", border: "1px solid #172134" }}>
-                        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "#4a5c72", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: "6px" }}>What&apos;s going on</div>
-                        <p style={{ color: "#dce8f5", fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
+                      <div className="preview-row-in" style={{ padding: "14px 16px", borderRadius: "12px", background: "var(--surface)", border: "1px solid var(--border)" }}>
+                        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: "6px" }}>What&apos;s going on</div>
+                        <p style={{ color: "var(--text)", fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
                           {streamPreview.whatsWrong}
                           {!streamPreview.driveSafety && <span className="stream-cursor" aria-hidden="true" />}
                         </p>
@@ -802,15 +807,15 @@ export default function Home() {
                       (() => {
                         const v = streamPreview.driveSafety.verdict;
                         const cfg = v === "STOP"
-                          ? { color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.3)", label: "STOP DRIVING" }
+                          ? { color: "var(--red)", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.3)", label: "STOP DRIVING" }
                           : v === "CAUTION"
-                            ? { color: "#f59e0b", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.3)", label: "DRIVE WITH CAUTION" }
-                            : { color: "#22c55e", bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.3)", label: "OKAY TO DRIVE" };
+                            ? { color: "var(--amber)", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.3)", label: "DRIVE WITH CAUTION" }
+                            : { color: "var(--green)", bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.3)", label: "OKAY TO DRIVE" };
                         return (
                           <div className="preview-row-in" style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px 16px", borderRadius: "12px", background: cfg.bg, border: `1px solid ${cfg.border}` }}>
                             <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", color: cfg.color, textTransform: "uppercase" as const }}>{cfg.label}</span>
                             {streamPreview.driveSafety.reason && (
-                              <span style={{ color: "#7d8fa8", fontSize: "12px", lineHeight: 1.4 }}>{streamPreview.driveSafety.reason}</span>
+                              <span style={{ color: "var(--text-2)", fontSize: "12px", lineHeight: 1.4 }}>{streamPreview.driveSafety.reason}</span>
                             )}
                           </div>
                         );
@@ -820,12 +825,12 @@ export default function Home() {
                     )}
 
                     {streamPreview?.rankedCauses?.some((c) => c.cause) ? (
-                      <div className="preview-row-in" style={{ padding: "14px 16px", borderRadius: "12px", background: "#0b1019", border: "1px solid #172134", display: "flex", flexDirection: "column", gap: "10px" }}>
-                        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "#4a5c72", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Likely causes</div>
+                      <div className="preview-row-in" style={{ padding: "14px 16px", borderRadius: "12px", background: "var(--surface)", border: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: "10px" }}>
+                        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Likely causes</div>
                         {streamPreview.rankedCauses.filter((c) => c.cause).map((c, i) => (
                           <div key={i} className="preview-row-in" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                            <span style={{ width: "22px", height: "22px", borderRadius: "6px", backgroundColor: "rgba(74,158,255,0.15)", border: "1px solid rgba(74,158,255,0.3)", color: "#4a9eff", fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{c.rank ?? i + 1}</span>
-                            <span style={{ color: "#dce8f5", fontSize: "14px", fontWeight: 600, lineHeight: 1.35 }}>{c.cause}</span>
+                            <span style={{ width: "22px", height: "22px", borderRadius: "6px", backgroundColor: "rgba(74,158,255,0.15)", border: "1px solid rgba(74,158,255,0.3)", color: "var(--accent)", fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{c.rank ?? i + 1}</span>
+                            <span style={{ color: "var(--text)", fontSize: "14px", fontWeight: 600, lineHeight: 1.35 }}>{c.cause}</span>
                           </div>
                         ))}
                       </div>
@@ -850,19 +855,19 @@ export default function Home() {
               >
                 {/* Outcome follow-up — closes the loop on a past diagnosis */}
                 {outcomeItem && !loading && (
-                  <div style={{ background: "#0b1019", border: "1px solid rgba(74,158,255,0.3)", borderRadius: "16px", padding: "16px" }}>
-                    <div style={{ fontSize: "11px", fontWeight: 600, color: "#4a5c72", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "6px" }}>Quick follow-up</div>
-                    <div style={{ fontSize: "14px", color: "#dce8f5", lineHeight: 1.5, marginBottom: "12px" }}>
+                  <div style={{ background: "var(--surface)", border: "1px solid rgba(74,158,255,0.3)", borderRadius: "16px", padding: "16px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "6px" }}>Quick follow-up</div>
+                    <div style={{ fontSize: "14px", color: "var(--text)", lineHeight: 1.5, marginBottom: "12px" }}>
                       Did <strong>{outcomeItem.diagnosis.rankedCauses[0]?.cause?.toLowerCase() ?? "the fix"}</strong> turn out to be the problem with your {outcomeItem.year} {outcomeItem.make}?
                     </div>
                     <div style={{ display: "flex", gap: "8px" }}>
-                      <button type="button" onClick={() => recordOutcome("fixed")} className="tap-target" style={{ flex: 1, height: "40px", borderRadius: "10px", border: "1px solid rgba(34,197,94,0.4)", backgroundColor: "rgba(34,197,94,0.1)", color: "#22c55e", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+                      <button type="button" onClick={() => recordOutcome("fixed")} className="tap-target" style={{ flex: 1, height: "40px", borderRadius: "10px", border: "1px solid rgba(34,197,94,0.4)", backgroundColor: "rgba(34,197,94,0.1)", color: "var(--green)", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
                         Yes, fixed it
                       </button>
-                      <button type="button" onClick={() => recordOutcome("not_fixed")} className="tap-target" style={{ flex: 1, height: "40px", borderRadius: "10px", border: "1px solid #1c2a3e", backgroundColor: "transparent", color: "#7d8fa8", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+                      <button type="button" onClick={() => recordOutcome("not_fixed")} className="tap-target" style={{ flex: 1, height: "40px", borderRadius: "10px", border: "1px solid var(--border-muted)", backgroundColor: "transparent", color: "var(--text-2)", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
                         No / not sure
                       </button>
-                      <button type="button" onClick={() => recordOutcome("later")} className="tap-target" aria-label="Ask me later" style={{ height: "40px", padding: "0 12px", borderRadius: "10px", border: "none", backgroundColor: "transparent", color: "#4a5c72", fontSize: "13px", cursor: "pointer" }}>
+                      <button type="button" onClick={() => recordOutcome("later")} className="tap-target" aria-label="Ask me later" style={{ height: "40px", padding: "0 12px", borderRadius: "10px", border: "none", backgroundColor: "transparent", color: "var(--text-3)", fontSize: "13px", cursor: "pointer" }}>
                         Later
                       </button>
                     </div>
@@ -872,14 +877,14 @@ export default function Home() {
                 {/* Your cars — one-tap refill from history */}
                 {savedCars.length > 0 && !(year && make && model) && (
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" as const, margin: "-6px 0 -8px" }}>
-                    <span style={{ fontSize: "12px", color: "#4a5c72" }}>Your cars:</span>
+                    <span style={{ fontSize: "12px", color: "var(--text-3)" }}>Your cars:</span>
                     {savedCars.map((c) => (
                       <button
                         key={`${c.year}${c.make}${c.model}`}
                         type="button"
                         onClick={() => { setYear(c.year); setMake(c.make); setModel(c.model); setShowErrors(false); }}
                         className="tap-target"
-                        style={{ fontSize: "12px", fontWeight: 600, padding: "6px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.3)", color: "#4a9eff", backgroundColor: "rgba(74,158,255,0.07)", cursor: "pointer" }}
+                        style={{ fontSize: "12px", fontWeight: 600, padding: "6px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.3)", color: "var(--accent)", backgroundColor: "rgba(74,158,255,0.07)", cursor: "pointer" }}
                       >
                         {c.year} {c.make} {c.model}
                       </button>
@@ -888,10 +893,10 @@ export default function Home() {
                 )}
 
                 {/* Vehicle card */}
-                <div style={{ background: "#0b1019", border: "1px solid #172134", borderRadius: "16px", padding: "20px" }}>
+                <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "16px", padding: "20px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
                     <Car size={17} color="#4a9eff" aria-hidden="true" />
-                    <span style={{ color: "#dce8f5", fontSize: "15px", fontWeight: 600 }}>What car are we working on?</span>
+                    <span style={{ color: "var(--text)", fontSize: "15px", fontWeight: 600 }}>What car are we working on?</span>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <div ref={yearRef}>
@@ -902,7 +907,7 @@ export default function Home() {
                         onChange={(e) => { setYear(e.target.value); if (showErrors) setShowErrors(false); }}
                         aria-invalid={showErrors && !year}
                         aria-describedby={showErrors && !year ? "vehicle-error" : undefined}
-                        style={{ ...fieldStyle, padding: "0 14px", color: year ? "#dce8f5" : "#4a5c72", borderColor: showErrors && !year ? "#ef4444" : "#1c2a3e" }}
+                        style={{ ...fieldStyle, padding: "0 14px", color: year ? "var(--text)" : "var(--text-3)", borderColor: showErrors && !year ? "var(--red)" : "var(--border-muted)" }}
                       >
                         <option value="">Year</option>
                         {years.map((y) => <option key={y} value={y}>{y}</option>)}
@@ -920,7 +925,7 @@ export default function Home() {
                         autoCapitalize="words"
                         aria-invalid={showErrors && !make}
                         aria-describedby={showErrors && !make ? "vehicle-error" : undefined}
-                        style={{ ...fieldStyle, borderColor: showErrors && !make ? "#ef4444" : "#1c2a3e" }}
+                        style={{ ...fieldStyle, borderColor: showErrors && !make ? "var(--red)" : "var(--border-muted)" }}
                       />
                     </div>
                     <div ref={modelRef}>
@@ -934,12 +939,12 @@ export default function Home() {
                         autoComplete="off"
                         aria-invalid={showErrors && !model}
                         aria-describedby={showErrors && !model ? "vehicle-error" : undefined}
-                        style={{ ...fieldStyle, borderColor: showErrors && !model ? "#ef4444" : "#1c2a3e" }}
+                        style={{ ...fieldStyle, borderColor: showErrors && !model ? "var(--red)" : "var(--border-muted)" }}
                       />
                     </div>
                   </div>
                   {showErrors && (!year || !make || !model) && (
-                    <p id="vehicle-error" role="alert" style={{ margin: "8px 0 0", fontSize: "12px", color: "#ef4444" }}>
+                    <p id="vehicle-error" role="alert" style={{ margin: "8px 0 0", fontSize: "12px", color: "var(--red)" }}>
                       Enter your vehicle year, make, and model
                     </p>
                   )}
@@ -950,7 +955,7 @@ export default function Home() {
                     type="button"
                     onClick={() => setShowObdScanner(true)}
                     className="tap-target"
-                    style={{ marginTop: "10px", width: "100%", height: "46px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", backgroundColor: "rgba(74,158,255,0.06)", border: "1px dashed rgba(74,158,255,0.35)", borderRadius: "10px", color: "#4a9eff", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}
+                    style={{ marginTop: "10px", width: "100%", height: "46px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", backgroundColor: "rgba(74,158,255,0.06)", border: "1px dashed rgba(74,158,255,0.35)", borderRadius: "10px", color: "var(--accent)", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}
                   >
                     <Bluetooth size={15} aria-hidden="true" />
                     Connect OBD2 Scanner
@@ -959,10 +964,10 @@ export default function Home() {
                   {/* "What the dealer knows" — recalls, TSBs, and owner complaints
                       from NHTSA in one module. One panel expands at a time. */}
                   {(recalls || (tsbs && tsbs.count > 0) || (complaints && complaints.count > 0)) && (
-                    <div style={{ marginTop: "12px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "12px", padding: "12px 14px" }}>
+                    <div style={{ marginTop: "12px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "12px", padding: "12px 14px" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-                        <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "#4a5c72", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>What the dealer knows</span>
-                        <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "9px", fontWeight: 600, color: "#2d3f55", letterSpacing: "0.08em" }}>NHTSA DATA</span>
+                        <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>What the dealer knows</span>
+                        <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "9px", fontWeight: 600, color: "var(--text-4)", letterSpacing: "0.08em" }}>NHTSA DATA</span>
                       </div>
                       <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" as const }}>
                         {recalls && (
@@ -975,7 +980,7 @@ export default function Home() {
                             style={{
                               display: "flex", alignItems: "center", gap: "6px", minHeight: "34px", padding: "0 12px", borderRadius: "20px",
                               fontSize: "12px", fontWeight: 600, cursor: recalls.count > 0 ? "pointer" : "default", transition: "background-color 200ms, border-color 200ms",
-                              color: recalls.count > 0 ? "#f59e0b" : "#22c55e",
+                              color: recalls.count > 0 ? "var(--amber)" : "var(--green)",
                               backgroundColor: recalls.count > 0 ? (intelOpen === "recalls" ? "rgba(245,158,11,0.14)" : "rgba(245,158,11,0.06)") : "rgba(34,197,94,0.06)",
                               border: `1px solid ${recalls.count > 0 ? (intelOpen === "recalls" ? "rgba(245,158,11,0.5)" : "rgba(245,158,11,0.3)") : "rgba(34,197,94,0.25)"}`,
                             }}
@@ -993,7 +998,7 @@ export default function Home() {
                             aria-expanded={intelOpen === "tsbs"}
                             style={{
                               display: "flex", alignItems: "center", gap: "6px", minHeight: "34px", padding: "0 12px", borderRadius: "20px",
-                              fontSize: "12px", fontWeight: 600, color: "#4a9eff", cursor: "pointer", transition: "background-color 200ms, border-color 200ms",
+                              fontSize: "12px", fontWeight: 600, color: "var(--accent)", cursor: "pointer", transition: "background-color 200ms, border-color 200ms",
                               backgroundColor: intelOpen === "tsbs" ? "rgba(74,158,255,0.14)" : "rgba(74,158,255,0.06)",
                               border: `1px solid ${intelOpen === "tsbs" ? "rgba(74,158,255,0.5)" : "rgba(74,158,255,0.3)"}`,
                             }}
@@ -1011,7 +1016,7 @@ export default function Home() {
                             aria-expanded={intelOpen === "complaints"}
                             style={{
                               display: "flex", alignItems: "center", gap: "6px", minHeight: "34px", padding: "0 12px", borderRadius: "20px",
-                              fontSize: "12px", fontWeight: 600, color: "#7d8fa8", cursor: "pointer", transition: "background-color 200ms, border-color 200ms",
+                              fontSize: "12px", fontWeight: 600, color: "var(--text-2)", cursor: "pointer", transition: "background-color 200ms, border-color 200ms",
                               backgroundColor: intelOpen === "complaints" ? "rgba(125,143,168,0.14)" : "rgba(125,143,168,0.06)",
                               border: `1px solid ${intelOpen === "complaints" ? "rgba(125,143,168,0.5)" : "rgba(125,143,168,0.25)"}`,
                             }}
@@ -1026,11 +1031,11 @@ export default function Home() {
                       {intelOpen === "recalls" && recalls && recalls.count > 0 && (
                         <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
                           {recalls.items.map((r) => (
-                            <div key={r.campaignNumber} style={{ fontSize: "12px", color: "#7d8fa8", lineHeight: 1.5 }}>
-                              <span style={{ color: "#dce8f5", fontWeight: 600 }}>{r.component ? r.component.split(":").pop() : "Recall"}:</span> {r.subject}
+                            <div key={r.campaignNumber} style={{ fontSize: "12px", color: "var(--text-2)", lineHeight: 1.5 }}>
+                              <span style={{ color: "var(--text)", fontWeight: 600 }}>{r.component ? r.component.split(":").pop() : "Recall"}:</span> {r.subject}
                             </div>
                           ))}
-                          <div style={{ fontSize: "11px", color: "#4a5c72" }}>
+                          <div style={{ fontSize: "11px", color: "var(--text-3)" }}>
                             Recall repairs are free at any dealer{recalls.count > 3 ? ` — ${recalls.count - 3} more on nhtsa.gov` : ""}.
                           </div>
                         </div>
@@ -1038,13 +1043,13 @@ export default function Home() {
                       {intelOpen === "tsbs" && tsbs && (
                         <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
                           {tsbs.items.slice(0, 4).map((t) => (
-                            <div key={t.nhtsaId} style={{ fontSize: "12px", color: "#7d8fa8", lineHeight: 1.5 }}>
-                              <span style={{ color: "#dce8f5", fontWeight: 600, fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px" }}>{t.number}</span>
-                              {t.date ? <span style={{ color: "#4a5c72" }}> · {t.date.slice(0, 7)}</span> : null}
+                            <div key={t.nhtsaId} style={{ fontSize: "12px", color: "var(--text-2)", lineHeight: 1.5 }}>
+                              <span style={{ color: "var(--text)", fontWeight: 600, fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px" }}>{t.number}</span>
+                              {t.date ? <span style={{ color: "var(--text-3)" }}> · {t.date.slice(0, 7)}</span> : null}
                               <br />{t.summary}
                             </div>
                           ))}
-                          <div style={{ fontSize: "11px", color: "#4a5c72" }}>
+                          <div style={{ fontSize: "11px", color: "var(--text-3)" }}>
                             Known fixes the dealer has on file. Carlos folds the relevant ones into your diagnosis automatically{tsbs.count > 4 ? ` — ${tsbs.count - 4} more` : ""}.
                           </div>
                         </div>
@@ -1053,11 +1058,11 @@ export default function Home() {
                         <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
                           {complaints.topComponents.map((c) => (
                             <div key={c.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", fontSize: "12px", lineHeight: 1.5 }}>
-                              <span style={{ color: "#dce8f5", fontWeight: 600 }}>{c.name.charAt(0) + c.name.slice(1).toLowerCase()}</span>
-                              <span style={{ fontFamily: "var(--font-jetbrains), monospace", color: "#7d8fa8" }}>{c.count}</span>
+                              <span style={{ color: "var(--text)", fontWeight: 600 }}>{c.name.charAt(0) + c.name.slice(1).toLowerCase()}</span>
+                              <span style={{ fontFamily: "var(--font-jetbrains), monospace", color: "var(--text-2)" }}>{c.count}</span>
                             </div>
                           ))}
-                          <div style={{ fontSize: "11px", color: "#4a5c72" }}>
+                          <div style={{ fontSize: "11px", color: "var(--text-3)" }}>
                             What owners of this exact car report to NHTSA most. Patterns, not panic.
                           </div>
                         </div>
@@ -1067,11 +1072,11 @@ export default function Home() {
                 </div>
 
                 {/* Issue card */}
-                <div style={{ background: "#0b1019", border: "1px solid #172134", borderRadius: "16px", padding: "20px" }}>
+                <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "16px", padding: "20px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/carlos/carlos-thinking.webp" alt="" style={{ width: "28px", height: "28px", objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(59,130,246,0.2))" }} />
-                    <span style={{ color: "#dce8f5", fontSize: "15px", fontWeight: 600 }}>What&apos;s going on with it?</span>
+                    <span style={{ color: "var(--text)", fontSize: "15px", fontWeight: 600 }}>What&apos;s going on with it?</span>
                   </div>
                   <div style={{ position: "relative" }}>
                     <label htmlFor="issue-description" className="sr-only">Describe the problem with your car</label>
@@ -1081,7 +1086,7 @@ export default function Home() {
                       onChange={(e) => setIssue(e.target.value)}
                       placeholder="P0301 misfire on cyl 1, rough idle at startup, knocking under load — describe what you see or hear"
                       rows={4}
-                      style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", minHeight: "130px", padding: "14px 48px 14px 16px", fontSize: "16px", backgroundColor: "#0a0d14", border: `1px solid ${isRecording ? "rgba(239,68,68,0.5)" : "#1c2a3e"}`, borderRadius: "12px", color: "#dce8f5", resize: "none", lineHeight: 1.6, fontFamily: "var(--font-ibm), sans-serif", transition: "border-color 200ms" }}
+                      style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", minHeight: "130px", padding: "14px 48px 14px 16px", fontSize: "16px", backgroundColor: "var(--input)", border: `1px solid ${isRecording ? "rgba(239,68,68,0.5)" : "var(--border-muted)"}`, borderRadius: "12px", color: "var(--text)", resize: "none", lineHeight: 1.6, fontFamily: "var(--font-ibm), sans-serif", transition: "border-color 200ms" }}
                     />
                     <button
                       type="button"
@@ -1090,9 +1095,9 @@ export default function Home() {
                       aria-label={isRecording ? "Stop recording" : "Start voice input"}
                     >
                       {isRecording ? (
-                        <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#ef4444" }} className="badge-pulse-stop" />
+                        <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "var(--red)" }} className="badge-pulse-stop" />
                       ) : (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isRecording ? "#ef4444" : "#4a5c72"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isRecording ? "var(--red)" : "var(--text-3)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                           <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                           <line x1="12" y1="19" x2="12" y2="23"/>
@@ -1116,9 +1121,9 @@ export default function Home() {
                           style={{
                             minHeight: "32px", padding: "0 12px", borderRadius: "20px", fontSize: "12px", fontWeight: 600,
                             cursor: "pointer", transition: "background-color 200ms, border-color 200ms, color 200ms",
-                            color: active ? "#4a9eff" : "#7d8fa8",
-                            backgroundColor: active ? "rgba(74,158,255,0.12)" : "#101822",
-                            border: `1px solid ${active ? "rgba(74,158,255,0.5)" : "#1c2a3e"}`,
+                            color: active ? "var(--accent)" : "var(--text-2)",
+                            backgroundColor: active ? "rgba(74,158,255,0.12)" : "var(--surface-2)",
+                            border: `1px solid ${active ? "rgba(74,158,255,0.5)" : "var(--border-muted)"}`,
                           }}
                         >
                           {s.label}
@@ -1129,19 +1134,19 @@ export default function Home() {
                 </div>
 
                 {/* Secondary details card */}
-                <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "16px", padding: "16px", display: "flex", flexDirection: "column", gap: "16px", width: "100%", boxSizing: "border-box" }}>
+                <div style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "16px", padding: "16px", display: "flex", flexDirection: "column", gap: "16px", width: "100%", boxSizing: "border-box" }}>
 
                   {/* Dashboard photo */}
                   <div>
-                    <label style={labelStyle}>Warning Lights Photo <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#2d3f55" }}>optional</span></label>
+                    <label style={labelStyle}>Warning Lights Photo <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "var(--text-4)" }}>optional</span></label>
                     {dashboardImage ? (
                       <div style={{ position: "relative", display: "inline-block", maxWidth: "100%" }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={dashboardImage} alt="Dashboard" style={{ height: "80px", borderRadius: "8px", border: "1px solid #172134", objectFit: "cover", display: "block" }} />
-                        <button type="button" onClick={() => setDashboardImage(null)} style={{ position: "absolute", top: "-6px", right: "-6px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "#162232", border: "1px solid #172134", color: "#7d8fa8", fontSize: "11px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>✕</button>
+                        <img src={dashboardImage} alt="Dashboard" style={{ height: "80px", borderRadius: "8px", border: "1px solid var(--border)", objectFit: "cover", display: "block" }} />
+                        <button type="button" onClick={() => setDashboardImage(null)} style={{ position: "absolute", top: "-6px", right: "-6px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "var(--surface-3)", border: "1px solid var(--border)", color: "var(--text-2)", fontSize: "11px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>✕</button>
                       </div>
                     ) : (
-                      <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 14px", boxSizing: "border-box", backgroundColor: "#101822", border: "1px dashed #172134", borderRadius: "10px", cursor: "pointer", fontSize: "13px", color: "#4a5c72", width: "100%" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 14px", boxSizing: "border-box", backgroundColor: "var(--surface-2)", border: "1px dashed var(--border)", borderRadius: "10px", cursor: "pointer", fontSize: "13px", color: "var(--text-3)", width: "100%" }}>
                         <Camera size={14} color="#4a5c72" />
                         <span>Dashboard / warning lights</span>
                         <input type="file" accept="image/*" capture="environment" onChange={handleDashboardPhoto} style={{ display: "none" }} />
@@ -1151,15 +1156,15 @@ export default function Home() {
 
                   {/* Engine bay photo */}
                   <div>
-                    <label style={labelStyle}>Engine Bay Photo <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#2d3f55" }}>optional</span></label>
+                    <label style={labelStyle}>Engine Bay Photo <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "var(--text-4)" }}>optional</span></label>
                     {engineBayImage ? (
                       <div style={{ position: "relative", display: "inline-block", maxWidth: "100%" }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={engineBayImage} alt="Engine bay" style={{ height: "80px", borderRadius: "8px", border: "1px solid #172134", objectFit: "cover", display: "block" }} />
-                        <button type="button" onClick={() => setEngineBayImage(null)} style={{ position: "absolute", top: "-6px", right: "-6px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "#162232", border: "1px solid #172134", color: "#7d8fa8", fontSize: "11px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>✕</button>
+                        <img src={engineBayImage} alt="Engine bay" style={{ height: "80px", borderRadius: "8px", border: "1px solid var(--border)", objectFit: "cover", display: "block" }} />
+                        <button type="button" onClick={() => setEngineBayImage(null)} style={{ position: "absolute", top: "-6px", right: "-6px", width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "var(--surface-3)", border: "1px solid var(--border)", color: "var(--text-2)", fontSize: "11px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>✕</button>
                       </div>
                     ) : (
-                      <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 14px", boxSizing: "border-box", backgroundColor: "#101822", border: "1px dashed #172134", borderRadius: "10px", cursor: "pointer", fontSize: "13px", color: "#4a5c72", width: "100%" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 14px", boxSizing: "border-box", backgroundColor: "var(--surface-2)", border: "1px dashed var(--border)", borderRadius: "10px", cursor: "pointer", fontSize: "13px", color: "var(--text-3)", width: "100%" }}>
                         <Camera size={14} color="#4a5c72" />
                         <span>Engine bay photo</span>
                         <input type="file" accept="image/*" capture="environment" onChange={handleEnginePhoto} style={{ display: "none" }} />
@@ -1168,22 +1173,22 @@ export default function Home() {
                   </div>
 
                   {/* Mods toggle */}
-                  <div style={{ borderTop: "1px solid #1c2a3e", paddingTop: "14px" }}>
+                  <div style={{ borderTop: "1px solid var(--border-muted)", paddingTop: "14px" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: modMode ? "14px" : 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                         <div style={{ width: "30px", height: "30px", borderRadius: "8px", backgroundColor: "rgba(74,158,255,0.08)", border: "1px solid rgba(74,158,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <Wrench size={13} color="#4a9eff" />
                         </div>
                         <div>
-                          <div style={{ fontSize: "13px", fontWeight: 600, color: "#dce8f5", lineHeight: 1.3 }}>Modified / Tuned</div>
-                          <div style={{ fontSize: "11px", color: "#4a5c72", lineHeight: 1.3 }}>Factor in mods and tune</div>
+                          <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>Modified / Tuned</div>
+                          <div style={{ fontSize: "11px", color: "var(--text-3)", lineHeight: 1.3 }}>Factor in mods and tune</div>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setModMode(!modMode)}
                         className="tap-target"
-                        style={{ width: "42px", height: "24px", borderRadius: "12px", backgroundColor: modMode ? "#4a9eff" : "#162232", border: "none", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background-color 200ms" }}
+                        style={{ width: "42px", height: "24px", borderRadius: "12px", backgroundColor: modMode ? "var(--accent)" : "var(--surface-3)", border: "none", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background-color 200ms" }}
                         role="switch"
                         aria-checked={modMode}
                         aria-label="Modified or tuned car"
@@ -1200,16 +1205,16 @@ export default function Home() {
                             onChange={(e) => setMods(e.target.value)}
                             placeholder="catless downpipe, Cobb Accessport tune, cold air intake"
                             rows={2}
-                            style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", padding: "10px 14px", fontSize: "15px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "10px", color: "#dce8f5", resize: "none", lineHeight: 1.5 }}
+                            style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", padding: "10px 14px", fontSize: "15px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "10px", color: "var(--text)", resize: "none", lineHeight: 1.5 }}
                           />
                         </div>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <span style={{ fontSize: "13px", color: "#7d8fa8" }}>Running a tune?</span>
+                          <span style={{ fontSize: "13px", color: "var(--text-2)" }}>Running a tune?</span>
                           <button
                             type="button"
                             onClick={() => setHasTune(!hasTune)}
                             className="tap-target"
-                            style={{ width: "42px", height: "24px", borderRadius: "12px", backgroundColor: hasTune ? "#4a9eff" : "#162232", border: "none", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background-color 200ms" }}
+                            style={{ width: "42px", height: "24px", borderRadius: "12px", backgroundColor: hasTune ? "var(--accent)" : "var(--surface-3)", border: "none", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background-color 200ms" }}
                             role="switch"
                             aria-checked={hasTune}
                             aria-label="Running a tune"
@@ -1222,7 +1227,7 @@ export default function Home() {
                   </div>
 
                   {/* ZIP */}
-                  <div style={{ borderTop: "1px solid #1c2a3e", paddingTop: "14px" }}>
+                  <div style={{ borderTop: "1px solid var(--border-muted)", paddingTop: "14px" }}>
                     <label htmlFor="area-zip" style={labelStyle}>
                       <MapPin size={9} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} aria-hidden="true" />
                       Area ZIP <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#5d7290" }}>— for local pricing</span>
@@ -1251,7 +1256,7 @@ export default function Home() {
               {!loading && (
                 <div style={{ marginTop: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
                   <Lock size={11} color="#4a5c72" />
-                  <span style={{ fontSize: "12px", color: "#4a5c72" }}>
+                  <span style={{ fontSize: "12px", color: "var(--text-3)" }}>
                     Free to use — your data is never sold.
                   </span>
                 </div>
@@ -1282,7 +1287,7 @@ export default function Home() {
 
       {/* Fixed diagnose button */}
       {activeTab === "diagnose" && !showDiagnosis && (
-        <div style={{ position: "fixed", bottom: "calc(60px + env(safe-area-inset-bottom, 0px))", left: 0, right: 0, padding: "10px 16px", boxSizing: "border-box", backgroundColor: "rgba(6,8,16,0.96)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderTop: "1px solid #172134", zIndex: 35 }}>
+        <div style={{ position: "fixed", bottom: "calc(60px + env(safe-area-inset-bottom, 0px))", left: 0, right: 0, padding: "10px 16px", boxSizing: "border-box", backgroundColor: "var(--header-bg)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderTop: "1px solid var(--border)", zIndex: 35 }}>
           <button
             type="submit"
             form="diagnose-form"
@@ -1318,6 +1323,9 @@ export default function Home() {
           onClose={() => setShowHistory(false)}
           onOpenLocal={(item) => handleOpenHistoryDiagnosis({ year: item.year, make: item.make, model: item.model, issue: item.issue, diagnosis: item.diagnosis as Diagnostic })}
         />
+      )}
+      {showSettings && (
+        <SettingsSheet onClose={() => setShowSettings(false)} onSignIn={() => setShowAuthModal(true)} />
       )}
     </>
   );

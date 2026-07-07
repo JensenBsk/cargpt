@@ -78,7 +78,7 @@ export default function AuthModal({ onClose }: Props) {
           </div>
           <button
             onClick={onClose}
-            style={{ marginTop: "20px", height: "44px", padding: "0 24px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer" }}
+            style={{ marginTop: "20px", height: "44px", padding: "0 24px", backgroundColor: "var(--accent)", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer" }}
           >
             Got it
           </button>
@@ -125,9 +125,9 @@ export default function AuthModal({ onClose }: Props) {
       </button>
 
       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
-        <div style={{ flex: 1, height: "1px", backgroundColor: "#172134" }} />
+        <div style={{ flex: 1, height: "1px", backgroundColor: "var(--border)" }} />
         <span style={{ fontSize: "12px", color: "#6b7280" }}>or</span>
-        <div style={{ flex: 1, height: "1px", backgroundColor: "#172134" }} />
+        <div style={{ flex: 1, height: "1px", backgroundColor: "var(--border)" }} />
       </div>
 
       <form onSubmit={handleEmailAuth} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -165,7 +165,7 @@ export default function AuthModal({ onClose }: Props) {
         <button
           type="submit"
           disabled={loading || !email.trim() || !password.trim()}
-          style={{ height: "48px", backgroundColor: "#4a9eff", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer", opacity: loading || !email.trim() || !password.trim() ? 0.55 : 1 }}
+          style={{ height: "48px", backgroundColor: "var(--accent)", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "8px", cursor: "pointer", opacity: loading || !email.trim() || !password.trim() ? 0.55 : 1 }}
         >
           {loading ? "..." : mode === "signin" ? "Sign In" : "Create Account"}
         </button>
@@ -175,7 +175,7 @@ export default function AuthModal({ onClose }: Props) {
         {mode === "signin" ? "Don't have an account? " : "Already have an account? "}
         <button
           onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(""); }}
-          style={{ color: "#4a9eff", background: "none", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 500, padding: 0 }}
+          style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 500, padding: 0 }}
         >
           {mode === "signin" ? "Sign up" : "Sign in"}
         </button>
@@ -234,7 +234,7 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
         aria-label="Sign in"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: "400px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "16px", padding: "24px", outline: "none" }}
+        style={{ width: "100%", maxWidth: "400px", backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "16px", padding: "24px", outline: "none" }}
       >
         {children}
       </div>

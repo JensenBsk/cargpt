@@ -27,9 +27,16 @@ export const metadata: Metadata = {
   },
 };
 
+// Applied before first paint so a light-theme user never sees a dark flash.
+// Kept tiny and inline; dark is the default when nothing is stored.
+const THEME_BOOTSTRAP = `try{var t=localStorage.getItem("torque_theme");if(t==="light"||(t==="system"&&matchMedia("(prefers-color-scheme: light)").matches))document.documentElement.dataset.theme="light"}catch(e){}`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${barlow.variable} ${ibm.variable} ${jetbrains.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${barlow.variable} ${ibm.variable} ${jetbrains.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+      </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <a href="#main-content" className="skip-link">Skip to main content</a>
         <Providers>{children}</Providers>
