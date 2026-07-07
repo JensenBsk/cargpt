@@ -158,7 +158,7 @@ export default function VinInput({ onDecode }: Props) {
           placeholder="17-CHARACTER VIN"
           maxLength={17}
           autoCapitalize="characters"
-          style={{ ...fieldStyle, borderColor: error ? "#ef4444" : vin.length === 17 && decoded ? "#22c55e" : "#1e2329" }}
+          style={{ ...fieldStyle, borderColor: error ? "#ef4444" : vin.length === 17 && decoded ? "#22c55e" : "#172134" }}
         />
         <button
           type="button"

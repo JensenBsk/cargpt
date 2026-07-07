@@ -91,7 +91,7 @@ export default function GarageModal({ onClose, onSelectCar, onRequestSignIn }: P
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: "560px", backgroundColor: "#13161b", border: "1px solid #1e2329", borderTop: "1px solid #252b34", borderRadius: "16px 16px 0 0", padding: "20px 16px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", maxHeight: "85dvh", overflowY: "auto" }}
+        style={{ width: "100%", maxWidth: "560px", backgroundColor: "#0b1019", border: "1px solid #172134", borderTop: "1px solid #252b34", borderRadius: "16px 16px 0 0", padding: "20px 16px", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))", maxHeight: "85dvh", overflowY: "auto" }}
       >
         <div style={{ width: "32px", height: "4px", backgroundColor: "#252b34", borderRadius: "2px", margin: "0 auto 20px" }} />
 

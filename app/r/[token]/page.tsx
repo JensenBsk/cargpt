@@ -89,7 +89,7 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
   return (
     <div style={{ minHeight: "100dvh", backgroundColor: "#0d0f12", fontFamily: "var(--font-inter, system-ui, sans-serif)" }}>
       {/* Header */}
-      <div style={{ position: "sticky", top: 0, zIndex: 10, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#0d0f12", borderBottom: "1px solid #1e2329" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 10, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#0d0f12", borderBottom: "1px solid #172134" }}>
         <Link href="/" style={{ textDecoration: "none" }}>
           <span style={{ fontWeight: 900, fontSize: "18px", color: "#4a9eff", letterSpacing: "0.15em" }}>CARLOS</span>
         </Link>
@@ -152,7 +152,7 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
 
         {/* Top cause — always visible */}
         {topCause && (
-          <div style={{ backgroundColor: "#13161b", border: "1px solid #1e2329", borderLeft: "3px solid #4a9eff", borderRadius: "10px", padding: "14px 16px" }}>
+          <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderLeft: "3px solid #4a9eff", borderRadius: "10px", padding: "14px 16px" }}>
             <div style={{ fontSize: "10px", fontWeight: 600, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "6px" }}>
               #1 Most Likely
             </div>
@@ -167,7 +167,7 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
 
         {/* Cost pill — always visible */}
         {topEst && (
-          <div style={{ backgroundColor: "#13161b", border: "1px solid #1e2329", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ fontSize: "13px", color: "#6b7280" }}>Est. Repair Cost</span>
             <span style={{ fontSize: "22px", fontWeight: 800, color: "#4a9eff" }}>{topEst.total}</span>
           </div>
@@ -180,7 +180,7 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
             `${totalSteps} step${totalSteps !== 1 ? "s" : ""}`,
             `${totalWarnings} warning${totalWarnings !== 1 ? "s" : ""}`,
           ].map((stat) => (
-            <div key={stat} style={{ flex: 1, backgroundColor: "#13161b", border: "1px solid #1e2329", borderRadius: "8px", padding: "8px", textAlign: "center", fontSize: "11px", color: "#6b7280", fontWeight: 500 }}>
+            <div key={stat} style={{ flex: 1, backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "8px", padding: "8px", textAlign: "center", fontSize: "11px", color: "#6b7280", fontWeight: 500 }}>
               {stat}
             </div>
           ))}
@@ -190,7 +190,7 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
         {diagnosis?.rankedCauses?.length > 1 && (
           <div style={{ position: "relative" }}>
             <div style={{ filter: isSignedIn ? "none" : "blur(5px)", userSelect: isSignedIn ? "auto" : "none", pointerEvents: isSignedIn ? "auto" : "none" }}>
-              <div style={{ backgroundColor: "#13161b", border: "1px solid #1e2329", borderRadius: "10px", padding: "14px 16px" }}>
+              <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "14px 16px" }}>
                 <div style={{ fontSize: "11px", fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>
                   All Likely Causes
                 </div>
@@ -198,7 +198,7 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
                   {diagnosis.rankedCauses.slice(1).map((cause: { rank: number; cause: string; likelihood: string }) => {
                     const colors = LIKELIHOOD_COLORS[cause.likelihood] ?? { bg: "rgba(107,114,128,0.18)", text: "#9ca3af" };
                     return (
-                      <div key={cause.rank} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", backgroundColor: "#1a1e25", borderRadius: "8px", border: "1px solid #1e2329" }}>
+                      <div key={cause.rank} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", backgroundColor: "#1a1e25", borderRadius: "8px", border: "1px solid #172134" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                           <span style={{ width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "#252b34", color: "#9ca3af", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{cause.rank}</span>
                           <span style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9" }}>{cause.cause}</span>
@@ -211,10 +211,10 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
               </div>
               {/* Steps preview */}
               {diagnosis?.diagnosticSteps && (
-                <div style={{ marginTop: "12px", backgroundColor: "#13161b", border: "1px solid #1e2329", borderRadius: "10px", padding: "14px 16px" }}>
+                <div style={{ marginTop: "12px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "14px 16px" }}>
                   <div style={{ fontSize: "11px", fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>Check This First</div>
                   {diagnosis.diagnosticSteps.slice(0, 2).map((step: { step: number; action: string }) => (
-                    <div key={step.step} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 0", borderBottom: "1px solid #1e2329" }}>
+                    <div key={step.step} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 0", borderBottom: "1px solid #172134" }}>
                       <span style={{ width: "24px", height: "24px", borderRadius: "50%", backgroundColor: "#1a1e25", border: "1px solid #252b34", color: "#6b7280", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{step.step}</span>
                       <span style={{ fontSize: "14px", color: "#f1f5f9" }}>{step.action}</span>
                     </div>
@@ -232,10 +232,10 @@ export default async function SharedDiagnosisPage({ params }: { params: Promise<
 
         {/* Signed-in: show full content */}
         {isSignedIn && diagnosis?.costEstimates && (
-          <div style={{ backgroundColor: "#13161b", border: "1px solid #1e2329", borderRadius: "10px", padding: "14px 16px" }}>
+          <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "14px 16px" }}>
             <div style={{ fontSize: "11px", fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>Cost Estimates</div>
             {diagnosis.costEstimates.map((est: { fix: string; total: string; parts: string; labor: string; note?: string }, i: number) => (
-              <div key={i} style={{ backgroundColor: "#1a1e25", border: "1px solid #1e2329", borderRadius: "8px", padding: "12px", marginBottom: i < diagnosis.costEstimates.length - 1 ? "8px" : 0 }}>
+              <div key={i} style={{ backgroundColor: "#1a1e25", border: "1px solid #172134", borderRadius: "8px", padding: "12px", marginBottom: i < diagnosis.costEstimates.length - 1 ? "8px" : 0 }}>
                 <div style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9", marginBottom: "8px" }}>{est.fix}</div>
                 <div style={{ display: "flex", gap: "16px" }}>
                   {[["Parts", est.parts], ["Labor", est.labor], ["Total", est.total]].map(([label, val]) => (

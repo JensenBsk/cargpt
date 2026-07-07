@@ -390,13 +390,13 @@ export default function RepairMode({ steps, vehicleLabel, causeName, onClose, on
             </h2>
             <p style={{ fontSize: "14px", color: S.sec, lineHeight: 1.65, margin: "0 0 18px" }}>
               {finished === "confirmed"
-                ? `Step ${idx + 1} confirmed the problem. The cost estimate and parts list in your diagnosis are ready — and you just saved yourself the shop's diagnostic fee.`
+                ? `Step ${idx + 1} confirmed the problem. The cost estimate and parts list in your diagnosis are ready — and you just saved yourself the $100–$180 a shop charges to diagnose it.`
                 : "None of the checks confirmed the usual suspects — that genuinely narrows it down, and a mechanic can skip everything you already tested. Ask Carlos what to try next."}
             </p>
             <div style={{ display: "flex", justifyContent: "center", gap: "6px", flexWrap: "wrap" as const, marginBottom: "24px" }}>
               {chip(<Check size={11} aria-hidden="true" />, `${finished === "confirmed" ? idx + 1 : total} steps run`)}
               {ruledOutCount > 0 ? chip(<ArrowRight size={11} aria-hidden="true" />, `${ruledOutCount} ruled out`) : null}
-              {finished === "confirmed" ? chip(<DollarSign size={11} aria-hidden="true" />, "diag fee saved") : null}
+              {finished === "confirmed" ? chip(<DollarSign size={11} aria-hidden="true" />, "$100–$180 saved") : null}
             </div>
             <button
               onClick={onClose}

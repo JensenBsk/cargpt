@@ -22,7 +22,7 @@ const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: "13px",
   fontWeight: 500,
-  color: "#8b95a8",
+  color: "#7d8fa8",
   textTransform: "none",
   letterSpacing: 0,
   marginBottom: "6px",
@@ -135,7 +135,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
     const potentialSavings = fairLow && result.totalQuoted > fairLow ? result.totalQuoted - fairLow : null;
     return (
       <div style={{ minHeight: "100dvh", backgroundColor: "#060810", display: "flex", flexDirection: "column" }}>
-        <div style={{ position: "sticky", top: 0, zIndex: 10, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#0b1019", borderBottom: "1px solid #1e2329" }}>
+        <div style={{ position: "sticky", top: 0, zIndex: 10, height: "52px", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#0b1019", borderBottom: "1px solid #172134" }}>
           <div>
             <div style={{ fontSize: "15px", fontWeight: 600, lineHeight: 1.2, color: "#dce8f5" }}>Quote Analysis</div>
             <div style={{ fontSize: "11px", color: "#7d8fa8", lineHeight: 1.2 }}>{year} {make} {model}</div>
@@ -147,7 +147,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
 
         <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "12px" }}>
           {/* Total comparison */}
-          <div style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "10px", padding: "16px" }}>
+          <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "16px" }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "10px" }}>
               <div>
                 <div style={{ fontSize: "11px", color: "#7d8fa8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Quoted</div>
@@ -164,7 +164,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
                 {overall.label}
               </span>
             </div>
-            <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid #1e2329" }}>
+            <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid #172134" }}>
               <span style={{ fontSize: "11px", color: "#4a5c72" }}>✓ Independent analysis — Carlos has no relationship with any mechanic or repair shop</span>
             </div>
           </div>
@@ -199,13 +199,13 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
           )}
 
           {/* Line items */}
-          <div style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "10px", padding: "14px 16px" }}>
+          <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "14px 16px" }}>
             <div style={{ fontSize: "11px", fontWeight: 600, color: "#7d8fa8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>🔍 Line by Line</div>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {result.lineItems.map((item, i) => {
                 const vc = VERDICT_CONFIG[item.verdict];
                 return (
-                  <div key={i} style={{ backgroundColor: "#101822", border: "1px solid #1e2329", borderRadius: "8px", padding: "12px", borderLeft: `3px solid ${vc.text}` }}>
+                  <div key={i} style={{ backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", padding: "12px", borderLeft: `3px solid ${vc.text}` }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "6px" }}>
                       <span style={{ fontSize: "15px", fontWeight: 600, color: "#dce8f5" }}>{item.service}</span>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
@@ -216,7 +216,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
                     <div style={{ fontSize: "12px", color: "#7d8fa8", marginBottom: "4px" }}>Fair: {item.fairRange}</div>
                     <p style={{ margin: 0, fontSize: "13px", color: "#7d8fa8", lineHeight: 1.5, marginBottom: "8px" }}>{item.note}</p>
                     {item.verdict !== "FAIR" && (
-                      <div style={{ backgroundColor: "#060810", border: "1px solid #1e2329", borderRadius: "6px", padding: "8px 10px" }}>
+                      <div style={{ backgroundColor: "#060810", border: "1px solid #172134", borderRadius: "6px", padding: "8px 10px" }}>
                         <span style={{ fontSize: "11px", color: "#7d8fa8", fontWeight: 600 }}>ASK: </span>
                         <span style={{ fontSize: "13px", color: "#7d8fa8" }}>{item.askMechanic}</span>
                       </div>
@@ -228,13 +228,13 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
           </div>
 
           {/* Customer rights */}
-          <div style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "10px", overflow: "hidden" }}>
+          <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", overflow: "hidden" }}>
             <button onClick={() => setShowRights(v => !v)} style={{ width: "100%", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "transparent", border: "none", cursor: "pointer" }}>
               <span style={{ fontSize: "13px", fontWeight: 600, color: "#7d8fa8" }}>⚖️ Your rights as a customer</span>
               <span style={{ fontSize: "12px", color: "#4a5c72" }}>{showRights ? "↑" : "↓"}</span>
             </button>
             {showRights && (
-              <div style={{ padding: "0 16px 14px", borderTop: "1px solid #1e2329" }}>
+              <div style={{ padding: "0 16px 14px", borderTop: "1px solid #172134" }}>
                 <ul style={{ margin: "12px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "8px" }}>
                   {[
                     "You can always ask for an itemized invoice showing parts cost separately from labor.",
@@ -254,12 +254,12 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
           </div>
 
           {/* Negotiation script */}
-          <div style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "10px", padding: "14px 16px" }}>
+          <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "14px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
               <div style={{ fontSize: "11px", fontWeight: 600, color: "#7d8fa8", textTransform: "uppercase", letterSpacing: "0.08em" }}>💬 Negotiation Script</div>
               <span style={{ fontSize: "11px", color: "#7d8fa8" }}>Screenshot this</span>
             </div>
-            <div style={{ backgroundColor: "#101822", border: "1px solid #1e2329", borderRadius: "8px", padding: "14px", marginBottom: "12px" }}>
+            <div style={{ backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "8px", padding: "14px", marginBottom: "12px" }}>
               <p style={{ margin: 0, fontSize: "14px", color: "#dce8f5", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
                 {result.negotiationScript}
               </p>
@@ -297,7 +297,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
           <form
             id="quote-form"
             onSubmit={handleSubmit}
-            style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}
+            style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}
           >
             <div>
               <label style={labelStyle}>Year</label>
@@ -357,7 +357,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
                 </div>
               ) : (
                 <label htmlFor="quote-photo-input" style={{ display: "block", cursor: resizing ? "wait" : "pointer" }}>
-                  <div style={{ background: "#0a0d14", border: "1px solid #1e2433", borderRadius: "12px", padding: "28px 24px", textAlign: "center" }}>
+                  <div style={{ background: "#0a0d14", border: "1px solid #172134", borderRadius: "12px", padding: "28px 24px", textAlign: "center" }}>
                     <span style={{ fontSize: "28px", display: "block", marginBottom: "8px" }}>📷</span>
                     <p style={{ color: "#6b7280", fontSize: "14px", fontWeight: 600, margin: "0 0 4px" }}>
                       {resizing ? "Resizing…" : "Tap to photograph your quote"}
@@ -391,7 +391,7 @@ export default function QuoteChecker({ onResultChange, onToast }: Props) {
         </div>
       </div>
 
-      <div style={{ padding: "12px 16px", paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))", backgroundColor: "#060810", borderTop: "1px solid #1e2329", flexShrink: 0 }}>
+      <div style={{ padding: "12px 16px", paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))", backgroundColor: "#060810", borderTop: "1px solid #172134", flexShrink: 0 }}>
         <button
           type="submit"
           form="quote-form"

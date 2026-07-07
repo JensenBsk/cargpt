@@ -102,7 +102,7 @@ export async function GET(request: Request) {
               justifyContent: "space-between",
               alignItems: "center",
               paddingTop: "20px",
-              borderTop: "1px solid #1e2329",
+              borderTop: "1px solid #172134",
             }}
           >
             <div style={{ fontSize: 15, color: "#4b5563" }}>Get your free diagnosis → mchaniccarlos.com</div>

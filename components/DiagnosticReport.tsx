@@ -47,8 +47,8 @@ const LIKELIHOOD_COLORS: Record<string, { bg: string; text: string }> = {
 
 const ACCENT_BORDERS: Record<string, string> = {
   "Most Likely": "#4a9eff",
-  "Likely": "#1e2433",
-  "Possible": "#1e2433",
+  "Likely": "#172134",
+  "Possible": "#172134",
   "Unlikely but serious": "#f59e0b",
 };
 
@@ -645,9 +645,9 @@ export default function DiagnosticReport({
                         {cause.confidence !== undefined && (
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingLeft: "30px" }}>
                             <div style={{ flex: 1, height: "3px", backgroundColor: "#172134", borderRadius: "2px", overflow: "hidden" }}>
-                              <div style={{ width: `${cause.confidence}%`, height: "100%", backgroundColor: accentColor === "#1e2433" ? "#4a5c72" : accentColor, borderRadius: "2px" }} />
+                              <div style={{ width: `${cause.confidence}%`, height: "100%", backgroundColor: accentColor === "#172134" ? "#4a5c72" : accentColor, borderRadius: "2px" }} />
                             </div>
-                            <span style={{ fontSize: "10px", color: accentColor === "#1e2433" ? "#4a5c72" : accentColor, fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, flexShrink: 0 }}>{cause.confidence}%</span>
+                            <span style={{ fontSize: "10px", color: accentColor === "#172134" ? "#4a5c72" : accentColor, fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, flexShrink: 0 }}>{cause.confidence}%</span>
                           </div>
                         )}
                       </button>

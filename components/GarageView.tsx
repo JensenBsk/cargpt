@@ -217,7 +217,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
             <div style={{ height: "32px", width: "80px", backgroundColor: "#101822", borderRadius: "8px" }} />
           </div>
           {[0, 1, 2].map((i) => (
-            <div key={i} style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "12px", padding: "16px", marginBottom: "8px", opacity: 1 - i * 0.25 }}>
+            <div key={i} style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "12px", padding: "16px", marginBottom: "8px", opacity: 1 - i * 0.25 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
                   <div style={{ height: "14px", width: i === 0 ? "160px" : i === 1 ? "130px" : "110px", backgroundColor: "#172134", borderRadius: "4px", marginBottom: "6px" }} />
@@ -250,7 +250,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                   <button
                     key={item.id}
                     onClick={() => onOpenDiagnosis(item)}
-                    style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "rgba(11,16,25,0.8)", border: "1px solid #1e2329", borderRadius: "10px", padding: "10px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
+                    style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "rgba(11,16,25,0.8)", border: "1px solid #172134", borderRadius: "10px", padding: "10px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
                   >
                     <div style={{ width: "7px", height: "7px", borderRadius: "50%", backgroundColor: VERDICT_DOT[item.verdict] ?? "#7d8fa8", flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -313,7 +313,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
       {showAddForm && (
         <form
           onSubmit={addCar}
-          style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "12px", padding: "16px", marginBottom: "16px", display: "flex", flexDirection: "column", gap: "10px", boxSizing: "border-box" }}
+          style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "12px", padding: "16px", marginBottom: "16px", display: "flex", flexDirection: "column", gap: "10px", boxSizing: "border-box" }}
         >
           <select value={form.year} onChange={(e) => setForm((f) => ({ ...f, year: e.target.value }))} required style={{ ...inputStyle, color: form.year ? "#dce8f5" : "#7d8fa8" }}>
             <option value="">Year</option>
@@ -379,7 +379,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
             const isLoadingMaint = maintLoading[car.id];
 
             return (
-              <div key={car.id} style={{ backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "12px", overflow: "hidden" }}>
+              <div key={car.id} style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "12px", overflow: "hidden" }}>
                 <div style={{ padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
@@ -416,7 +416,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                   const carRepairs = repairs.filter(r => r.carKey === carKey).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
                   const isRepairOpen = showRepairSection === carKey;
                   return (
-                    <div style={{ borderTop: "1px solid #1e2329" }}>
+                    <div style={{ borderTop: "1px solid #172134" }}>
                       <button
                         onClick={() => setShowRepairSection(isRepairOpen ? null : carKey)}
                         style={{ width: "100%", padding: "10px 16px", fontSize: "12px", color: "#7d8fa8", backgroundColor: "transparent", border: "none", cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between" }}
@@ -486,7 +486,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                 })()}
 
                 {/* Maintenance section */}
-                <div style={{ borderTop: "1px solid #1e2329" }}>
+                <div style={{ borderTop: "1px solid #172134" }}>
                   {!isMaintExpanded ? (
                     <button onClick={() => setExpandedMaint(car.id)} style={{ width: "100%", padding: "10px 16px", fontSize: "12px", color: "#7d8fa8", backgroundColor: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
                       Maintenance schedule →
@@ -571,7 +571,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
               <button
                 key={item.id}
                 onClick={() => onOpenDiagnosis(item)}
-                style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "#0b1019", border: "1px solid #1e2329", borderRadius: "10px", padding: "12px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
+                style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "10px", padding: "12px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
               >
                 <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: VERDICT_DOT[item.verdict] ?? "#7d8fa8", flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>

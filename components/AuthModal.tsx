@@ -125,9 +125,9 @@ export default function AuthModal({ onClose }: Props) {
       </button>
 
       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
-        <div style={{ flex: 1, height: "1px", backgroundColor: "#1e2329" }} />
+        <div style={{ flex: 1, height: "1px", backgroundColor: "#172134" }} />
         <span style={{ fontSize: "12px", color: "#6b7280" }}>or</span>
-        <div style={{ flex: 1, height: "1px", backgroundColor: "#1e2329" }} />
+        <div style={{ flex: 1, height: "1px", backgroundColor: "#172134" }} />
       </div>
 
       <form onSubmit={handleEmailAuth} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -234,7 +234,7 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
         aria-label="Sign in"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: "400px", backgroundColor: "#13161b", border: "1px solid #1e2329", borderRadius: "16px", padding: "24px", outline: "none" }}
+        style={{ width: "100%", maxWidth: "400px", backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "16px", padding: "24px", outline: "none" }}
       >
         {children}
       </div>

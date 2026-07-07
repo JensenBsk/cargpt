@@ -641,7 +641,7 @@ export default function Home() {
     backgroundColor: "#0a0d14",
     border: "1px solid #1c2a3e",
     borderRadius: "10px",
-    color: "#f8fafc",
+    color: "#dce8f5",
   };
 
   const labelStyle: React.CSSProperties = {
@@ -902,7 +902,7 @@ export default function Home() {
                         onChange={(e) => { setYear(e.target.value); if (showErrors) setShowErrors(false); }}
                         aria-invalid={showErrors && !year}
                         aria-describedby={showErrors && !year ? "vehicle-error" : undefined}
-                        style={{ ...fieldStyle, padding: "0 14px", color: year ? "#f8fafc" : "#4a5c72", borderColor: showErrors && !year ? "#ef4444" : "#1c2a3e" }}
+                        style={{ ...fieldStyle, padding: "0 14px", color: year ? "#dce8f5" : "#4a5c72", borderColor: showErrors && !year ? "#ef4444" : "#1c2a3e" }}
                       >
                         <option value="">Year</option>
                         {years.map((y) => <option key={y} value={y}>{y}</option>)}
@@ -1081,7 +1081,7 @@ export default function Home() {
                       onChange={(e) => setIssue(e.target.value)}
                       placeholder="P0301 misfire on cyl 1, rough idle at startup, knocking under load — describe what you see or hear"
                       rows={4}
-                      style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", minHeight: "130px", padding: "14px 48px 14px 16px", fontSize: "16px", backgroundColor: "#0a0d14", border: `1px solid ${isRecording ? "rgba(239,68,68,0.5)" : "#1c2a3e"}`, borderRadius: "12px", color: "#f8fafc", resize: "none", lineHeight: 1.6, fontFamily: "var(--font-ibm), sans-serif", transition: "border-color 200ms" }}
+                      style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", minHeight: "130px", padding: "14px 48px 14px 16px", fontSize: "16px", backgroundColor: "#0a0d14", border: `1px solid ${isRecording ? "rgba(239,68,68,0.5)" : "#1c2a3e"}`, borderRadius: "12px", color: "#dce8f5", resize: "none", lineHeight: 1.6, fontFamily: "var(--font-ibm), sans-serif", transition: "border-color 200ms" }}
                     />
                     <button
                       type="button"
