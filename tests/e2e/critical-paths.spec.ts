@@ -71,6 +71,9 @@ test.describe("Diagnosis flow", () => {
         },
       })
     );
+    await page.route("**/api/complaints**", (route) =>
+      route.fulfill({ json: { count: 45, topComponents: [{ name: "ENGINE", count: 18 }, { name: "ELECTRICAL SYSTEM", count: 9 }] } })
+    );
 
     await page.goto("/diagnose");
     await page.locator("#vehicle-year").selectOption("2018");
@@ -78,10 +81,18 @@ test.describe("Diagnosis flow", () => {
     await page.locator("#vehicle-model").fill("Civic");
     await page.locator("#issue-description").fill("P0301 misfire on cold start");
 
-    // TSB banner appears once the vehicle is identified (debounced lookup)
-    await expect(page.getByText(/2 service bulletins/i)).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("button", { name: /service bulletins/i }).click();
+    // "What the dealer knows" intel appears once the vehicle is identified
+    await expect(page.getByText(/what the dealer knows/i)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("button", { name: /recalls — all clear/i })).toBeVisible();
+    await page.getByRole("button", { name: /2\s*bulletins/i }).click();
     await expect(page.getByText("A19-014")).toBeVisible();
+    await page.getByRole("button", { name: /45\s*owner complaints/i }).click();
+    await expect(page.getByText("A19-014")).not.toBeVisible(); // one panel at a time
+    await expect(page.getByText("Engine", { exact: true })).toBeVisible();
+
+    // Symptom chip appends to the issue description
+    await page.getByRole("button", { name: "Burning smell", exact: true }).click();
+    await expect(page.locator("#issue-description")).toHaveValue(/burning smell/i);
 
     await page.getByRole("button", { name: /ask carlos/i }).click();
 
@@ -114,6 +125,7 @@ test.describe("Repair Mode", () => {
     await page.route("**/api/questions", (route) => route.fulfill({ json: { questions: [] } }));
     await page.route("**/api/recalls**", (route) => route.fulfill({ json: { count: 0, recalls: [] } }));
     await page.route("**/api/tsbs**", (route) => route.fulfill({ json: { count: 0, tsbs: [] } }));
+    await page.route("**/api/complaints**", (route) => route.fulfill({ json: { count: 0, topComponents: [] } }));
 
     await page.goto("/diagnose");
     await page.locator("#vehicle-year").selectOption("2018");

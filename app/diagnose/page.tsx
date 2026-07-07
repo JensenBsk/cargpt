@@ -19,7 +19,21 @@ import { resizeImage } from "@/utils/resizeImage";
 import { hapticSuccess } from "@/lib/native";
 import { track } from "@/lib/track";
 import { parsePartialJson } from "@/lib/partialJson";
-import { MapPin, Camera, Wrench, Lock, WifiOff, Bluetooth, Car, AlertTriangle } from "lucide-react";
+import { MapPin, Camera, Wrench, Lock, WifiOff, Bluetooth, Car, AlertTriangle, Users } from "lucide-react";
+
+// Common symptoms as one-tap chips (mirrors how people actually describe
+// problems). Tapping toggles the phrase in the issue description.
+const SYMPTOM_CHIPS: { label: string; phrase: string }[] = [
+  { label: "Warning light", phrase: "a warning light is on" },
+  { label: "Strange noise", phrase: "making a strange noise" },
+  { label: "Won't start", phrase: "won't start" },
+  { label: "Overheating", phrase: "overheating" },
+  { label: "Vibration", phrase: "vibrates while driving" },
+  { label: "Braking issue", phrase: "brakes feel off" },
+  { label: "Fluid leak", phrase: "leaking fluid" },
+  { label: "Burning smell", phrase: "burning smell" },
+  { label: "Stalling", phrase: "stalls while driving" },
+];
 
 const LS_KEY = "torque_diagnosis_history";
 
@@ -139,11 +153,13 @@ export default function Home() {
   const [savedCars, setSavedCars] = useState<{ year: string; make: string; model: string }[]>([]);
   const [outcomeItem, setOutcomeItem] = useState<HistoryItem | null>(null);
   const [recallData, setRecallData] = useState<{ key: string; count: number; items: { campaignNumber: string; subject: string; component: string }[] } | null>(null);
-  const [recallsOpen, setRecallsOpen] = useState(false);
   const recallCacheRef = useRef<Record<string, { count: number; items: { campaignNumber: string; subject: string; component: string }[] }>>({});
   const [tsbData, setTsbData] = useState<{ key: string; count: number; items: TsbItem[] } | null>(null);
-  const [tsbsOpen, setTsbsOpen] = useState(false);
   const tsbCacheRef = useRef<Record<string, { count: number; items: TsbItem[] }>>({});
+  const [complaintData, setComplaintData] = useState<{ key: string; count: number; topComponents: { name: string; count: number }[] } | null>(null);
+  const complaintCacheRef = useRef<Record<string, { count: number; topComponents: { name: string; count: number }[] }>>({});
+  // Which "What the dealer knows" panel is expanded (one at a time)
+  const [intelOpen, setIntelOpen] = useState<"recalls" | "tsbs" | "complaints" | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showObdScanner, setShowObdScanner] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -238,6 +254,7 @@ export default function Home() {
     : null;
   const recalls = recallData && recallData.key === recallKey ? recallData : null;
   const tsbs = tsbData && tsbData.key === recallKey ? tsbData : null;
+  const complaints = complaintData && complaintData.key === recallKey ? complaintData : null;
 
   useEffect(() => {
     if (!recallKey || !year) return;
@@ -264,6 +281,18 @@ export default function Home() {
             const val = { count: d.count ?? 0, items: (d.tsbs ?? []) as TsbItem[] };
             tsbCacheRef.current[recallKey] = val;
             setTsbData({ key: recallKey, ...val });
+          })
+          .catch(() => {});
+      }
+      const cachedComplaints = complaintCacheRef.current[recallKey];
+      if (cachedComplaints) { setComplaintData({ key: recallKey, ...cachedComplaints }); }
+      else {
+        fetch(`/api/complaints?${vehicleQs}`)
+          .then((r) => r.json())
+          .then((d) => {
+            const val = { count: d.count ?? 0, topComponents: d.topComponents ?? [] };
+            complaintCacheRef.current[recallKey] = val;
+            setComplaintData({ key: recallKey, ...val });
           })
           .catch(() => {});
       }
@@ -418,6 +447,18 @@ export default function Home() {
       setLoading(false);
       setStreamPreview(null);
     }
+  }
+
+  function toggleSymptom(phrase: string) {
+    setIssue((cur) => {
+      if (cur.toLowerCase().includes(phrase.toLowerCase())) {
+        // Remove the phrase plus one adjacent separator, then tidy up
+        return cur
+          .replace(new RegExp(`(,\\s*)?${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(,\\s*)?`, "i"), (_, pre, post) => (pre && post ? ", " : ""))
+          .replace(/^[,\s]+|[,\s]+$/g, "");
+      }
+      return cur.trim() ? `${cur.replace(/[,\s]+$/, "")}, ${phrase}` : phrase.charAt(0).toUpperCase() + phrase.slice(1);
+    });
   }
 
   function handleNewDiagnosis() {
@@ -598,7 +639,7 @@ export default function Home() {
     padding: "0 14px",
     fontSize: "16px",
     backgroundColor: "#0a0d14",
-    border: "1px solid #1e2433",
+    border: "1px solid #1c2a3e",
     borderRadius: "10px",
     color: "#f8fafc",
   };
@@ -607,7 +648,7 @@ export default function Home() {
     display: "block",
     fontSize: "13px",
     fontWeight: 500,
-    color: "#8b95a8",
+    color: "#7d8fa8",
     letterSpacing: 0,
     textTransform: "none" as const,
     marginBottom: "8px",
@@ -717,7 +758,7 @@ export default function Home() {
                     <h1 style={{ color: "white", fontSize: "20px", fontWeight: 700, margin: "0 0 2px" }}>
                       What&apos;s going on?
                     </h1>
-                    <p style={{ color: "#8b95a8", fontSize: "13px", margin: 0 }}>
+                    <p style={{ color: "#7d8fa8", fontSize: "13px", margin: 0 }}>
                       Tell Carlos — he&apos;ll figure it out.
                     </p>
                   </div>
@@ -727,7 +768,7 @@ export default function Home() {
               {/* Carlos thinking — loading state with result skeleton */}
               {loading && (
                 <div style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", margin: "0 0 16px" }}>
-                  <div aria-live="polite" style={{ textAlign: "center", padding: "28px 24px", borderRadius: "16px", background: "#13161b", border: "1px solid #1e2329", marginBottom: "12px" }}>
+                  <div aria-live="polite" style={{ textAlign: "center", padding: "28px 24px", borderRadius: "16px", background: "#0b1019", border: "1px solid #172134", marginBottom: "12px" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src="/carlos/carlos-thinking.webp"
@@ -739,7 +780,7 @@ export default function Home() {
                       {streamPreview ? "Here's what Carlos is finding…" : loadingMsgsRef.current[loadingMsgIdx] || `Carlos is on it…`}
                     </p>
                     <p style={{ color: "#7d8fa8", fontSize: "13px", margin: 0 }}>
-                      {streamPreview ? "Report coming in live — full details in a moment" : "Carlos checks real repair data — usually 20–40 seconds"}
+                      {streamPreview ? "Report coming in live — full details in a moment" : "Live report — first findings land in seconds"}
                     </p>
                   </div>
 
@@ -809,7 +850,7 @@ export default function Home() {
               >
                 {/* Outcome follow-up — closes the loop on a past diagnosis */}
                 {outcomeItem && !loading && (
-                  <div style={{ background: "#13161f", border: "1px solid rgba(74,158,255,0.3)", borderRadius: "14px", padding: "16px" }}>
+                  <div style={{ background: "#0b1019", border: "1px solid rgba(74,158,255,0.3)", borderRadius: "16px", padding: "16px" }}>
                     <div style={{ fontSize: "11px", fontWeight: 600, color: "#4a5c72", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "6px" }}>Quick follow-up</div>
                     <div style={{ fontSize: "14px", color: "#dce8f5", lineHeight: 1.5, marginBottom: "12px" }}>
                       Did <strong>{outcomeItem.diagnosis.rankedCauses[0]?.cause?.toLowerCase() ?? "the fix"}</strong> turn out to be the problem with your {outcomeItem.year} {outcomeItem.make}?
@@ -818,7 +859,7 @@ export default function Home() {
                       <button type="button" onClick={() => recordOutcome("fixed")} className="tap-target" style={{ flex: 1, height: "40px", borderRadius: "10px", border: "1px solid rgba(34,197,94,0.4)", backgroundColor: "rgba(34,197,94,0.1)", color: "#22c55e", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
                         Yes, fixed it
                       </button>
-                      <button type="button" onClick={() => recordOutcome("not_fixed")} className="tap-target" style={{ flex: 1, height: "40px", borderRadius: "10px", border: "1px solid #1e2433", backgroundColor: "transparent", color: "#8b95a8", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+                      <button type="button" onClick={() => recordOutcome("not_fixed")} className="tap-target" style={{ flex: 1, height: "40px", borderRadius: "10px", border: "1px solid #1c2a3e", backgroundColor: "transparent", color: "#7d8fa8", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
                         No / not sure
                       </button>
                       <button type="button" onClick={() => recordOutcome("later")} className="tap-target" aria-label="Ask me later" style={{ height: "40px", padding: "0 12px", borderRadius: "10px", border: "none", backgroundColor: "transparent", color: "#4a5c72", fontSize: "13px", cursor: "pointer" }}>
@@ -847,10 +888,10 @@ export default function Home() {
                 )}
 
                 {/* Vehicle card */}
-                <div style={{ background: "#13161f", border: "1px solid #1e2433", borderRadius: "16px", padding: "20px" }}>
+                <div style={{ background: "#0b1019", border: "1px solid #172134", borderRadius: "16px", padding: "20px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
                     <Car size={17} color="#4a9eff" aria-hidden="true" />
-                    <span style={{ color: "#f8fafc", fontSize: "15px", fontWeight: 600 }}>What car are we working on?</span>
+                    <span style={{ color: "#dce8f5", fontSize: "15px", fontWeight: 600 }}>What car are we working on?</span>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <div ref={yearRef}>
@@ -861,7 +902,7 @@ export default function Home() {
                         onChange={(e) => { setYear(e.target.value); if (showErrors) setShowErrors(false); }}
                         aria-invalid={showErrors && !year}
                         aria-describedby={showErrors && !year ? "vehicle-error" : undefined}
-                        style={{ ...fieldStyle, padding: "0 14px", color: year ? "#f8fafc" : "#4a5c72", borderColor: showErrors && !year ? "#ef4444" : "#1e2433" }}
+                        style={{ ...fieldStyle, padding: "0 14px", color: year ? "#f8fafc" : "#4a5c72", borderColor: showErrors && !year ? "#ef4444" : "#1c2a3e" }}
                       >
                         <option value="">Year</option>
                         {years.map((y) => <option key={y} value={y}>{y}</option>)}
@@ -879,7 +920,7 @@ export default function Home() {
                         autoCapitalize="words"
                         aria-invalid={showErrors && !make}
                         aria-describedby={showErrors && !make ? "vehicle-error" : undefined}
-                        style={{ ...fieldStyle, borderColor: showErrors && !make ? "#ef4444" : "#1e2433" }}
+                        style={{ ...fieldStyle, borderColor: showErrors && !make ? "#ef4444" : "#1c2a3e" }}
                       />
                     </div>
                     <div ref={modelRef}>
@@ -893,7 +934,7 @@ export default function Home() {
                         autoComplete="off"
                         aria-invalid={showErrors && !model}
                         aria-describedby={showErrors && !model ? "vehicle-error" : undefined}
-                        style={{ ...fieldStyle, borderColor: showErrors && !model ? "#ef4444" : "#1e2433" }}
+                        style={{ ...fieldStyle, borderColor: showErrors && !model ? "#ef4444" : "#1c2a3e" }}
                       />
                     </div>
                   </div>
@@ -915,64 +956,109 @@ export default function Home() {
                     Connect OBD2 Scanner
                   </button>
 
-                  {/* Open recalls (NHTSA) for the identified vehicle */}
-                  {recalls && recalls.count > 0 && (
-                    <div style={{ marginTop: "12px", backgroundColor: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: "10px", overflow: "hidden" }}>
-                      <button
-                        type="button"
-                        onClick={() => setRecallsOpen((v) => !v)}
-                        className="tap-target"
-                        aria-expanded={recallsOpen}
-                        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "11px 14px", backgroundColor: "transparent", border: "none", cursor: "pointer" }}
-                      >
-                        <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, color: "#f59e0b" }}>
-                          <AlertTriangle size={14} aria-hidden="true" />
-                          {recalls.count} open recall{recalls.count > 1 ? "s" : ""} on this car
-                        </span>
-                        <span style={{ fontSize: "12px", color: "#8a6d1f" }}>{recallsOpen ? "Hide" : "View"}</span>
-                      </button>
-                      {recallsOpen && (
-                        <div style={{ padding: "0 14px 12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {/* "What the dealer knows" — recalls, TSBs, and owner complaints
+                      from NHTSA in one module. One panel expands at a time. */}
+                  {(recalls || (tsbs && tsbs.count > 0) || (complaints && complaints.count > 0)) && (
+                    <div style={{ marginTop: "12px", backgroundColor: "#101822", border: "1px solid #172134", borderRadius: "12px", padding: "12px 14px" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                        <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "#4a5c72", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>What the dealer knows</span>
+                        <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "9px", fontWeight: 600, color: "#2d3f55", letterSpacing: "0.08em" }}>NHTSA DATA</span>
+                      </div>
+                      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" as const }}>
+                        {recalls && (
+                          <button
+                            type="button"
+                            onClick={() => setIntelOpen((v) => (v === "recalls" ? null : "recalls"))}
+                            className="tap-target"
+                            aria-expanded={intelOpen === "recalls"}
+                            disabled={recalls.count === 0}
+                            style={{
+                              display: "flex", alignItems: "center", gap: "6px", minHeight: "34px", padding: "0 12px", borderRadius: "20px",
+                              fontSize: "12px", fontWeight: 600, cursor: recalls.count > 0 ? "pointer" : "default", transition: "background-color 200ms, border-color 200ms",
+                              color: recalls.count > 0 ? "#f59e0b" : "#22c55e",
+                              backgroundColor: recalls.count > 0 ? (intelOpen === "recalls" ? "rgba(245,158,11,0.14)" : "rgba(245,158,11,0.06)") : "rgba(34,197,94,0.06)",
+                              border: `1px solid ${recalls.count > 0 ? (intelOpen === "recalls" ? "rgba(245,158,11,0.5)" : "rgba(245,158,11,0.3)") : "rgba(34,197,94,0.25)"}`,
+                            }}
+                          >
+                            <AlertTriangle size={12} aria-hidden="true" />
+                            <span style={{ fontFamily: "var(--font-jetbrains), monospace" }}>{recalls.count}</span>
+                            {recalls.count === 0 ? "recalls — all clear" : `open recall${recalls.count > 1 ? "s" : ""}`}
+                          </button>
+                        )}
+                        {tsbs && tsbs.count > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => { setIntelOpen((v) => (v === "tsbs" ? null : "tsbs")); if (intelOpen !== "tsbs") track("tsb_viewed", { make }); }}
+                            className="tap-target"
+                            aria-expanded={intelOpen === "tsbs"}
+                            style={{
+                              display: "flex", alignItems: "center", gap: "6px", minHeight: "34px", padding: "0 12px", borderRadius: "20px",
+                              fontSize: "12px", fontWeight: 600, color: "#4a9eff", cursor: "pointer", transition: "background-color 200ms, border-color 200ms",
+                              backgroundColor: intelOpen === "tsbs" ? "rgba(74,158,255,0.14)" : "rgba(74,158,255,0.06)",
+                              border: `1px solid ${intelOpen === "tsbs" ? "rgba(74,158,255,0.5)" : "rgba(74,158,255,0.3)"}`,
+                            }}
+                          >
+                            <Wrench size={12} aria-hidden="true" />
+                            <span style={{ fontFamily: "var(--font-jetbrains), monospace" }}>{tsbs.count}</span>
+                            bulletins
+                          </button>
+                        )}
+                        {complaints && complaints.count > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setIntelOpen((v) => (v === "complaints" ? null : "complaints"))}
+                            className="tap-target"
+                            aria-expanded={intelOpen === "complaints"}
+                            style={{
+                              display: "flex", alignItems: "center", gap: "6px", minHeight: "34px", padding: "0 12px", borderRadius: "20px",
+                              fontSize: "12px", fontWeight: 600, color: "#7d8fa8", cursor: "pointer", transition: "background-color 200ms, border-color 200ms",
+                              backgroundColor: intelOpen === "complaints" ? "rgba(125,143,168,0.14)" : "rgba(125,143,168,0.06)",
+                              border: `1px solid ${intelOpen === "complaints" ? "rgba(125,143,168,0.5)" : "rgba(125,143,168,0.25)"}`,
+                            }}
+                          >
+                            <Users size={12} aria-hidden="true" />
+                            <span style={{ fontFamily: "var(--font-jetbrains), monospace" }}>{complaints.count}</span>
+                            owner complaints
+                          </button>
+                        )}
+                      </div>
+
+                      {intelOpen === "recalls" && recalls && recalls.count > 0 && (
+                        <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
                           {recalls.items.map((r) => (
-                            <div key={r.campaignNumber} style={{ fontSize: "12px", color: "#8b95a8", lineHeight: 1.5 }}>
+                            <div key={r.campaignNumber} style={{ fontSize: "12px", color: "#7d8fa8", lineHeight: 1.5 }}>
                               <span style={{ color: "#dce8f5", fontWeight: 600 }}>{r.component ? r.component.split(":").pop() : "Recall"}:</span> {r.subject}
                             </div>
                           ))}
                           <div style={{ fontSize: "11px", color: "#4a5c72" }}>
-                            Recall repairs are free at any dealer. Source: NHTSA{recalls.count > 3 ? ` — ${recalls.count - 3} more on nhtsa.gov` : ""}.
+                            Recall repairs are free at any dealer{recalls.count > 3 ? ` — ${recalls.count - 3} more on nhtsa.gov` : ""}.
                           </div>
                         </div>
                       )}
-                    </div>
-                  )}
-
-                  {/* Technical Service Bulletins (NHTSA) — what the dealer already knows */}
-                  {tsbs && tsbs.count > 0 && (
-                    <div style={{ marginTop: recalls && recalls.count > 0 ? "8px" : "12px", backgroundColor: "rgba(74,158,255,0.05)", border: "1px solid rgba(74,158,255,0.25)", borderRadius: "10px", overflow: "hidden" }}>
-                      <button
-                        type="button"
-                        onClick={() => { setTsbsOpen((v) => !v); if (!tsbsOpen) track("tsb_viewed", { make }); }}
-                        className="tap-target"
-                        aria-expanded={tsbsOpen}
-                        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "11px 14px", backgroundColor: "transparent", border: "none", cursor: "pointer" }}
-                      >
-                        <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, color: "#4a9eff", textAlign: "left" as const }}>
-                          <Wrench size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
-                          {tsbs.count} service bulletin{tsbs.count > 1 ? "s" : ""} — known fixes the dealer has
-                        </span>
-                        <span style={{ fontSize: "12px", color: "#3d5a80", flexShrink: 0 }}>{tsbsOpen ? "Hide" : "View"}</span>
-                      </button>
-                      {tsbsOpen && (
-                        <div style={{ padding: "0 14px 12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {intelOpen === "tsbs" && tsbs && (
+                        <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
                           {tsbs.items.slice(0, 4).map((t) => (
-                            <div key={t.nhtsaId} style={{ fontSize: "12px", color: "#8b95a8", lineHeight: 1.5 }}>
+                            <div key={t.nhtsaId} style={{ fontSize: "12px", color: "#7d8fa8", lineHeight: 1.5 }}>
                               <span style={{ color: "#dce8f5", fontWeight: 600, fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px" }}>{t.number}</span>
                               {t.date ? <span style={{ color: "#4a5c72" }}> · {t.date.slice(0, 7)}</span> : null}
                               <br />{t.summary}
                             </div>
                           ))}
                           <div style={{ fontSize: "11px", color: "#4a5c72" }}>
-                            Factory-issued fix procedures. Carlos folds the relevant ones into your diagnosis automatically. Source: NHTSA{tsbs.count > 4 ? ` — ${tsbs.count - 4} more` : ""}.
+                            Known fixes the dealer has on file. Carlos folds the relevant ones into your diagnosis automatically{tsbs.count > 4 ? ` — ${tsbs.count - 4} more` : ""}.
+                          </div>
+                        </div>
+                      )}
+                      {intelOpen === "complaints" && complaints && (
+                        <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                          {complaints.topComponents.map((c) => (
+                            <div key={c.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", fontSize: "12px", lineHeight: 1.5 }}>
+                              <span style={{ color: "#dce8f5", fontWeight: 600 }}>{c.name.charAt(0) + c.name.slice(1).toLowerCase()}</span>
+                              <span style={{ fontFamily: "var(--font-jetbrains), monospace", color: "#7d8fa8" }}>{c.count}</span>
+                            </div>
+                          ))}
+                          <div style={{ fontSize: "11px", color: "#4a5c72" }}>
+                            What owners of this exact car report to NHTSA most. Patterns, not panic.
                           </div>
                         </div>
                       )}
@@ -981,11 +1067,11 @@ export default function Home() {
                 </div>
 
                 {/* Issue card */}
-                <div style={{ background: "#13161f", border: "1px solid #1e2433", borderRadius: "16px", padding: "20px" }}>
+                <div style={{ background: "#0b1019", border: "1px solid #172134", borderRadius: "16px", padding: "20px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/carlos/carlos-thinking.webp" alt="" style={{ width: "28px", height: "28px", objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(59,130,246,0.2))" }} />
-                    <span style={{ color: "#f8fafc", fontSize: "15px", fontWeight: 600 }}>What&apos;s going on with it?</span>
+                    <span style={{ color: "#dce8f5", fontSize: "15px", fontWeight: 600 }}>What&apos;s going on with it?</span>
                   </div>
                   <div style={{ position: "relative" }}>
                     <label htmlFor="issue-description" className="sr-only">Describe the problem with your car</label>
@@ -995,7 +1081,7 @@ export default function Home() {
                       onChange={(e) => setIssue(e.target.value)}
                       placeholder="P0301 misfire on cyl 1, rough idle at startup, knocking under load — describe what you see or hear"
                       rows={4}
-                      style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", minHeight: "130px", padding: "14px 48px 14px 16px", fontSize: "16px", backgroundColor: "#0a0d14", border: `1px solid ${isRecording ? "rgba(239,68,68,0.5)" : "#1e2433"}`, borderRadius: "12px", color: "#f8fafc", resize: "none", lineHeight: 1.6, fontFamily: "var(--font-ibm), sans-serif", transition: "border-color 200ms" }}
+                      style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", minHeight: "130px", padding: "14px 48px 14px 16px", fontSize: "16px", backgroundColor: "#0a0d14", border: `1px solid ${isRecording ? "rgba(239,68,68,0.5)" : "#1c2a3e"}`, borderRadius: "12px", color: "#f8fafc", resize: "none", lineHeight: 1.6, fontFamily: "var(--font-ibm), sans-serif", transition: "border-color 200ms" }}
                     />
                     <button
                       type="button"
@@ -1015,10 +1101,35 @@ export default function Home() {
                       )}
                     </button>
                   </div>
+
+                  {/* Common symptoms — one tap adds it to the description */}
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" as const, marginTop: "12px" }}>
+                    {SYMPTOM_CHIPS.map((s) => {
+                      const active = issue.toLowerCase().includes(s.phrase.toLowerCase());
+                      return (
+                        <button
+                          key={s.label}
+                          type="button"
+                          onClick={() => toggleSymptom(s.phrase)}
+                          aria-pressed={active}
+                          className="tap-target"
+                          style={{
+                            minHeight: "32px", padding: "0 12px", borderRadius: "20px", fontSize: "12px", fontWeight: 600,
+                            cursor: "pointer", transition: "background-color 200ms, border-color 200ms, color 200ms",
+                            color: active ? "#4a9eff" : "#7d8fa8",
+                            backgroundColor: active ? "rgba(74,158,255,0.12)" : "#101822",
+                            border: `1px solid ${active ? "rgba(74,158,255,0.5)" : "#1c2a3e"}`,
+                          }}
+                        >
+                          {s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Secondary details card */}
-                <div style={{ backgroundColor: "#0b1019", border: "1px solid #1c2a3e", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "16px", width: "100%", boxSizing: "border-box" }}>
+                <div style={{ backgroundColor: "#0b1019", border: "1px solid #172134", borderRadius: "16px", padding: "16px", display: "flex", flexDirection: "column", gap: "16px", width: "100%", boxSizing: "border-box" }}>
 
                   {/* Dashboard photo */}
                   <div>
