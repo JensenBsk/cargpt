@@ -11,10 +11,16 @@
 
 import Stripe from "stripe";
 
-const key = process.env.STRIPE_SECRET_KEY;
-if (!key) {
+// Accept the key as env var or first argument — people paste it both ways.
+const key = process.env.STRIPE_SECRET_KEY?.startsWith("sk_")
+  ? process.env.STRIPE_SECRET_KEY
+  : process.argv[2];
+if (!key?.startsWith("sk_")) {
   console.error("Set STRIPE_SECRET_KEY (sk_test_... to try it, sk_live_... for real).");
   process.exit(1);
+}
+if (key.startsWith("sk_test_")) {
+  console.log("NOTE: test-mode key — prices work with test cards only. Re-run with sk_live_ for real payments.\n");
 }
 const stripe = new Stripe(key);
 
