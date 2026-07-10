@@ -141,7 +141,7 @@ export default function VinInput({ onDecode }: Props) {
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        style={{ fontSize: "12px", color: "var(--accent)", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "0", textDecoration: "underline", textDecorationStyle: "dotted" }}
+        style={{ fontSize: "12px", color: "var(--text-2)", backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "0", textDecoration: "underline", textDecorationStyle: "dotted" }}
       >
         Or enter your VIN for exact specs →
       </button>

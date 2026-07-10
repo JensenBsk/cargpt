@@ -211,17 +211,10 @@ img {
   animation: shimmer 1.6s linear infinite !important;
 }
 
-/* Safety pulses */
-@keyframes pulse-stop {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
-  50%       { box-shadow: 0 0 0 7px rgba(239,68,68,0); }
-}
-@keyframes pulse-caution {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.6); }
-  50%       { box-shadow: 0 0 0 7px rgba(245,158,11,0); }
-}
-.badge-pulse-stop    { animation: pulse-stop    2s ease-in-out infinite; }
-.badge-pulse-caution { animation: pulse-caution 2.4s ease-in-out infinite; }
+/* Verdict dots hold a steady glow — no pulsing in a professional tool.
+   Classes kept as no-ops so any stale usage degrades gracefully. */
+.badge-pulse-stop    { box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+.badge-pulse-caution { box-shadow: 0 0 8px rgba(245,158,11,0.45); }
 
 /* View fade-in */
 @keyframes view-fade-in {
@@ -230,12 +223,12 @@ img {
 }
 .view-enter { animation: view-fade-in 160ms ease forwards; }
 
-/* Toast */
+/* Toast — crisp ease-out, no overshoot */
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-.toast-enter { animation: toast-in 220ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.toast-enter { animation: toast-in 200ms cubic-bezier(0.23, 1, 0.32, 1) forwards; }
 
 /* Photo scan */
 @keyframes scan-sweep {
@@ -252,52 +245,26 @@ img {
   pointer-events: none; z-index: 1;
 }
 
-/* Typing dots */
-@keyframes dot-bounce {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-  40%           { transform: scale(1);   opacity: 1;   }
+/* Typing dots — opacity only; conveys "thinking" without bounce */
+@keyframes dot-fade {
+  0%, 60%, 100% { opacity: 0.35; }
+  30%           { opacity: 1;    }
 }
 .typing-dot {
   display: inline-block; width: 6px; height: 6px;
   border-radius: 50%; background: var(--text-3);
   margin: 0 2px;
-  animation: dot-bounce 1.4s ease-in-out infinite;
+  animation: dot-fade 1.2s linear infinite;
 }
 .typing-dot:nth-child(2) { animation-delay: 0.2s; }
 .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
-/* Bottom sheet slide-up */
+/* Bottom sheet slide-up — iOS drawer curve */
 @keyframes sheet-up {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
 }
-.sheet-enter { animation: sheet-up 280ms cubic-bezier(0.32, 0.72, 0, 1) forwards; }
-
-/* Nav pill */
-@keyframes pill-in {
-  from { transform: scaleX(0.3) translateX(-50%); opacity: 0; }
-  to   { transform: scaleX(1) translateX(-50%); opacity: 1; }
-}
-.nav-pill { animation: pill-in 200ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-
-/* Carlos animations */
-@keyframes carlos-float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-12px); }
-}
-.carlos-float { animation: carlos-float 4s ease-in-out infinite; }
-
-@keyframes carlos-think {
-  0%, 100% { transform: rotate(-2deg) translateY(0px); }
-  50%       { transform: rotate(2deg) translateY(-4px); }
-}
-.carlos-think { animation: carlos-think 2s ease-in-out infinite; }
-
-@keyframes carlos-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.8; transform: scale(0.97); }
-}
-.carlos-pulse { animation: carlos-pulse 2s ease-in-out infinite; }
+.sheet-enter { animation: sheet-up 240ms cubic-bezier(0.32, 0.72, 0, 1) forwards; }
 
 /* Primary CTAs get one quiet shadow — no animated glow rings. */
 .cta-button { box-shadow: 0 4px 16px rgba(59,130,246,0.25); }
@@ -358,26 +325,16 @@ img {
 }
 .preview-row-in { animation: preview-row-in 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-/* ── Diagnosis result slide-up ── */
+/* ── Diagnosis result slide-up — crisp, under 250ms ── */
 @keyframes result-slide-up {
-  from { opacity: 0; transform: translateY(24px); }
+  from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.result-enter { animation: result-slide-up 360ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.result-enter { animation: result-slide-up 240ms cubic-bezier(0.23, 1, 0.32, 1) forwards; }
 
-/* ── Step-complete checkmark draw ── */
-@keyframes check-pop {
-  0%   { transform: scale(0.4); opacity: 0; }
-  60%  { transform: scale(1.15); }
-  100% { transform: scale(1); opacity: 1; }
+/* ── Step-complete checkmark — scales in from a visible size, no overshoot ── */
+@keyframes check-in {
+  from { transform: scale(0.9); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
 }
-.check-pop { animation: check-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-
-/* WCAG 2.3.3: honor the OS-level motion preference */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+.check-pop { animation: check-in 160ms cubic-bezier(0.23, 1, 0.32, 1) forwards; }

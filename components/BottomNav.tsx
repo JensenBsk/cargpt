@@ -1,6 +1,6 @@
 "use client";
 
-import { Wrench, Receipt, Car, Lock, HeartPulse } from "lucide-react";
+import { Wrench, Receipt, Warehouse, HeartPulse } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type AppTab = "diagnose" | "health" | "quote" | "garage";
@@ -14,7 +14,7 @@ const TABS: { id: AppTab; label: string; Icon: React.ElementType }[] = [
   { id: "diagnose", label: "Diagnose", Icon: Wrench },
   { id: "health",   label: "Health",   Icon: HeartPulse },
   { id: "quote",    label: "Quote",    Icon: Receipt },
-  { id: "garage",   label: "Garage",   Icon: Car },
+  { id: "garage",   label: "Garage",   Icon: Warehouse },
 ];
 
 export default function BottomNav({ activeTab, onChange }: Props) {
@@ -58,48 +58,18 @@ export default function BottomNav({ activeTab, onChange }: Props) {
               backgroundColor: "transparent",
               border: "none",
               cursor: "pointer",
-              // #7d8fa8 on #060810 ≈ 7:1 — inactive tabs stay WCAG AA readable
-              color: isActive ? "var(--text)" : "var(--text-2)",
+              // Active tab reads by color alone — accent means current selection
+              color: isActive ? "var(--accent)" : "var(--text-2)",
               paddingTop: "8px",
-              position: "relative",
+              transition: "color 150ms ease",
             }}
             aria-label={locked ? `${label} (sign in required)` : label}
             aria-current={isActive ? "page" : undefined}
           >
-            {/* Active indicator background — subtle, not blue */}
-            {isActive && (
-              <div style={{
-                position: "absolute",
-                top: "6px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "44px",
-                height: "36px",
-                borderRadius: "10px",
-                backgroundColor: "rgba(125,143,168,0.12)",
-                pointerEvents: "none",
-              }} />
-            )}
-            {locked ? <Lock size={18} aria-hidden="true" /> : <Icon size={18} aria-hidden="true" />}
-            <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.04em", position: "relative", zIndex: 1 }}>
+            <Icon size={18} aria-hidden="true" />
+            <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.04em" }}>
               {label}
             </span>
-            {/* Active pill indicator */}
-            {isActive && (
-              <div
-                className="nav-pill"
-                style={{
-                  position: "absolute",
-                  bottom: "6px",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  width: "20px",
-                  height: "3px",
-                  borderRadius: "2px",
-                  backgroundColor: "var(--accent)",
-                }}
-              />
-            )}
           </button>
         );
       })}

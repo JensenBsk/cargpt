@@ -223,7 +223,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                   <div style={{ height: "14px", width: i === 0 ? "160px" : i === 1 ? "130px" : "110px", backgroundColor: "var(--border)", borderRadius: "4px", marginBottom: "6px" }} />
                   <div style={{ height: "11px", width: "70px", backgroundColor: "var(--surface-2)", borderRadius: "4px" }} />
                 </div>
-                <div style={{ height: "32px", width: "48px", backgroundColor: "var(--accent)", borderRadius: "8px", opacity: 0.4 }} />
+                <div style={{ height: "32px", width: "48px", backgroundColor: "var(--surface-3)", borderRadius: "8px" }} />
               </div>
             </div>
           ))}
@@ -237,7 +237,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
           <div style={{ fontSize: "14px", color: "var(--text-2)", marginBottom: "28px", lineHeight: 1.6 }}>
             Save your cars, track repairs, and get<br />Carlos to remember your car every time.
           </div>
-          <button onClick={() => signInWithGoogle()} className="tap-target" style={{ height: "50px", padding: "0 32px", backgroundColor: "var(--accent)", color: "white", fontWeight: 600, fontSize: "15px", border: "none", borderRadius: "12px", cursor: "pointer", boxShadow: "0 4px 20px rgba(74,158,255,0.35)" }}>
+          <button onClick={() => signInWithGoogle()} className="tap-target" style={{ height: "50px", padding: "0 32px", backgroundColor: "var(--accent)", color: "white", fontWeight: 700, fontSize: "15px", border: "none", borderRadius: "12px", cursor: "pointer", boxShadow: "0 4px 16px var(--accent-glow)" }}>
             Sign In to Unlock
           </button>
 
@@ -250,7 +250,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                   <button
                     key={item.id}
                     onClick={() => onOpenDiagnosis(item)}
-                    style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "rgba(11,16,25,0.8)", border: "1px solid var(--border)", borderRadius: "10px", padding: "10px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
+                    style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "rgba(11,16,25,0.8)", border: "none", borderRadius: "10px", padding: "10px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
                   >
                     <div style={{ width: "7px", height: "7px", borderRadius: "50%", backgroundColor: VERDICT_DOT[item.verdict] ?? "var(--text-2)", flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -283,28 +283,22 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
         </div>
       )}
 
-      {/* Carlos summary panel */}
-      {!loading && (
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "12px 14px", marginBottom: "16px", boxSizing: "border-box" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/carlos/carlos-thumbsup.webp" alt="" aria-hidden="true" style={{ height: "48px", width: "auto", filter: "drop-shadow(0 2px 8px rgba(59,130,246,0.2))", flexShrink: 0 }} />
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>Your Garage</div>
-            <div style={{ fontSize: "12px", color: "var(--text-3)" }}>
+      {/* Page title — the biggest thing on the screen, straight on the background */}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "12px", padding: "8px 0 4px", marginBottom: "20px" }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <h1 style={{ fontSize: "24px", fontWeight: 800, color: "var(--text)", margin: "0 0 2px", lineHeight: 1.1 }}>Garage</h1>
+          {!loading && (
+            <div style={{ fontSize: "13px", color: "var(--text-3)" }}>
               {cars.length > 0
                 ? `${cars.length} car${cars.length !== 1 ? "s" : ""} saved · Carlos has your back`
                 : "Add your first car and Carlos will remember it"}
             </div>
-          </div>
+          )}
         </div>
-      )}
-
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-        <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>My Cars</span>
         <button
           onClick={() => setShowAddForm((v) => !v)}
           className="tap-target"
-          style={{ fontSize: "13px", fontWeight: 600, padding: "6px 14px", borderRadius: "8px", border: "1px solid var(--accent)", color: "var(--accent)", backgroundColor: "transparent", cursor: "pointer" }}
+          style={{ fontSize: "13px", fontWeight: 600, padding: "8px 14px", borderRadius: "8px", border: "1px solid var(--border-muted)", color: "var(--text)", backgroundColor: "transparent", cursor: "pointer", flexShrink: 0 }}
         >
           {showAddForm ? "Cancel" : "+ Add Car"}
         </button>
@@ -313,7 +307,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
       {showAddForm && (
         <form
           onSubmit={addCar}
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px", marginBottom: "16px", display: "flex", flexDirection: "column", gap: "10px", boxSizing: "border-box" }}
+          style={{ marginBottom: "24px", display: "flex", flexDirection: "column", gap: "10px", boxSizing: "border-box" }}
         >
           <select value={form.year} onChange={(e) => setForm((f) => ({ ...f, year: e.target.value }))} required style={{ ...inputStyle, color: form.year ? "var(--text)" : "var(--text-2)" }}>
             <option value="">Year</option>
@@ -379,7 +373,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
             const isLoadingMaint = maintLoading[car.id];
 
             return (
-              <div key={car.id} style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+              <div key={car.id} style={{ backgroundColor: "var(--surface)", borderRadius: "12px", overflow: "hidden" }}>
                 <div style={{ padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
@@ -401,10 +395,10 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                     )}
                   </div>
                   <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-                    <button onClick={() => onSelectCar({ year: String(car.year), make: car.make, model: car.model, mods: car.mods || "", hasTune: car.has_tune })} className="tap-target" style={{ fontSize: "13px", fontWeight: 600, padding: "7px 14px", borderRadius: "8px", border: "none", backgroundColor: "var(--accent)", color: "white", cursor: "pointer" }}>
+                    <button onClick={() => onSelectCar({ year: String(car.year), make: car.make, model: car.model, mods: car.mods || "", hasTune: car.has_tune })} className="tap-target" style={{ fontSize: "13px", fontWeight: 600, padding: "7px 14px", borderRadius: "8px", border: "1px solid var(--border-muted)", backgroundColor: "transparent", color: "var(--text)", cursor: "pointer" }}>
                       Use
                     </button>
-                    <button onClick={() => deleteCar(car.id)} disabled={deletingId === car.id} className="tap-target" style={{ fontSize: "13px", padding: "7px 10px", borderRadius: "8px", border: "1px solid #252b34", backgroundColor: "transparent", color: "var(--text-2)", cursor: "pointer", opacity: deletingId === car.id ? 0.4 : 1 }}>
+                    <button onClick={() => deleteCar(car.id)} disabled={deletingId === car.id} aria-label="Remove car" className="tap-target" style={{ fontSize: "13px", padding: "7px 10px", borderRadius: "8px", border: "none", backgroundColor: "transparent", color: "var(--text-3)", cursor: "pointer", opacity: deletingId === car.id ? 0.4 : 1 }}>
                       ✕
                     </button>
                   </div>
@@ -429,7 +423,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                           {carRepairs.length > 0 && (
                             <div style={{ display: "flex", flexDirection: "column", gap: "5px", marginBottom: "10px" }}>
                               {carRepairs.map(rep => (
-                                <div key={rep.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "7px 10px", backgroundColor: "var(--bg)", borderRadius: "7px" }}>
+                                <div key={rep.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0" }}>
                                   <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "var(--green)", flexShrink: 0 }} />
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontSize: "13px", color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rep.repairName}</div>
@@ -520,7 +514,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                           {services.map((svc) => {
                             const colors = STATUS_COLORS[svc.status];
                             return (
-                              <div key={svc.service} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", backgroundColor: "var(--surface-2)", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                              <div key={svc.service} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                   <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: colors.dot, flexShrink: 0 }} />
                                   <span style={{ fontSize: "13px", color: "var(--text)" }}>{svc.service}</span>
@@ -545,7 +539,7 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
                                 const granted = await requestPushPermission();
                                 setReminderState(prev => ({ ...prev, [carId]: granted ? "done" : "unavailable" }));
                               }}
-                              style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "6px", width: "100%", height: "36px", backgroundColor: reminderState[car.id] === "done" ? "rgba(34,197,94,0.1)" : "rgba(74,158,255,0.08)", border: `1px solid ${reminderState[car.id] === "done" ? "rgba(34,197,94,0.3)" : "rgba(74,158,255,0.2)"}`, borderRadius: "8px", cursor: reminderState[car.id] && reminderState[car.id] !== "idle" ? "default" : "pointer", padding: "0 12px", color: reminderState[car.id] === "done" ? "var(--green)" : "var(--accent)", fontSize: "12px", fontWeight: 600 }}
+                              style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "6px", width: "100%", height: "36px", backgroundColor: reminderState[car.id] === "done" ? "rgba(34,197,94,0.1)" : "transparent", border: `1px solid ${reminderState[car.id] === "done" ? "rgba(34,197,94,0.3)" : "var(--border-muted)"}`, borderRadius: "8px", cursor: reminderState[car.id] && reminderState[car.id] !== "idle" ? "default" : "pointer", padding: "0 12px", color: reminderState[car.id] === "done" ? "var(--green)" : "var(--text-2)", fontSize: "12px", fontWeight: 600 }}
                             >
                               <Bell size={12} />
                               {reminderState[car.id] === "loading" ? "Enabling…" : reminderState[car.id] === "done" ? "Reminders on ✓" : reminderState[car.id] === "unavailable" ? "Notifications blocked" : "Get reminded when due"}
@@ -564,14 +558,14 @@ export default function GarageView({ onSelectCar, onRequestSignIn, onOpenDiagnos
 
       {/* ── Recent Diagnoses ── */}
       {visibleHistory.length > 0 && (
-        <div style={{ marginTop: "28px", paddingBottom: "24px" }}>
-          <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)", marginBottom: "12px" }}>Recent Diagnoses</div>
+        <div style={{ marginTop: "36px", paddingBottom: "24px" }}>
+          <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: "12px" }}>Recent Diagnoses</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {visibleHistory.map((item) => (
               <button
                 key={item.id}
                 onClick={() => onOpenDiagnosis(item)}
-                style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "12px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
+                style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "var(--surface)", border: "none", borderRadius: "10px", padding: "12px 14px", cursor: "pointer", textAlign: "left", width: "100%", boxSizing: "border-box" }}
               >
                 <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: VERDICT_DOT[item.verdict] ?? "var(--text-2)", flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>

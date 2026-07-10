@@ -710,7 +710,7 @@ export default function Home() {
             History
           </button>
         {!isSignedIn && (
-            <button onClick={() => setShowAuthModal(true)} className="tap-target" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.35)", color: "var(--accent)", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}>
+            <button onClick={() => setShowAuthModal(true)} className="tap-target" style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "20px", border: "1px solid var(--border-muted)", color: "var(--text)", backgroundColor: "transparent", cursor: "pointer" }}>
               Sign In
             </button>
           )}
@@ -779,13 +779,12 @@ export default function Home() {
               {/* Carlos thinking — loading state with result skeleton */}
               {loading && (
                 <div style={{ width: "100%", maxWidth: "480px", boxSizing: "border-box", margin: "0 0 16px" }}>
-                  <div aria-live="polite" style={{ textAlign: "center", padding: "28px 24px", borderRadius: "16px", background: "var(--surface)", border: "1px solid var(--border)", marginBottom: "12px" }}>
+                  <div aria-live="polite" style={{ textAlign: "center", padding: "28px 24px 20px" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src="/carlos/carlos-thinking.webp"
                       alt=""
-                      className="carlos-pulse"
-                      style={{ height: "100px", width: "auto", margin: "0 auto 16px", display: "block", filter: "drop-shadow(0 4px 16px rgba(59,130,246,0.3)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }}
+                      style={{ height: "100px", width: "auto", margin: "0 auto 16px", display: "block", filter: "drop-shadow(0 4px 16px var(--accent-glow)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }}
                     />
                     <p style={{ color: "var(--text)", fontSize: "15px", fontWeight: 600, margin: "0 0 4px", minHeight: "22px" }}>
                       {streamPreview ? "Here's what Carlos is finding…" : loadingMsgsRef.current[loadingMsgIdx] || `Carlos is on it…`}
@@ -798,7 +797,7 @@ export default function Home() {
                   {/* Live report preview — sections replace their skeletons as the diagnosis streams in */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     {streamPreview?.whatsWrong ? (
-                      <div className="preview-row-in" style={{ padding: "14px 16px", borderRadius: "12px", background: "var(--surface)", border: "1px solid var(--border)" }}>
+                      <div className="preview-row-in" style={{ padding: "4px 2px" }}>
                         <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: "6px" }}>What&apos;s going on</div>
                         <p style={{ color: "var(--text)", fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
                           {streamPreview.whatsWrong}
@@ -831,11 +830,11 @@ export default function Home() {
                     )}
 
                     {streamPreview?.rankedCauses?.some((c) => c.cause) ? (
-                      <div className="preview-row-in" style={{ padding: "14px 16px", borderRadius: "12px", background: "var(--surface)", border: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: "10px" }}>
+                      <div className="preview-row-in" style={{ padding: "4px 2px", display: "flex", flexDirection: "column", gap: "10px" }}>
                         <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Likely causes</div>
                         {streamPreview.rankedCauses.filter((c) => c.cause).map((c, i) => (
-                          <div key={i} className="preview-row-in" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                            <span style={{ width: "22px", height: "22px", borderRadius: "6px", backgroundColor: "rgba(74,158,255,0.15)", border: "1px solid rgba(74,158,255,0.3)", color: "var(--accent)", fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{c.rank ?? i + 1}</span>
+                          <div key={i} className="preview-row-in" style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
+                            <span style={{ color: "var(--text-3)", fontFamily: "var(--font-jetbrains), monospace", fontSize: "12px", fontWeight: 700, flexShrink: 0, width: "16px", textAlign: "right" }}>{c.rank ?? i + 1}</span>
                             <span style={{ color: "var(--text)", fontSize: "14px", fontWeight: 600, lineHeight: 1.35 }}>{c.cause}</span>
                           </div>
                         ))}
@@ -861,7 +860,7 @@ export default function Home() {
               >
                 {/* Outcome follow-up — closes the loop on a past diagnosis */}
                 {outcomeItem && !loading && (
-                  <div style={{ background: "var(--surface)", border: "1px solid rgba(74,158,255,0.3)", borderRadius: "16px", padding: "16px" }}>
+                  <div style={{ background: "var(--surface)", borderRadius: "16px", padding: "16px" }}>
                     <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "6px" }}>Quick follow-up</div>
                     <div style={{ fontSize: "14px", color: "var(--text)", lineHeight: 1.5, marginBottom: "12px" }}>
                       Did <strong>{outcomeItem.diagnosis.rankedCauses[0]?.cause?.toLowerCase() ?? "the fix"}</strong> turn out to be the problem with your {outcomeItem.year} {outcomeItem.make}?
@@ -890,7 +889,7 @@ export default function Home() {
                         type="button"
                         onClick={() => { setYear(c.year); setMake(c.make); setModel(c.model); setShowErrors(false); }}
                         className="tap-target"
-                        style={{ fontSize: "12px", fontWeight: 600, padding: "6px 12px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.3)", color: "var(--accent)", backgroundColor: "rgba(74,158,255,0.07)", cursor: "pointer" }}
+                        style={{ fontSize: "12px", fontWeight: 600, padding: "6px 12px", borderRadius: "20px", border: "1px solid var(--border-muted)", color: "var(--text-2)", backgroundColor: "var(--surface-2)", cursor: "pointer" }}
                       >
                         {c.year} {c.make} {c.model}
                       </button>
@@ -898,11 +897,11 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Vehicle card */}
-                <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "16px", padding: "20px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-                    <Car size={17} color="#4a9eff" aria-hidden="true" />
-                    <span style={{ color: "var(--text)", fontSize: "15px", fontWeight: 600 }}>What car are we working on?</span>
+                {/* Vehicle section — grouped by heading and spacing, not a box */}
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+                    <Car size={16} color="var(--text-3)" aria-hidden="true" />
+                    <span style={{ color: "var(--text)", fontSize: "16px", fontWeight: 700 }}>What car are we working on?</span>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <div ref={yearRef}>
@@ -961,7 +960,7 @@ export default function Home() {
                     type="button"
                     onClick={() => setShowObdScanner(true)}
                     className="tap-target"
-                    style={{ marginTop: "10px", width: "100%", height: "46px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", backgroundColor: "rgba(74,158,255,0.06)", border: "1px dashed rgba(74,158,255,0.35)", borderRadius: "10px", color: "var(--accent)", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}
+                    style={{ marginTop: "10px", width: "100%", height: "46px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", backgroundColor: "transparent", border: "1px dashed var(--border-muted)", borderRadius: "10px", color: "var(--text-2)", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}
                   >
                     <Bluetooth size={15} aria-hidden="true" />
                     Connect OBD2 Scanner
@@ -1013,9 +1012,9 @@ export default function Home() {
                             aria-expanded={intelOpen === "tsbs"}
                             style={{
                               display: "flex", alignItems: "center", gap: "6px", minHeight: "34px", padding: "0 12px", borderRadius: "20px",
-                              fontSize: "12px", fontWeight: 600, color: "var(--accent)", cursor: "pointer", transition: "background-color 200ms, border-color 200ms",
-                              backgroundColor: intelOpen === "tsbs" ? "rgba(74,158,255,0.14)" : "rgba(74,158,255,0.06)",
-                              border: `1px solid ${intelOpen === "tsbs" ? "rgba(74,158,255,0.5)" : "rgba(74,158,255,0.3)"}`,
+                              fontSize: "12px", fontWeight: 600, color: "var(--text-2)", cursor: "pointer", transition: "background-color 200ms, border-color 200ms",
+                              backgroundColor: intelOpen === "tsbs" ? "rgba(125,143,168,0.14)" : "rgba(125,143,168,0.06)",
+                              border: `1px solid ${intelOpen === "tsbs" ? "rgba(125,143,168,0.5)" : "rgba(125,143,168,0.25)"}`,
                             }}
                           >
                             <Wrench size={12} aria-hidden="true" />
@@ -1086,12 +1085,12 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* Issue card */}
-                <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "16px", padding: "20px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+                {/* Issue section */}
+                <div style={{ marginTop: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/carlos/carlos-thinking.webp" alt="" style={{ width: "28px", height: "28px", objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(59,130,246,0.2))" }} />
-                    <span style={{ color: "var(--text)", fontSize: "15px", fontWeight: 600 }}>What&apos;s going on with it?</span>
+                    <img src="/carlos/carlos-thinking.webp" alt="" style={{ width: "28px", height: "28px", objectFit: "contain" }} />
+                    <span style={{ color: "var(--text)", fontSize: "16px", fontWeight: 700 }}>What&apos;s going on with it?</span>
                   </div>
                   <div style={{ position: "relative" }}>
                     <label htmlFor="issue-description" className="sr-only">Describe the problem with your car</label>
@@ -1110,7 +1109,7 @@ export default function Home() {
                       aria-label={isRecording ? "Stop recording" : "Start voice input"}
                     >
                       {isRecording ? (
-                        <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "var(--red)" }} className="badge-pulse-stop" />
+                        <div style={{ width: "10px", height: "10px", borderRadius: "2px", backgroundColor: "var(--red)" }} />
                       ) : (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isRecording ? "var(--red)" : "var(--text-3)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -1148,8 +1147,8 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Secondary details card */}
-                <div style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "16px", padding: "16px", display: "flex", flexDirection: "column", gap: "16px", width: "100%", boxSizing: "border-box" }}>
+                {/* Secondary details — optional extras, separated by whitespace */}
+                <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "20px", width: "100%", boxSizing: "border-box" }}>
 
                   {/* Dashboard photo */}
                   <div>
@@ -1188,12 +1187,10 @@ export default function Home() {
                   </div>
 
                   {/* Mods toggle */}
-                  <div style={{ borderTop: "1px solid var(--border-muted)", paddingTop: "14px" }}>
+                  <div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: modMode ? "14px" : 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <div style={{ width: "30px", height: "30px", borderRadius: "8px", backgroundColor: "rgba(74,158,255,0.08)", border: "1px solid rgba(74,158,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <Wrench size={13} color="#4a9eff" />
-                        </div>
+                        <Wrench size={14} color="var(--text-3)" style={{ flexShrink: 0 }} />
                         <div>
                           <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>Modified / Tuned</div>
                           <div style={{ fontSize: "11px", color: "var(--text-3)", lineHeight: 1.3 }}>Factor in mods and tune</div>
@@ -1242,7 +1239,7 @@ export default function Home() {
                   </div>
 
                   {/* ZIP */}
-                  <div style={{ borderTop: "1px solid var(--border-muted)", paddingTop: "14px" }}>
+                  <div>
                     <label htmlFor="area-zip" style={labelStyle}>
                       <MapPin size={9} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} aria-hidden="true" />
                       Area ZIP <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "var(--text-3)" }}>— for local pricing</span>
@@ -1324,7 +1321,7 @@ export default function Home() {
               color: "white", fontWeight: 700, fontSize: "15px", letterSpacing: "0.04em",
               border: "none", borderRadius: "12px",
               cursor: loading ? "default" : "pointer",
-              boxShadow: "0 4px 16px rgba(59,130,246,0.3)",
+              boxShadow: "0 4px 16px var(--accent-glow)",
               transition: "background 200ms ease",
             }}
           >

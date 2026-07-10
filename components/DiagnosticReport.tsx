@@ -38,17 +38,12 @@ interface Props {
   onToast: (msg: string) => void;
 }
 
-const LIKELIHOOD_COLORS: Record<string, { bg: string; text: string }> = {
-  "Most Likely": { bg: "rgba(74,158,255,0.14)", text: "var(--accent)" },
-  "Likely": { bg: "rgba(99,102,241,0.14)", text: "#818cf8" },
-  "Possible": { bg: "rgba(107,114,128,0.18)", text: "var(--text-2)" },
-  "Unlikely but serious": { bg: "rgba(245,158,11,0.14)", text: "var(--amber)" },
-};
-
-const ACCENT_BORDERS: Record<string, string> = {
-  "Most Likely": "var(--accent)",
-  "Likely": "var(--border)",
-  "Possible": "var(--border)",
+// Likelihood is supporting metadata — plain text, amber reserved for the
+// one label that carries a caution semantic.
+const LIKELIHOOD_TEXT: Record<string, string> = {
+  "Most Likely": "var(--text-2)",
+  "Likely": "var(--text-2)",
+  "Possible": "var(--text-3)",
   "Unlikely but serious": "var(--amber)",
 };
 
@@ -70,9 +65,9 @@ function StepPills({ cost, time, tools }: { cost?: string; time?: string; tools?
   if (tools && tools !== "None" && tools !== "none") pills.push({ icon: <Wrench size={10} />, text: tools });
   if (!pills.length) return null;
   return (
-    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "8px" }}>
+    <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", marginTop: "8px" }}>
       {pills.map((p, i) => (
-        <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: "3px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "20px", padding: "3px 9px", fontSize: "11px", color: "var(--text-2)" }}>
+        <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", color: "var(--text-3)" }}>
           {p.icon} {p.text}
         </span>
       ))}
@@ -92,63 +87,56 @@ function AnswerCard({ topCause, firstStep, topEst, hasAudio, eli5Mode, eli5Text,
   onEli5: () => void;
   onStartRepair: () => void;
 }) {
-  const lhColor = LIKELIHOOD_COLORS[topCause.likelihood] ?? { bg: "rgba(107,114,128,0.18)", text: "var(--text-2)" };
   return (
-    <div style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderLeft: "3px solid var(--accent)", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
-      {/* Most likely */}
+    <div style={{ display: "flex", flexDirection: "column", gap: "18px", padding: "8px 2px 4px" }}>
+      {/* Most likely — the diagnosis is the headline, straight on the background */}
       <div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "5px" }}>
-          <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>Most likely</div>
-          {hasAudio && <span style={{ fontSize: "10px", color: "var(--accent)", backgroundColor: "rgba(74,158,255,0.08)", border: "1px solid rgba(74,158,255,0.2)", borderRadius: "20px", padding: "2px 8px" }}>🎙️ Audio analyzed</span>}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+          <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Most likely</div>
+          {hasAudio && <span style={{ fontSize: "10px", color: "var(--text-3)" }}>Audio analyzed</span>}
         </div>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
-          <span style={{ fontSize: "18px", fontWeight: 700, color: "var(--text)", lineHeight: 1.2, flex: 1 }}>{topCause.cause}</span>
-          <div style={{ display: "flex", gap: "5px", flexShrink: 0, marginTop: "2px" }}>
-            {topCause.modRelated && (
-              <span style={{ backgroundColor: "rgba(251,191,36,0.15)", color: "var(--amber)", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "4px" }}>MOD</span>
-            )}
-            {topCause.confidence !== undefined && (
-              <span style={{ backgroundColor: "rgba(74,158,255,0.12)", border: "1px solid rgba(74,158,255,0.3)", color: "var(--accent)", fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" as const, fontFamily: "var(--font-jetbrains), monospace" }}>{topCause.confidence}%</span>
-            )}
-            <span style={{ backgroundColor: lhColor.bg, color: lhColor.text, fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" as const }}>{topCause.likelihood}</span>
-          </div>
+        <h1 style={{ fontSize: "26px", fontWeight: 800, color: "var(--text)", lineHeight: 1.15, margin: "0 0 6px", textWrap: "balance" }}>{topCause.cause}</h1>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "10px", flexWrap: "wrap" as const }}>
+          {topCause.confidence !== undefined && (
+            <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "13px", fontWeight: 700, color: "var(--text-2)" }}>{topCause.confidence}% confidence</span>
+          )}
+          <span style={{ fontSize: "12px", color: LIKELIHOOD_TEXT[topCause.likelihood] ?? "var(--text-3)" }}>{topCause.likelihood}</span>
+          {topCause.modRelated && (
+            <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--amber)", letterSpacing: "0.06em" }}>MOD</span>
+          )}
         </div>
         {topCause.evidence && (
-          <p style={{ margin: "5px 0 0", fontSize: "12px", color: "var(--text-3)", lineHeight: 1.4, fontStyle: "italic" }}>{topCause.evidence}</p>
+          <p style={{ margin: "6px 0 0", fontSize: "13px", color: "var(--text-3)", lineHeight: 1.5 }}>{topCause.evidence}</p>
         )}
         {eli5Mode && eli5Text && (
-          <div style={{ backgroundColor: "rgba(74,158,255,0.06)", border: "1px solid rgba(74,158,255,0.15)", borderRadius: "8px", padding: "10px 12px", marginTop: "10px" }}>
-            <p style={{ margin: 0, fontSize: "13px", color: "var(--text-2)", lineHeight: 1.6 }}>{eli5Text}</p>
-          </div>
+          <p style={{ margin: "10px 0 0", fontSize: "14px", color: "var(--text-2)", lineHeight: 1.65 }}>{eli5Text}</p>
         )}
       </div>
 
-      <div style={{ height: "1px", backgroundColor: "var(--border)" }} />
-
       {/* First step */}
       <div>
-        <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: "6px" }}>Do this first</div>
-        <div style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)", lineHeight: 1.4 }}>{firstStep.action}</div>
+        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: "6px" }}>Do this first</div>
+        <div style={{ fontSize: "16px", fontWeight: 600, color: "var(--text)", lineHeight: 1.4 }}>{firstStep.action}</div>
         <StepPills cost={firstStep.cost} time={firstStep.time} tools={firstStep.tools} />
       </div>
 
       {/* Branch logic */}
       <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
         <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-          <CheckCircle2 size={13} color="#22c55e" style={{ flexShrink: 0, marginTop: "2px" }} />
+          <CheckCircle2 size={13} color="var(--green)" style={{ flexShrink: 0, marginTop: "2px" }} />
           <span style={{ fontSize: "13px", color: "var(--text-2)", lineHeight: 1.4 }}>{firstStep.ifResultA}</span>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-          <AlertTriangle size={13} color="#f59e0b" style={{ flexShrink: 0, marginTop: "2px" }} />
+          <AlertTriangle size={13} color="var(--amber)" style={{ flexShrink: 0, marginTop: "2px" }} />
           <span style={{ fontSize: "13px", color: "var(--text-2)", lineHeight: 1.4 }}>{firstStep.ifResultB}</span>
         </div>
       </div>
 
-      {/* Guided repair launcher */}
+      {/* Guided repair launcher — the one primary action on this screen */}
       <button
         onClick={onStartRepair}
-        className="tap-target"
-        style={{ width: "100%", height: "48px", backgroundColor: "rgba(74,158,255,0.1)", border: "1px solid rgba(74,158,255,0.35)", borderRadius: "10px", color: "var(--accent)", fontSize: "14px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+        className="tap-target btn-primary"
+        style={{ width: "100%", height: "50px", borderRadius: "12px", fontSize: "15px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
       >
         <Wrench size={15} aria-hidden="true" />
         Fix it with Carlos — guided steps
@@ -156,9 +144,9 @@ function AnswerCard({ topCause, firstStep, topEst, hasAudio, eli5Mode, eli5Text,
 
       {/* Cost estimate */}
       {topEst && (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "8px" }}>
           <span style={{ fontSize: "13px", color: "var(--text-3)" }}>Est. if {topCause.cause}:</span>
-          <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "16px", fontWeight: 700, color: "var(--accent)" }}>{topEst.total}</span>
+          <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>{topEst.total}</span>
         </div>
       )}
 
@@ -167,7 +155,7 @@ function AnswerCard({ topCause, firstStep, topEst, hasAudio, eli5Mode, eli5Text,
         onClick={onEli5}
         disabled={eli5Loading}
         className="tap-target"
-        style={{ width: "100%", height: "34px", backgroundColor: "transparent", border: "1px solid var(--border)", borderRadius: "8px", color: "var(--text-3)", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+        style={{ alignSelf: "flex-start", height: "34px", padding: 0, backgroundColor: "transparent", border: "none", color: "var(--text-3)", fontSize: "12px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
       >
         <RefreshCw size={12} aria-hidden="true" />
         {eli5Loading ? "Simplifying…" : eli5Mode ? "Regular explanation" : "Simpler explanation"}
@@ -180,49 +168,44 @@ function AnswerCard({ topCause, firstStep, topEst, hasAudio, eli5Mode, eli5Text,
 function SafetyCard({ verdict, reason }: { verdict: "STOP" | "CAUTION" | "OKAY"; reason: string }) {
   if (verdict === "OKAY") {
     return (
-      <div style={{ position: "relative", backgroundColor: "transparent", border: "1px solid var(--border)", borderLeft: "3px solid var(--green)", borderRadius: "10px", padding: "10px 84px 10px 14px", display: "flex", alignItems: "center", gap: "10px", overflow: "hidden", minHeight: "56px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "4px 2px", minHeight: "40px" }}>
         <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "var(--green)", flexShrink: 0 }} />
         <div style={{ minWidth: 0 }}>
           <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, color: "var(--green)", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>OKAY TO DRIVE</span>
           <span style={{ fontSize: "13px", color: "var(--text-3)", marginLeft: "8px" }}>{reason}</span>
         </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/carlos/carlos-thumbsup.webp" alt="" aria-hidden="true" style={{ position: "absolute", right: "8px", bottom: "0", height: "72px", width: "auto", filter: "drop-shadow(0 4px 12px rgba(34,197,94,0.3))" }} />
       </div>
     );
   }
   const cfg = verdict === "STOP"
-    ? { bg: "var(--red-bg)", border: "#2d0f0f", accent: "var(--red)", label: "STOP DRIVING", reasonColor: "var(--red)", pulseClass: "badge-pulse-stop", img: "/carlos/carlos-warning.webp", glow: "rgba(239,68,68,0.3)" }
-    : { bg: "var(--amber-bg)", border: "#2d2200", accent: "var(--amber)", label: "DRIVE WITH CAUTION", reasonColor: "var(--amber)", pulseClass: "badge-pulse-caution", img: "/carlos/carlos-thinking.webp", glow: "rgba(245,158,11,0.3)" };
+    ? { bg: "var(--red-bg)", border: "#2d0f0f", accent: "var(--red)", label: "STOP DRIVING", img: "/carlos/carlos-warning.webp", glow: "rgba(239,68,68,0.3)" }
+    : { bg: "var(--amber-bg)", border: "#2d2200", accent: "var(--amber)", label: "DRIVE WITH CAUTION", img: "/carlos/carlos-thinking.webp", glow: "rgba(245,158,11,0.3)" };
   return (
-    <div style={{ position: "relative", backgroundColor: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: "12px", overflow: "hidden" }}>
-      <div style={{ borderBottom: `1px solid ${cfg.border}`, padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px" }}>
-        <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: cfg.accent, boxShadow: `0 0 8px ${cfg.accent}`, flexShrink: 0 }} className={cfg.pulseClass} />
+    <div style={{ position: "relative", backgroundColor: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: "12px", overflow: "hidden", padding: "14px 84px 14px 16px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+        <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: cfg.accent, boxShadow: `0 0 8px ${cfg.accent}`, flexShrink: 0 }} />
         <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, fontSize: "12px", letterSpacing: "0.12em", color: cfg.accent, textTransform: "uppercase" as const }}>{cfg.label}</span>
       </div>
-      <div style={{ padding: "12px 84px 12px 16px", minHeight: "56px" }}>
-        <p style={{ margin: 0, fontSize: "13px", color: cfg.reasonColor, lineHeight: 1.6 }}>{reason}</p>
-      </div>
+      <p style={{ margin: 0, fontSize: "13px", color: "var(--text-2)", lineHeight: 1.6 }}>{reason}</p>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={cfg.img} alt="" aria-hidden="true" style={{ position: "absolute", right: "8px", bottom: "0", height: "72px", width: "auto", filter: `drop-shadow(0 4px 12px ${cfg.glow})` }} />
     </div>
   );
 }
 
-// ── Section header ──
+// ── Section header — the readout-label convention, straight on the background ──
 function SectionHeader({ label }: { label: string }) {
   return (
-    <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
-      <div style={{ width: "2px", height: "11px", borderRadius: "2px", backgroundColor: "var(--accent)" }} />
+    <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px" }}>
       {label}
-      <div style={{ flex: 1, height: "1px", backgroundColor: "var(--border)" }} />
     </div>
   );
 }
 
+// A "Card" is now an open section: grouping comes from the header + whitespace.
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "14px 16px", width: "100%", boxSizing: "border-box" as const, ...style }}>
+    <div style={{ padding: "12px 2px", width: "100%", boxSizing: "border-box" as const, ...style }}>
       {children}
     </div>
   );
@@ -559,7 +542,7 @@ export default function DiagnosticReport({
         <TorqueLogo markSize={28} showWordmark wordmarkSize={14} glow="soft" />
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <span style={{ fontSize: "11px", color: "var(--text-3)" }}>{year} {cap(make)} {cap(model)}</span>
-          <button onClick={() => setShowShareSheet(true)} style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid rgba(74,158,255,0.35)", color: "var(--accent)", backgroundColor: "rgba(74,158,255,0.1)", cursor: "pointer" }}>
+          <button onClick={() => setShowShareSheet(true)} style={{ fontSize: "12px", fontWeight: 500, padding: "5px 10px", borderRadius: "20px", border: "1px solid var(--border-muted)", color: "var(--text-2)", backgroundColor: "transparent", cursor: "pointer" }}>
             ↑ Share
           </button>
           <button onClick={onNewDiagnosis} className="tap-target" style={{ fontSize: "12px", fontWeight: 500, padding: "5px 12px", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.15)", color: "var(--text)", backgroundColor: "transparent", cursor: "pointer" }}>
@@ -576,7 +559,7 @@ export default function DiagnosticReport({
         </div>
       )}
 
-      <div role="region" aria-label="Diagnosis result" style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "10px", width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
+      <div role="region" aria-label="Diagnosis result" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "16px", width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
 
         {/* 1. Safety verdict */}
         <SafetyCard verdict={verdict} reason={currentDiagnosis.driveSafety.reason} />
@@ -593,7 +576,7 @@ export default function DiagnosticReport({
         )}
 
         {/* AI disclaimer — required on every diagnosis result */}
-        <p style={{ margin: 0, fontSize: "12px", color: "var(--text-2)", lineHeight: 1.55, padding: "10px 14px", backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px" }}>
+        <p style={{ margin: 0, fontSize: "12px", color: "var(--text-3)", lineHeight: 1.55, padding: "0 2px" }}>
           Carlos provides AI-generated estimates for informational purposes only. Always consult a qualified mechanic before making repair decisions.
         </p>
 
@@ -611,8 +594,8 @@ export default function DiagnosticReport({
 
         {/* 4. First warning (if any) */}
         {currentDiagnosis.dontDoThis[0] && (
-          <div style={{ backgroundColor: "var(--amber-bg)", border: "1px solid #2d2200", borderLeft: "3px solid var(--amber)", borderRadius: "10px", padding: "10px 14px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
-            <AlertTriangle size={14} color="#f59e0b" style={{ flexShrink: 0, marginTop: "1px" }} />
+          <div style={{ backgroundColor: "var(--amber-bg)", border: "1px solid #2d2200", borderRadius: "10px", padding: "10px 14px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
+            <AlertTriangle size={14} color="var(--amber)" style={{ flexShrink: 0, marginTop: "1px" }} />
             <span style={{ fontSize: "13px", color: "var(--amber)", lineHeight: 1.4 }}>{currentDiagnosis.dontDoThis[0]}</span>
           </div>
         )}
@@ -622,7 +605,7 @@ export default function DiagnosticReport({
           <button
             onClick={() => setShowFullDiagnosis(v => !v)}
             className="tap-target"
-            style={{ flex: 1, height: "44px", backgroundColor: showFullDiagnosis ? "var(--surface)" : "var(--accent)", border: showFullDiagnosis ? "1px solid var(--border)" : "none", borderRadius: "10px", color: showFullDiagnosis ? "var(--text-2)" : "white", fontWeight: 700, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", boxShadow: showFullDiagnosis ? "none" : "0 4px 14px rgba(59,130,246,0.35)" }}
+            style={{ flex: 1, height: "44px", backgroundColor: "var(--surface)", border: "1px solid var(--border-muted)", borderRadius: "10px", color: "var(--text)", fontWeight: 600, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
           >
             <ChevronDown size={14} style={{ transform: showFullDiagnosis ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }} />
             {showFullDiagnosis ? "Hide diagnosis" : "See full diagnosis"}
@@ -630,7 +613,7 @@ export default function DiagnosticReport({
           <button
             onClick={handleOpenQuestions}
             className="tap-target"
-            style={{ flex: 1, height: "44px", backgroundColor: "rgba(74,158,255,0.08)", border: "1px solid rgba(74,158,255,0.3)", borderRadius: "10px", color: "var(--accent)", fontWeight: 600, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+            style={{ flex: 1, height: "44px", backgroundColor: "var(--surface)", border: "1px solid var(--border-muted)", borderRadius: "10px", color: "var(--text)", fontWeight: 600, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
           >
             <MessageCircle size={14} />
             {isRefined ? "Refine again" : "Answer a few questions"}
@@ -647,47 +630,49 @@ export default function DiagnosticReport({
               <p style={{ margin: 0, fontSize: "14px", color: "var(--text-2)", lineHeight: 1.7 }}>{currentDiagnosis.whatsWrong}</p>
             </Card>
 
-            {/* All causes — progressive disclosure */}
+            {/* All causes — rows divided by hairlines, not boxes */}
             <Card>
               <SectionHeader label="Likely Causes" />
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 {currentDiagnosis.rankedCauses.map((cause, causeIdx) => {
-                  const colors = LIKELIHOOD_COLORS[cause.likelihood] ?? { bg: "rgba(107,114,128,0.18)", text: "var(--text-2)" };
-                  const accentColor = ACCENT_BORDERS[cause.likelihood] ?? "var(--border-muted)";
+                  const lhText = LIKELIHOOD_TEXT[cause.likelihood] ?? "var(--text-3)";
                   const isOpen = expandedCauseIdx === causeIdx;
+                  const isTop = cause.rank === 1;
                   return (
-                    <div key={cause.rank} style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderLeft: `3px solid ${accentColor}`, borderRadius: "8px", overflow: "hidden" }}>
+                    <div key={cause.rank} style={{ borderTop: causeIdx > 0 ? "1px solid var(--border)" : "none" }}>
                       <button
                         onClick={() => setExpandedCauseIdx(isOpen ? null : causeIdx)}
-                        style={{ width: "100%", padding: "12px", display: "flex", flexDirection: "column" as const, gap: "6px", backgroundColor: "transparent", border: "none", cursor: "pointer", textAlign: "left" as const }}
+                        aria-expanded={isOpen}
+                        style={{ width: "100%", padding: "12px 0", display: "flex", flexDirection: "column" as const, gap: "6px", backgroundColor: "transparent", border: "none", cursor: "pointer", textAlign: "left" as const }}
                       >
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", width: "100%" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
-                            <span style={{ width: "22px", height: "22px", borderRadius: "6px", backgroundColor: "rgba(74,158,255,0.15)", border: "1px solid rgba(74,158,255,0.3)", color: "var(--accent)", fontFamily: "var(--font-jetbrains), monospace", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{cause.rank}</span>
+                          <div style={{ display: "flex", alignItems: "baseline", gap: "10px", minWidth: 0, flex: 1 }}>
+                            <span style={{ color: "var(--text-3)", fontFamily: "var(--font-jetbrains), monospace", fontSize: "12px", fontWeight: 700, flexShrink: 0, width: "14px" }}>{cause.rank}</span>
                             <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const, flex: 1 }}>{cause.cause}</span>
                           </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
-                            {cause.modRelated && <span style={{ backgroundColor: "rgba(251,191,36,0.15)", color: "var(--amber)", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "4px" }}>MOD</span>}
-                            <span style={{ backgroundColor: colors.bg, color: colors.text, fontSize: "11px", fontWeight: 500, padding: "2px 8px", borderRadius: "20px", whiteSpace: "nowrap" as const }}>{cause.likelihood}</span>
-                            <ChevronDown size={13} color="#4a5c72" style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms", flexShrink: 0 }} />
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                            {cause.modRelated && <span style={{ fontFamily: "var(--font-jetbrains), monospace", color: "var(--amber)", fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em" }}>MOD</span>}
+                            <span style={{ color: lhText, fontSize: "11px", whiteSpace: "nowrap" as const }}>{cause.likelihood}</span>
+                            <ChevronDown size={13} color="var(--text-3)" style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms", flexShrink: 0 }} />
                           </div>
                         </div>
                         {cause.confidence !== undefined && (
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingLeft: "30px" }}>
-                            <div style={{ flex: 1, height: "3px", backgroundColor: "var(--border)", borderRadius: "2px", overflow: "hidden" }}>
-                              <div style={{ width: `${cause.confidence}%`, height: "100%", backgroundColor: accentColor === "var(--border-muted)" ? "var(--text-3)" : accentColor, borderRadius: "2px" }} />
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingLeft: "24px" }}>
+                            <div style={{ flex: 1, height: "3px", backgroundColor: "var(--surface-2)", borderRadius: "2px", overflow: "hidden" }}>
+                              {/* Accent = live measured data, on the leading cause only */}
+                              <div style={{ width: `${cause.confidence}%`, height: "100%", backgroundColor: isTop ? "var(--accent)" : "var(--text-3)", borderRadius: "2px" }} />
                             </div>
-                            <span style={{ fontSize: "10px", color: accentColor === "var(--border-muted)" ? "var(--text-3)" : accentColor, fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, flexShrink: 0 }}>{cause.confidence}%</span>
+                            <span style={{ fontSize: "10px", color: isTop ? "var(--accent)" : "var(--text-3)", fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, flexShrink: 0 }}>{cause.confidence}%</span>
                           </div>
                         )}
                       </button>
                       {isOpen && (
-                        <div style={{ padding: "0 12px 12px 42px", borderTop: "1px solid var(--border)" }}>
-                          <p style={{ margin: "10px 0 0", fontSize: "13px", color: "#6a7e96", lineHeight: 1.6, wordBreak: "break-word" as const }}>{cause.reasoning}</p>
+                        <div style={{ padding: "0 0 14px 24px" }}>
+                          <p style={{ margin: 0, fontSize: "13px", color: "var(--text-2)", lineHeight: 1.6, wordBreak: "break-word" as const }}>{cause.reasoning}</p>
                           {cause.confidenceBooster && (
                             <div style={{ marginTop: "8px", display: "flex", gap: "6px", alignItems: "flex-start" }}>
-                              <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--accent)", flexShrink: 0, marginTop: "1px", letterSpacing: "0.06em" }}>CONFIRM →</span>
-                              <span style={{ fontSize: "12px", color: "var(--accent)", lineHeight: 1.4 }}>{cause.confidenceBooster}</span>
+                              <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--text-3)", flexShrink: 0, marginTop: "2px", letterSpacing: "0.06em" }}>CONFIRM →</span>
+                              <span style={{ fontSize: "12px", color: "var(--text-2)", lineHeight: 1.4 }}>{cause.confidenceBooster}</span>
                             </div>
                           )}
                         </div>
@@ -732,15 +717,15 @@ export default function DiagnosticReport({
                           <span style={{ color: "var(--text-3)", fontSize: "10px", flexShrink: 0 }} aria-hidden="true">{isOpen ? "▲" : "▼"}</span>
                         </button>
                         <Expandable open={isOpen}>
-                          <div style={{ backgroundColor: "var(--bg)", border: "1px solid var(--border)", borderRadius: "8px", padding: "12px", display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
-                            <p style={{ margin: 0, fontSize: "13px", fontStyle: "italic", color: "var(--text-2)", lineHeight: 1.5 }}>{step.why}</p>
+                          <div style={{ padding: "4px 0 8px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                            <p style={{ margin: 0, fontSize: "13px", color: "var(--text-2)", lineHeight: 1.5 }}>{step.why}</p>
                             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                              <div style={{ backgroundColor: "#0a1a0f", border: "1px solid #1e3a28", borderRadius: "8px", padding: "10px 12px", boxSizing: "border-box" }}>
-                                <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--green)", marginBottom: "4px" }}>If it passes / looks good</div>
+                              <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                                <CheckCircle2 size={13} color="var(--green)" style={{ flexShrink: 0, marginTop: "2px" }} />
                                 <div style={{ fontSize: "13px", color: "var(--text-2)", lineHeight: 1.5 }}>{step.ifResultA}</div>
                               </div>
-                              <div style={{ backgroundColor: "#1a1200", border: "1px solid #3a2a00", borderRadius: "8px", padding: "10px 12px", boxSizing: "border-box" }}>
-                                <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--amber)", marginBottom: "4px" }}>If it fails / looks bad</div>
+                              <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                                <AlertTriangle size={13} color="var(--amber)" style={{ flexShrink: 0, marginTop: "2px" }} />
                                 <div style={{ fontSize: "13px", color: "var(--text-2)", lineHeight: 1.5 }}>{step.ifResultB}</div>
                               </div>
                             </div>
@@ -756,10 +741,8 @@ export default function DiagnosticReport({
 
             {/* Prevention tips — Part 9 */}
             {currentDiagnosis.preventionTips && currentDiagnosis.preventionTips.length > 0 && (
-              <div style={{ backgroundColor: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.15)", borderRadius: "10px", padding: "14px 16px" }}>
-                <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--green)", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: "10px" }}>
-                  🛡️ Prevent this next time
-                </div>
+              <Card>
+                <SectionHeader label="Prevent This Next Time" />
                 <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "6px" }}>
                   {currentDiagnosis.preventionTips.map((tip, i) => (
                     <li key={i} style={{ display: "flex", gap: "8px", fontSize: "13px", color: "var(--text-2)", lineHeight: 1.5 }}>
@@ -768,33 +751,29 @@ export default function DiagnosticReport({
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Card>
             )}
 
-            {/* Cost estimates */}
+            {/* Cost estimates — typographic table, hairline dividers */}
             <Card>
               <SectionHeader label="Cost Estimates" />
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 {currentDiagnosis.costEstimates.map((est, i) => (
-                  <div key={i} style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "8px", padding: "12px", boxSizing: "border-box" }}>
+                  <div key={i} style={{ padding: "12px 0", borderTop: i > 0 ? "1px solid var(--border)" : "none" }}>
                     <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", marginBottom: "8px", wordBreak: "break-word" }}>{est.fix}</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                      <div style={{ display: "flex", gap: "12px" }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: "9px", color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px", fontWeight: 600 }}>Parts</div>
-                          <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "12px", color: "var(--text-2)", wordBreak: "break-word" }}>{est.parts}</div>
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: "9px", color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px", fontWeight: 600 }}>Labor</div>
-                          <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "12px", color: "var(--text-2)", wordBreak: "break-word" }}>{est.labor}</div>
-                        </div>
-                      </div>
-                      <div style={{ borderTop: "1px solid var(--border)", paddingTop: "8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div style={{ fontSize: "9px", color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Total</div>
-                        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "16px", color: "var(--accent)", fontWeight: 700, whiteSpace: "nowrap" }}>{est.total}</div>
-                      </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", padding: "3px 0", fontSize: "13px" }}>
+                      <span style={{ color: "var(--text-3)" }}>Parts</span>
+                      <span style={{ fontFamily: "var(--font-jetbrains), monospace", color: "var(--text-2)", textAlign: "right", wordBreak: "break-word" }}>{est.parts}</span>
                     </div>
-                    {est.note && <div style={{ marginTop: "8px", fontSize: "12px", color: "var(--text-3)", fontStyle: "italic", wordBreak: "break-word" }}>{est.note}</div>}
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", padding: "3px 0", fontSize: "13px" }}>
+                      <span style={{ color: "var(--text-3)" }}>Labor</span>
+                      <span style={{ fontFamily: "var(--font-jetbrains), monospace", color: "var(--text-2)", textAlign: "right", wordBreak: "break-word" }}>{est.labor}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "12px", padding: "6px 0 0", fontSize: "13px" }}>
+                      <span style={{ color: "var(--text)", fontWeight: 600 }}>Total</span>
+                      <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "16px", color: "var(--text)", fontWeight: 700, whiteSpace: "nowrap" }}>{est.total}</span>
+                    </div>
+                    {est.note && <div style={{ marginTop: "8px", fontSize: "12px", color: "var(--text-3)", wordBreak: "break-word" }}>{est.note}</div>}
                   </div>
                 ))}
               </div>
@@ -804,50 +783,50 @@ export default function DiagnosticReport({
             {currentDiagnosis.partsNeeded && currentDiagnosis.partsNeeded.length > 0 && (
               <Card>
                 <SectionHeader label="Parts You May Need" />
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
                   {currentDiagnosis.partsNeeded.map((part: PartNeeded, i: number) => {
                     const links = buildPartLinks(part, year, make, model);
                     return (
-                      <div key={i} style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "8px", padding: "12px", boxSizing: "border-box" }}>
+                      <div key={i} style={{ padding: "12px 0", borderTop: i > 0 ? "1px solid var(--border)" : "none" }}>
                         {/* Part name + qty + cost */}
-                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px", marginBottom: "10px" }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px", marginBottom: "8px" }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>{part.partName}</div>
                             {part.qty > 1 && <div style={{ fontSize: "11px", color: "var(--text-3)", marginTop: "2px" }}>Qty: {part.qty}</div>}
-                            {part.engineNote && <div style={{ fontSize: "11px", color: "var(--text-3)", marginTop: "2px", fontStyle: "italic" }}>{part.engineNote}</div>}
+                            {part.engineNote && <div style={{ fontSize: "11px", color: "var(--text-3)", marginTop: "2px" }}>{part.engineNote}</div>}
                           </div>
-                          <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "14px", fontWeight: 700, color: "var(--accent)", flexShrink: 0 }}>{part.estimatedPartCost}</div>
+                          <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "14px", fontWeight: 700, color: "var(--text)", flexShrink: 0 }}>{part.estimatedPartCost}</div>
                         </div>
 
                         {/* Part numbers */}
-                        <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-                          <div style={{ flex: 1, backgroundColor: "var(--bg)", border: "1px solid var(--border)", borderRadius: "6px", padding: "7px 10px" }}>
-                            <div style={{ fontSize: "9px", fontWeight: 700, color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px" }}>OEM {part.oemBrand ? `· ${part.oemBrand}` : ""}</div>
+                        <div style={{ display: "flex", gap: "20px", marginBottom: "8px" }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "9px", fontWeight: 700, color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px" }}>OEM {part.oemBrand ? `· ${part.oemBrand}` : ""}</div>
                             {part.oemPartNumber ? (
-                              <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "13px", color: "var(--accent)", fontWeight: 600 }}>{part.oemPartNumber}</div>
+                              <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "13px", color: "var(--text)", fontWeight: 600 }}>{part.oemPartNumber}</div>
                             ) : (
-                              <div style={{ fontSize: "12px", color: "var(--text-3)", fontStyle: "italic" }}>Verify fitment</div>
+                              <div style={{ fontSize: "12px", color: "var(--text-3)" }}>Verify fitment</div>
                             )}
                           </div>
-                          <div style={{ flex: 1, backgroundColor: "var(--bg)", border: "1px solid var(--border)", borderRadius: "6px", padding: "7px 10px" }}>
-                            <div style={{ fontSize: "9px", fontWeight: 700, color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px" }}>Aftermarket {part.alternateBrand ? `· ${part.alternateBrand}` : ""}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "9px", fontWeight: 700, color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px" }}>Aftermarket {part.alternateBrand ? `· ${part.alternateBrand}` : ""}</div>
                             {part.alternatePartNumber ? (
                               <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "13px", color: "var(--text-2)", fontWeight: 600 }}>{part.alternatePartNumber}</div>
                             ) : (
-                              <div style={{ fontSize: "12px", color: "var(--text-3)", fontStyle: "italic" }}>Verify fitment</div>
+                              <div style={{ fontSize: "12px", color: "var(--text-3)" }}>Verify fitment</div>
                             )}
                           </div>
                         </div>
 
                         {/* Buying note */}
                         {part.notes && (
-                          <div style={{ fontSize: "12px", color: "var(--text-3)", fontStyle: "italic", marginBottom: "8px", lineHeight: 1.4 }}>{part.notes}</div>
+                          <div style={{ fontSize: "12px", color: "var(--text-3)", marginBottom: "8px", lineHeight: 1.4 }}>{part.notes}</div>
                         )}
 
                         {/* Retailer links */}
                         <div style={{ display: "flex", flexWrap: "wrap" as const, gap: "6px" }}>
                           {links.map(link => (
-                            <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", height: "28px", padding: "0 10px", backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "20px", fontSize: "11px", color: "var(--text-2)", textDecoration: "none", whiteSpace: "nowrap" as const }}>
+                            <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", height: "28px", padding: "0 10px", backgroundColor: "var(--surface-2)", borderRadius: "20px", fontSize: "11px", color: "var(--text-2)", textDecoration: "none", whiteSpace: "nowrap" as const }}>
                               {link.name}
                             </a>
                           ))}
@@ -860,14 +839,14 @@ export default function DiagnosticReport({
               </Card>
             )}
 
-            {/* All warnings */}
+            {/* All warnings — safety content keeps its tinted, bordered panel */}
             {currentDiagnosis.dontDoThis.length > 0 && (
-              <div style={{ backgroundColor: "#150a0a", border: "1px solid #2a1515", borderRadius: "10px", padding: "14px 16px", boxSizing: "border-box" }}>
-                <SectionHeader label="Don't Do This" />
+              <div style={{ backgroundColor: "var(--red-bg)", border: "1px solid #2d0f0f", borderRadius: "12px", padding: "14px 16px", boxSizing: "border-box" }}>
+                <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--red)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "10px" }}>Don&apos;t Do This</div>
                 <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "8px" }}>
                   {currentDiagnosis.dontDoThis.map((warning, i) => (
                     <li key={i} style={{ display: "flex", gap: "8px", lineHeight: 1.4 }}>
-                      <span style={{ color: "var(--amber)", fontWeight: 700, flexShrink: 0, fontSize: "14px" }}>›</span>
+                      <span style={{ color: "var(--red)", fontWeight: 700, flexShrink: 0, fontSize: "14px" }}>›</span>
                       <span style={{ fontSize: "13px", color: "var(--text)", lineHeight: 1.4, wordBreak: "break-word" }}>{warning}</span>
                     </li>
                   ))}
@@ -888,17 +867,17 @@ export default function DiagnosticReport({
 
             {/* Shops near you */}
             {shops.length > 0 && (
-              <div style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "14px 16px", boxSizing: "border-box" }}>
+              <Card>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                  <MapPin size={12} color="#4a5c72" />
-                  <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Shops Near You</span>
+                  <MapPin size={12} color="var(--text-3)" />
+                  <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: "10px", fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Shops Near You</span>
                 </div>
-                <p style={{ margin: "0 0 12px", fontSize: "12px", color: "var(--text-4)", fontStyle: "italic" }}>
+                <p style={{ margin: "0 0 12px", fontSize: "12px", color: "var(--text-3)" }}>
                   Independent shops typically charge 30–40% less than dealers for this repair.
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {shops.map((shop, i) => (
-                    <a key={i} href={shop.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "8px", padding: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", boxSizing: "border-box" }}>
+                    <a key={i} href={shop.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", backgroundColor: "var(--surface)", borderRadius: "10px", padding: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", boxSizing: "border-box" }}>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", marginBottom: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shop.name}</div>
                         {shop.address && <div style={{ fontSize: "11px", color: "var(--text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shop.address}</div>}
@@ -913,7 +892,7 @@ export default function DiagnosticReport({
                     </a>
                   ))}
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* Outcome tracking */}
@@ -942,7 +921,7 @@ export default function DiagnosticReport({
               <button
                 onClick={openMechanicModal}
                 className="tap-target"
-                style={{ width: "100%", height: "44px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border-muted)", borderRadius: "8px", color: "var(--text)", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}
+                style={{ width: "100%", height: "44px", backgroundColor: "var(--surface)", border: "1px solid var(--border-muted)", borderRadius: "10px", color: "var(--text)", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}
               >
                 Generate Message
               </button>
@@ -1004,7 +983,7 @@ export default function DiagnosticReport({
                 <button
                   type="submit"
                   disabled={!chatInput.trim() || chatLoading}
-                  style={{ height: "44px", padding: "0 18px", backgroundColor: "var(--accent)", color: "white", fontWeight: 600, fontSize: "14px", border: "none", borderRadius: "8px", cursor: chatInput.trim() && !chatLoading ? "pointer" : "not-allowed", opacity: chatInput.trim() && !chatLoading ? 1 : 0.4, flexShrink: 0 }}
+                  style={{ height: "44px", padding: "0 18px", backgroundColor: "var(--surface-2)", color: "var(--text)", fontWeight: 600, fontSize: "14px", border: "1px solid var(--border-muted)", borderRadius: "8px", cursor: chatInput.trim() && !chatLoading ? "pointer" : "not-allowed", opacity: chatInput.trim() && !chatLoading ? 1 : 0.4, flexShrink: 0 }}
                 >
                   Ask
                 </button>
@@ -1142,7 +1121,7 @@ export default function DiagnosticReport({
               <div style={{ fontSize: "24px", fontWeight: 800, color: "var(--text)", marginBottom: "4px", lineHeight: 1.1 }}>{year} {cap(make)} {cap(model)}</div>
               <div style={{ fontSize: "13px", color: "var(--text-3)", marginBottom: "20px", lineHeight: 1.4, wordBreak: "break-word" }}>{issue.length > 72 ? issue.slice(0, 69) + "…" : issue}</div>
               {verdict !== "OKAY" ? (
-                <div style={{ padding: "12px 16px", borderRadius: "10px", marginBottom: "18px", backgroundColor: verdict === "STOP" ? "var(--red-bg)" : "var(--amber-bg)", borderLeft: `4px solid ${verdict === "STOP" ? "var(--red)" : "var(--amber)"}` }}>
+                <div style={{ padding: "12px 16px", borderRadius: "10px", marginBottom: "18px", backgroundColor: verdict === "STOP" ? "var(--red-bg)" : "var(--amber-bg)", border: `1px solid ${verdict === "STOP" ? "rgba(239,68,68,0.35)" : "rgba(245,158,11,0.35)"}` }}>
                   <span style={{ fontSize: "13px", fontWeight: 700, color: verdict === "STOP" ? "var(--red)" : "var(--amber)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{verdict === "STOP" ? "STOP DRIVING" : "DRIVE WITH CAUTION"}</span>
                 </div>
               ) : (
