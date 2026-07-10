@@ -21,6 +21,7 @@ import { resizeImage } from "@/utils/resizeImage";
 import { hapticSuccess } from "@/lib/native";
 import { track } from "@/lib/track";
 import { parsePartialJson } from "@/lib/partialJson";
+import { diagnosisDigest } from "@/lib/diagnosisDigest";
 import { MapPin, Camera, Wrench, Lock, WifiOff, Bluetooth, Car, AlertTriangle, Users, Settings } from "lucide-react";
 
 // Common symptoms as one-tap chips (mirrors how people actually describe
@@ -428,7 +429,7 @@ export default function Home() {
       track("diagnosis_completed", { make, verdict: diag.driveSafety.verdict });
       setChatHistory([
         { role: "user", content: `Vehicle: ${year} ${make} ${model}${modMode && mods ? `\nMods: ${mods}${hasTune ? " (tuned)" : ""}` : ""}\n\nIssue: ${issue}` },
-        { role: "assistant", content: JSON.stringify(diag) },
+        { role: "assistant", content: diagnosisDigest(diag) },
       ]);
 
       saveToLS({ year, make, model, issue, diagnosis: diag, verdict: diag.driveSafety.verdict });
@@ -626,7 +627,7 @@ export default function Home() {
     setDiagnosis(item.diagnosis);
     setChatHistory([
       { role: "user", content: `Vehicle: ${item.year} ${item.make} ${item.model}\n\nIssue: ${item.issue}` },
-      { role: "assistant", content: JSON.stringify(item.diagnosis) },
+      { role: "assistant", content: diagnosisDigest(item.diagnosis) },
     ]);
     setDiagnosisId(null);
     setActiveTab("diagnose");

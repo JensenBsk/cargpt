@@ -523,7 +523,14 @@ export default function DiagnosticReport({
         body: JSON.stringify({ year, make, model, diagnosis: currentDiagnosis, conversationHistory: updatedHistory, message: userText }),
       });
       if (!res.ok || !res.body) {
-        setChatMessages(prev => { const u = [...prev]; u[u.length - 1] = { role: "assistant", text: "Service unavailable. Please try again." }; return u; });
+        // Surface the server's actual reason — a blanket "unavailable" hid a
+        // request-validation bug for days.
+        let detail = "";
+        try { detail = (await res.json())?.error ?? ""; } catch { /* not JSON */ }
+        const friendly = res.status === 429
+          ? "Carlos needs a quick breather — try again in a minute."
+          : `Couldn't send that${detail ? ` (${detail.replace(/\.$/, "").toLowerCase()})` : ""}. Please try again.`;
+        setChatMessages(prev => { const u = [...prev]; u[u.length - 1] = { role: "assistant", text: friendly }; return u; });
         return;
       }
       const reader = res.body.getReader();

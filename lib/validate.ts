@@ -72,8 +72,10 @@ export function sanitizeHistory(history: unknown): ChatMessage[] | null {
     if (!m || typeof m !== "object") return null;
     const { role, content } = m as { role?: unknown; content?: unknown };
     if (role !== "user" && role !== "assistant") return null;
-    if (typeof content !== "string" || content.length > LIMITS.historyMessageChars) return null;
-    out.push({ role, content });
+    if (typeof content !== "string") return null;
+    // Overlong messages (old clients seeded raw diagnosis JSON) get clipped,
+    // not rejected — losing a request over context length punishes the user.
+    out.push({ role, content: content.length > LIMITS.historyMessageChars ? content.slice(0, LIMITS.historyMessageChars) : content });
   }
   return out;
 }
