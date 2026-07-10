@@ -6,7 +6,7 @@ const isDev = process.env.NODE_ENV === "development";
 // nonce-based setup; 'unsafe-eval' is only needed for dev tooling/HMR.
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://cdn.onesignal.com https://va.vercel-scripts.com`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval' http://localhost:8400" : ""} https://cdn.onesignal.com https://va.vercel-scripts.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
